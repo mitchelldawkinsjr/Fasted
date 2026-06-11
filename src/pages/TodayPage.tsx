@@ -72,6 +72,12 @@ export function TodayPage() {
 
       <TodayFastCard plan={plan} />
 
+      <DailyCommitmentCard
+        date={viewDate}
+        checkedIn={!!existingCheckIn}
+        onCheckIn={() => setShowCheckIn(true)}
+      />
+
       <section className="grid grid-cols-1 gap-gutter md:grid-cols-2">
         <ScriptureCard phaseId={plan.phaseId} references={plan.scriptureReferences} />
         <PrayerPointsCard
@@ -79,12 +85,6 @@ export function TodayPage() {
           encouragement="You are setting this time apart for something greater. Breathe and reflect."
         />
       </section>
-
-      <DailyCommitmentCard
-        date={viewDate}
-        checkedIn={!!existingCheckIn}
-        onCheckIn={() => setShowCheckIn(true)}
-      />
 
       <EncouragementCard message={plan.encouragement} />
 
