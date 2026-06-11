@@ -1,9 +1,10 @@
 import { BadgeWall } from '../components/BadgeWall';
+import { PhaseMilestonesCard } from '../components/PhaseMilestonesCard';
 import { FAST_PHASES, getPhaseForDate } from '../data/fastingPlan';
 import { useProgress } from '../hooks/useProgress';
-import { getFastDaysCompleted } from '../lib/badges';
+import { getFastDaysCompleted, getNextReward, getPhasesCompletedCount } from '../lib/badges';
 import {
-  getCurrentStreak,
+  getCurrentCheckInStreak,
   getLongestStreak,
   getPhaseCompletionPercent,
   getTotalCheckIns,
@@ -17,9 +18,10 @@ export function ProgressPage() {
   const phasePercent = currentPhase
     ? getPhaseCompletionPercent(currentPhase.startDate, currentPhase.endDate)
     : 0;
-  const phasesCompleted = FAST_PHASES.filter(
-    (p) => getPhaseCompletionPercent(p.startDate, p.endDate) === 100,
-  ).length;
+  const phasesCompleted = getPhasesCompletedCount(today);
+  const nextReward = currentPhase
+    ? getNextReward(currentPhase.id, currentPhase.startDate, currentPhase.endDate, today)
+    : null;
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
@@ -32,9 +34,9 @@ export function ProgressPage() {
 
       <section className="grid grid-cols-2 gap-gutter">
         <div className="col-span-2 stitch-card flex min-h-[120px] flex-col justify-center border-l-4 border-secondary p-stack-md">
-          <span className="label-caps text-on-surface-variant opacity-70">Current Streak</span>
+          <span className="label-caps text-on-surface-variant opacity-70">Check-In Streak</span>
           <div className="flex items-baseline gap-unit">
-            <span className="font-display text-[48px] text-primary">{getCurrentStreak(today)}</span>
+            <span className="font-display text-[48px] text-primary">{getCurrentCheckInStreak(today)}</span>
             <span className="font-display text-headline-md text-secondary">Days</span>
           </div>
         </div>
@@ -57,34 +59,44 @@ export function ProgressPage() {
       </section>
 
       {currentPhase && (
-        <section className="stitch-card flex flex-col items-center p-stack-lg">
-          <h3 className="label-caps mb-stack-md text-center text-on-surface-variant">
-            {currentPhase.title}
-          </h3>
-          <div className="relative flex h-48 w-48 items-center justify-center">
-            <svg className="h-full w-full -rotate-90" viewBox="0 0 200 200">
-              <circle cx="100" cy="100" r="88" fill="transparent" stroke="#edefe5" strokeWidth="6" />
-              <circle
-                cx="100"
-                cy="100"
-                r="88"
-                fill="transparent"
-                stroke="#d2eabf"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={2 * Math.PI * 88}
-                strokeDashoffset={2 * Math.PI * 88 * (1 - phasePercent / 100)}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-display text-display-scripture text-primary">{phasePercent}%</span>
-              <span className="label-caps text-on-surface-variant">Complete</span>
+        <>
+          <section className="stitch-card flex flex-col items-center p-stack-lg">
+            <h3 className="label-caps mb-stack-md text-center text-on-surface-variant">
+              {currentPhase.title}
+            </h3>
+            <div className="relative flex h-48 w-48 items-center justify-center">
+              <svg className="h-full w-full -rotate-90" viewBox="0 0 200 200">
+                <circle cx="100" cy="100" r="88" fill="transparent" stroke="#edefe5" strokeWidth="6" />
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="88"
+                  fill="transparent"
+                  stroke="#d2eabf"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 88}
+                  strokeDashoffset={2 * Math.PI * 88 * (1 - phasePercent / 100)}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="font-display text-display-scripture text-primary">{phasePercent}%</span>
+                <span className="label-caps text-on-surface-variant">Complete</span>
+              </div>
             </div>
-          </div>
-          <p className="mt-stack-md max-w-[240px] text-center text-body-md text-on-surface-variant">
-            Grace over guilt—every step of obedience matters.
-          </p>
-        </section>
+            <p className="mt-stack-md max-w-[240px] text-center text-body-md text-on-surface-variant">
+              Grace over guilt—every step of obedience matters.
+            </p>
+            {nextReward && (
+              <p className="mt-stack-md text-center text-body-md text-primary">
+                Next milestone: <strong>{nextReward.title}</strong> ({nextReward.current}/
+                {nextReward.target})
+              </p>
+            )}
+          </section>
+
+          <PhaseMilestonesCard phaseId={currentPhase.id} today={today} />
+        </>
       )}
 
       <section className="grid grid-cols-2 gap-gutter">

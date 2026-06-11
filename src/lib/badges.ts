@@ -1,133 +1,230 @@
+import {
+  GLOBAL_BADGES,
+  LEGACY_BADGE_IDS,
+  PHASE_MILESTONES,
+  type GlobalBadgeDef,
+  type PhaseMilestoneDef,
+} from '../data/phaseAchievements';
 import { FAST_PHASES } from '../data/fastingPlan';
 import type { Badge, BadgeId } from '../types';
 import { getDailyPlan } from './dailyPlan';
 import { getAllPlanDates } from './dateUtils';
+import {
+  getMilestoneProgress,
+  getMilestoneTarget,
+  getNextPhaseMilestone,
+  hasFinishedPlan,
+  isMilestoneEarned,
+} from './phaseProgress';
 import { getProgress, saveBadges } from './storage';
 import { getCurrentStreak } from './streaks';
 
-const BADGE_DEFINITIONS: Record<BadgeId, Omit<Badge, 'earnedAt'>> = {
-  'first-check-in': {
-    id: 'first-check-in',
-    title: 'First Check-In',
-    description: 'Completed your first daily check-in.',
-  },
-  'streak-3': {
-    id: 'streak-3',
-    title: '3-Day Streak',
-    description: 'Checked in three days in a row.',
-  },
-  'streak-7': {
-    id: 'streak-7',
-    title: '7-Day Streak',
-    description: 'Checked in seven days in a row.',
-  },
-  'phase-1-complete': {
-    id: 'phase-1-complete',
-    title: 'Phase 1 Complete',
-    description: 'Finished the Daniel 1 Fast Pattern phase.',
-  },
-  'daniel-fast-complete': {
-    id: 'daniel-fast-complete',
-    title: 'Daniel Fast Complete',
-    description: 'Completed a full Daniel Fast phase.',
-  },
-  'prayer-warrior': {
-    id: 'prayer-warrior',
-    title: 'Prayer Warrior',
-    description: 'Prayed over your focus on 10 check-ins.',
-  },
-  'journal-keeper': {
-    id: 'journal-keeper',
-    title: 'Journal Keeper',
-    description: 'Wrote five journal entries.',
-  },
-  'isaiah-58-servant': {
-    id: 'isaiah-58-servant',
-    title: 'Isaiah 58 Servant',
-    description: 'Completed check-ins during the Isaiah 58 phase.',
-  },
-  'finished-plan': {
-    id: 'finished-plan',
-    title: 'Finished the Plan',
-    description: 'Reached the end of the fasting calendar.',
-  },
+export type BadgeProgress = {
+  id: BadgeId;
+  title: string;
+  description: string;
+  earnedAt?: string;
+  phaseId?: number;
+  current: number;
+  target: number;
+  earned: boolean;
 };
 
-export function getAllBadgeDefinitions(): Badge[] {
-  const earned = new Map(getProgress().badges.map((b) => [b.id, b]));
-  return (Object.keys(BADGE_DEFINITIONS) as BadgeId[]).map((id) => ({
-    ...BADGE_DEFINITIONS[id],
-    earnedAt: earned.get(id)?.earnedAt,
-  }));
+function normalizeBadgeId(id: string): string {
+  return LEGACY_BADGE_IDS[id] ?? id;
+}
+
+function buildPhaseBadge(milestone: PhaseMilestoneDef): Omit<Badge, 'earnedAt'> {
+  return {
+    id: milestone.id,
+    title: milestone.title,
+    description: milestone.description,
+    phaseId: milestone.phaseId,
+  };
+}
+
+function buildGlobalBadge(def: GlobalBadgeDef): Omit<Badge, 'earnedAt'> {
+  return {
+    id: def.id,
+    title: def.title,
+    description: def.description,
+  };
+}
+
+const ALL_BADGE_DEFS: Omit<Badge, 'earnedAt'>[] = [
+  ...GLOBAL_BADGES.map(buildGlobalBadge),
+  ...PHASE_MILESTONES.map(buildPhaseBadge),
+];
+
+const BADGE_DEF_MAP = new Map(ALL_BADGE_DEFS.map((b) => [b.id, b]));
+
+function getEarnedBadgeMap(): Map<string, Badge> {
+  const map = new Map<string, Badge>();
+  for (const badge of getProgress().badges) {
+    const id = normalizeBadgeId(badge.id);
+    if (!map.has(id)) {
+      map.set(id, { ...badge, id });
+    }
+  }
+  return map;
+}
+
+function getGlobalBadgeProgress(def: GlobalBadgeDef, today: string): number {
+  const progress = getProgress();
+
+  switch (def.kind) {
+    case 'check-ins':
+      return progress.checkIns.length;
+    case 'streak':
+      return getCurrentStreak(today);
+    case 'prayer':
+      return progress.checkIns.filter((c) => c.prayedFocus).length;
+    case 'journal':
+      return progress.journalEntries.length;
+    case 'plan-finish': {
+      const phase8 = FAST_PHASES.find((p) => p.id === 8)!;
+      return getMilestoneProgress(
+        { id: 'phase-8-milestone-21', phaseId: 8, threshold: 21, metric: 'phase-check-ins', title: '', description: '' },
+        phase8.startDate,
+        phase8.endDate,
+      );
+    }
+    default:
+      return 0;
+  }
+}
+
+function isGlobalBadgeEarned(def: GlobalBadgeDef, today: string): boolean {
+  if (def.kind === 'plan-finish') {
+    return hasFinishedPlan(today);
+  }
+  return getGlobalBadgeProgress(def, today) >= def.threshold;
+}
+
+export function getAllBadgeDefinitions(today: string): BadgeProgress[] {
+  const earned = getEarnedBadgeMap();
+
+  const globalBadges: BadgeProgress[] = GLOBAL_BADGES.map((def) => {
+    const stored = earned.get(def.id);
+    const current = getGlobalBadgeProgress(def, today);
+    const autoEarned = isGlobalBadgeEarned(def, today);
+    return {
+      ...buildGlobalBadge(def),
+      earnedAt: stored?.earnedAt ?? (autoEarned ? today : undefined),
+      current,
+      target: def.threshold,
+      earned: Boolean(stored?.earnedAt) || autoEarned,
+    };
+  });
+
+  const phaseBadges: BadgeProgress[] = PHASE_MILESTONES.map((milestone) => {
+    const phase = FAST_PHASES.find((p) => p.id === milestone.phaseId)!;
+    const stored = earned.get(milestone.id);
+    const current = getMilestoneProgress(milestone, phase.startDate, phase.endDate);
+    const target = getMilestoneTarget(milestone, phase.startDate, phase.endDate);
+    const autoEarned = isMilestoneEarned(milestone, phase.startDate, phase.endDate);
+    return {
+      ...buildPhaseBadge(milestone),
+      earnedAt: stored?.earnedAt ?? (autoEarned ? today : undefined),
+      current,
+      target,
+      earned: Boolean(stored?.earnedAt) || autoEarned,
+    };
+  });
+
+  return [...globalBadges, ...phaseBadges];
+}
+
+export function getPhaseBadgeDefinitions(phaseId: number, today: string): BadgeProgress[] {
+  return getAllBadgeDefinitions(today).filter((b) => b.phaseId === phaseId);
+}
+
+export function getNextReward(
+  phaseId: number,
+  phaseStart: string,
+  phaseEnd: string,
+  today: string,
+): BadgeProgress | null {
+  const nextPhase = getNextPhaseMilestone(phaseId, phaseStart, phaseEnd);
+  if (nextPhase) {
+    return {
+      ...buildPhaseBadge(nextPhase.milestone),
+      current: nextPhase.current,
+      target: nextPhase.target,
+      earned: false,
+    };
+  }
+
+  const globalDefs = GLOBAL_BADGES.filter((g) => g.kind !== 'plan-finish');
+  const earned = getEarnedBadgeMap();
+  for (const def of globalDefs) {
+    if (earned.get(def.id)?.earnedAt || isGlobalBadgeEarned(def, today)) continue;
+    const current = getGlobalBadgeProgress(def, today);
+    if (current < def.threshold) {
+      return {
+        ...buildGlobalBadge(def),
+        current,
+        target: def.threshold,
+        earned: false,
+      };
+    }
+  }
+
+  return null;
 }
 
 function hasBadge(id: BadgeId): boolean {
-  return getProgress().badges.some((b) => b.id === id);
+  const normalized = normalizeBadgeId(id);
+  return getProgress().badges.some((b) => normalizeBadgeId(b.id) === normalized);
 }
 
-function awardBadge(id: BadgeId, earnedAt: string): Badge | null {
-  if (hasBadge(id)) return null;
-  const badge: Badge = { ...BADGE_DEFINITIONS[id], earnedAt };
+function awardBadge(def: Omit<Badge, 'earnedAt'>, earnedAt: string): Badge | null {
+  if (hasBadge(def.id)) return null;
+  const badge: Badge = { ...def, earnedAt };
   const progress = getProgress();
   saveBadges([...progress.badges, badge]);
   return badge;
 }
 
-export function evaluateBadges(today: string): Badge[] {
+function migrateLegacyBadges(): void {
   const progress = getProgress();
-  const newlyEarned: Badge[] = [];
+  const existingIds = new Set(progress.badges.map((b) => normalizeBadgeId(b.id)));
+  const migrated: Badge[] = [];
+  let changed = false;
 
-  const add = (id: BadgeId) => {
-    const badge = awardBadge(id, today);
-    if (badge) newlyEarned.push(badge);
-  };
-
-  if (progress.checkIns.length >= 1) add('first-check-in');
-
-  const streak = getCurrentStreak(today);
-  if (streak >= 3) add('streak-3');
-  if (streak >= 7) add('streak-7');
-
-  const prayedCount = progress.checkIns.filter((c) => c.prayedFocus).length;
-  if (prayedCount >= 10) add('prayer-warrior');
-
-  if (progress.journalEntries.length >= 5) add('journal-keeper');
-
-  const phase1 = FAST_PHASES[0];
-  const phase1Dates = getAllPlanDates().filter(
-    (d) => d >= phase1.startDate && d <= phase1.endDate,
-  );
-  const phase1CheckIns = progress.checkIns.filter((c) =>
-    phase1Dates.includes(c.date),
-  );
-  if (phase1CheckIns.length >= phase1Dates.length) add('phase-1-complete');
-
-  const danielPhases = [3, 6];
-  for (const phaseId of danielPhases) {
-    const phase = FAST_PHASES.find((p) => p.id === phaseId)!;
-    const phaseDates = getAllPlanDates().filter(
-      (d) => d >= phase.startDate && d <= phase.endDate,
-    );
-    const phaseCheckIns = progress.checkIns.filter((c) =>
-      phaseDates.includes(c.date),
-    );
-    if (phaseCheckIns.length >= phaseDates.length) {
-      add('daniel-fast-complete');
-      break;
+  for (const badge of progress.badges) {
+    const mappedId = LEGACY_BADGE_IDS[badge.id];
+    if (mappedId && !existingIds.has(mappedId)) {
+      migrated.push({ ...badge, id: mappedId });
+      changed = true;
+    } else if (!mappedId) {
+      migrated.push(badge);
     }
   }
 
-  const isaiahPhase = FAST_PHASES.find((p) => p.id === 5)!;
-  const isaiahDates = getAllPlanDates().filter(
-    (d) => d >= isaiahPhase.startDate && d <= isaiahPhase.endDate,
-  );
-  const isaiahCheckIns = progress.checkIns.filter((c) =>
-    isaiahDates.includes(c.date),
-  );
-  if (isaiahCheckIns.length >= isaiahDates.length) add('isaiah-58-servant');
+  if (changed) saveBadges(migrated);
+}
 
-  if (today >= '2026-12-19' && progress.checkIns.some((c) => c.date === '2026-12-19')) {
-    add('finished-plan');
+export function evaluateBadges(today: string): Badge[] {
+  migrateLegacyBadges();
+  const newlyEarned: Badge[] = [];
+
+  const add = (def: Omit<Badge, 'earnedAt'>) => {
+    const badge = awardBadge(def, today);
+    if (badge) newlyEarned.push(badge);
+  };
+
+  for (const def of GLOBAL_BADGES) {
+    if (isGlobalBadgeEarned(def, today)) {
+      add(buildGlobalBadge(def));
+    }
+  }
+
+  for (const milestone of PHASE_MILESTONES) {
+    const phase = FAST_PHASES.find((p) => p.id === milestone.phaseId)!;
+    if (isMilestoneEarned(milestone, phase.startDate, phase.endDate)) {
+      add(buildPhaseBadge(milestone));
+    }
   }
 
   return newlyEarned;
@@ -137,4 +234,22 @@ export function getFastDaysCompleted(): number {
   const fastDays = getAllPlanDates().filter((d) => getDailyPlan(d)?.isFastDay);
   const checkInDates = new Set(getProgress().checkIns.map((c) => c.date));
   return fastDays.filter((d) => checkInDates.has(d)).length;
+}
+
+export function getPhasesCompletedCount(_today: string): number {
+  const earned = getEarnedBadgeMap();
+  return FAST_PHASES.filter((phase) => {
+    const milestones = PHASE_MILESTONES.filter((m) => m.phaseId === phase.id);
+    const finalMilestone = milestones[milestones.length - 1];
+    if (!finalMilestone) return false;
+    return (
+      Boolean(earned.get(finalMilestone.id)?.earnedAt) ||
+      isMilestoneEarned(finalMilestone, phase.startDate, phase.endDate)
+    );
+  }).length;
+}
+
+/** Resolve badge definition for display (e.g. celebration modal). */
+export function getBadgeDefinition(id: BadgeId): Omit<Badge, 'earnedAt'> | undefined {
+  return BADGE_DEF_MAP.get(normalizeBadgeId(id));
 }
