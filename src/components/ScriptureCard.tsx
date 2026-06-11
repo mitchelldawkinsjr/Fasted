@@ -32,7 +32,12 @@ export function ScriptureCard({ phaseId, references }: Props) {
       className="stitch-card flex flex-col justify-center border-l-4 border-gold p-stack-lg"
       aria-labelledby="scripture-heading"
     >
-      <Icon name="auto_stories" className="mb-3 text-secondary" />
+      <div className="mb-4 flex items-center gap-2">
+        <Icon name="auto_stories" className="text-secondary" />
+        <h2 id="scripture-heading" className="font-display text-headline-md text-primary">
+          Scripture
+        </h2>
+      </div>
       <blockquote className="mb-4 font-display text-body-lg italic leading-relaxed text-primary">
         &ldquo;{phase.scriptureTextNLT}&rdquo;
       </blockquote>
