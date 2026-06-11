@@ -12,7 +12,6 @@ import { useProgress } from '../hooks/useProgress';
 import { getDailyPlan } from '../lib/dailyPlan';
 import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/dateUtils';
 import { getCheckIn } from '../lib/storage';
-import type { Badge } from '../types';
 
 const REFLECTION_TAGS = ['Gratitude', 'Peace', 'Focus', 'Strength', 'Patience'];
 
@@ -26,7 +25,6 @@ export function TodayPage() {
   const progress = useProgress();
   const existingCheckIn = getCheckIn(viewDate);
   const [showCheckIn, setShowCheckIn] = useState(false);
-  const [newBadges, setNewBadges] = useState<Badge[]>([]);
 
   if (!inPlan || !plan) {
     return (
@@ -115,17 +113,6 @@ export function TodayPage() {
         )}
       </section>
 
-      {newBadges.length > 0 && (
-        <div className="stitch-card border-l-4 border-tertiary-container p-stack-md text-center">
-          <p className="font-display text-headline-md text-primary">New badge earned!</p>
-          {newBadges.map((b) => (
-            <p key={b.id} className="mt-1 text-body-md text-on-surface-variant">
-              {b.title}
-            </p>
-          ))}
-        </div>
-      )}
-
       <SafetyNote compact={plan.fastType !== 'twenty-four-hour-water'} />
 
       {showCheckIn && (
@@ -133,7 +120,7 @@ export function TodayPage() {
           date={viewDate}
           existing={existingCheckIn}
           onClose={() => setShowCheckIn(false)}
-          onComplete={(badges) => setNewBadges(badges)}
+          onComplete={() => setShowCheckIn(false)}
         />
       )}
     </div>
