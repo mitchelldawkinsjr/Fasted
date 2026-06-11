@@ -1,6 +1,8 @@
-import { getAllPlanDates } from '../lib/dateUtils';
-import { getCurrentStreak } from '../lib/streaks';
+import { getPhaseForDate } from '../data/fastingPlan';
+import { getNextReward } from '../lib/badges';
+import { getPhaseDayCount, getCurrentCheckInStreak } from '../lib/streaks';
 import { Icon } from './Icon';
+import { PhaseMilestonesCard } from './PhaseMilestonesCard';
 
 type Props = {
   date: string;
@@ -9,9 +11,11 @@ type Props = {
 };
 
 export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
-  const streak = getCurrentStreak(date);
-  const totalDays = getAllPlanDates().length;
-  const progress = Math.min(100, (streak / totalDays) * 100);
+  const streak = getCurrentCheckInStreak(date);
+  const phase = getPhaseForDate(date);
+  const nextReward = phase
+    ? getNextReward(phase.id, phase.startDate, phase.endDate, date)
+    : null;
 
   return (
     <section className="rounded-xl bg-primary-container p-stack-lg text-on-primary grace-shadow">
@@ -34,23 +38,46 @@ export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
         )}
       </div>
 
-      <div className="mt-8">
-        <div className="mb-2 flex items-end justify-between">
-          <span className="label-caps text-on-primary-container">STREAK TRACKER</span>
-          <span className="font-display text-headline-md text-secondary-container">
-            {streak}{' '}
-            <span className="text-body-md font-normal text-on-primary-container">
-              of {totalDays} days
+      <div className="mt-8 space-y-stack-md">
+        <div>
+          <div className="mb-2 flex items-end justify-between">
+            <span className="label-caps text-on-primary-container">CHECK-IN STREAK</span>
+            <span className="font-display text-headline-md text-secondary-container">
+              {streak}{' '}
+              <span className="text-body-md font-normal text-on-primary-container">
+                consecutive days
+              </span>
             </span>
-          </span>
+          </div>
+          <div className="flex h-2 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-secondary-container transition-all"
+              style={{
+                width: `${Math.min(100, Math.max(streak > 0 ? 8 : 0, (streak / 21) * 100))}%`,
+              }}
+            />
+          </div>
         </div>
-        <div className="flex h-2 w-full gap-0.5 overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-l-full bg-secondary-container transition-all"
-            style={{ width: `${Math.max(progress, streak > 0 ? 2 : 0)}%` }}
-          />
-          <div className="h-full w-full bg-white/5" />
-        </div>
+
+        {phase && (
+          <>
+            <div className="flex items-end justify-between text-on-primary-container">
+              <span className="label-caps">THIS PHASE</span>
+              <span className="text-body-md">
+                {phase.title} · {getPhaseDayCount(phase.startDate, phase.endDate)} days
+              </span>
+            </div>
+            <PhaseMilestonesCard phaseId={phase.id} today={date} compact />
+          </>
+        )}
+
+        {nextReward && (
+          <p className="rounded-lg bg-black/10 px-3 py-2 text-body-md text-on-primary-container">
+            <span className="label-caps text-secondary-container">Next milestone · </span>
+            {nextReward.title} ({Math.min(nextReward.current, nextReward.target)}/
+            {nextReward.target})
+          </p>
+        )}
       </div>
     </section>
   );

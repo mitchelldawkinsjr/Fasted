@@ -63,22 +63,14 @@ export type AppSettings = {
   scriptureNote: string;
 };
 
-export type BadgeId =
-  | 'first-check-in'
-  | 'streak-3'
-  | 'streak-7'
-  | 'phase-1-complete'
-  | 'daniel-fast-complete'
-  | 'prayer-warrior'
-  | 'journal-keeper'
-  | 'isaiah-58-servant'
-  | 'finished-plan';
+export type BadgeId = string;
 
 export type Badge = {
   id: BadgeId;
   title: string;
   description: string;
   earnedAt?: string;
+  phaseId?: number;
 };
 
 export type UserProgress = {
