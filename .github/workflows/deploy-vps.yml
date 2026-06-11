@@ -1,0 +1,141 @@
+name: Deploy to mitch-cloud
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "assets/**"
+      - "deploy/**"
+      - "scripts/**"
+      - "docker/**"
+      - "index.html"
+      - "Dockerfile"
+      - "docker-compose.prod.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - "tailwind.config.js"
+      - "postcss.config.js"
+      - "tsconfig*.json"
+      - ".github/workflows/deploy-vps.yml"
+  workflow_dispatch:
+
+jobs:
+  secrets-check:
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - name: Check VPS secrets
+        id: check
+        run: |
+          if [ -n "${{ secrets.VPS_SSH_KEY }}" ] && [ -n "${{ secrets.VPS_HOST }}" ] && [ -n "${{ secrets.VPS_USER }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Warn when secrets are missing
+        if: steps.check.outputs.configured != 'true' && github.event_name == 'push'
+        run: |
+          echo "::warning::VPS deploy skipped. Add repository secrets VPS_SSH_KEY, VPS_HOST, and VPS_USER (same values as ghfb / WNBA-Stat-Spot), then re-run Deploy to mitch-cloud from Actions."
+
+  secrets-required:
+    needs: secrets-check
+    if: needs.secrets-check.outputs.configured != 'true' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail — VPS secrets not configured
+        run: |
+          echo "::error::Add VPS_SSH_KEY, VPS_HOST, and VPS_USER under Settings → Secrets and variables → Actions."
+          echo "Use the same values as ghfb or WNBA-Stat-Spot, then re-run this workflow."
+          exit 1
+
+  deploy:
+    name: Deploy Fasted Calendar to mitch-cloud
+    needs: secrets-check
+    if: needs.secrets-check.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to mitch-cloud
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -e
+
+          ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
+            set -e
+            mkdir -p /opt/360ws/clients/docker-app/fasted-calendar
+            docker network ls --format '{{.Name}}' | grep -q '^360ws-network$' || docker network create 360ws-network
+          EOF
+
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude 'dist' \
+            --exclude 'docker/pb_data' \
+            --exclude '.env.local' \
+            ./ ${VPS_USER}@${VPS_HOST}:/opt/360ws/clients/docker-app/fasted-calendar/
+
+          ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
+            set -e
+            cd /opt/360ws/clients/docker-app/fasted-calendar
+
+            docker compose -f docker-compose.prod.yml build --no-cache
+            docker compose -f docker-compose.prod.yml up -d
+
+            echo "Waiting for containers..."
+            sleep 10
+
+            max_attempts=30
+            attempt=0
+            while [ $attempt -lt $max_attempts ]; do
+              if curl -fsS http://127.0.0.1:8022/ >/dev/null && curl -fsS http://127.0.0.1:8023/api/health >/dev/null; then
+                echo "Health checks passed!"
+                break
+              fi
+              attempt=$((attempt + 1))
+              echo "Health check attempt $attempt/$max_attempts failed, retrying..."
+              sleep 2
+            done
+
+            if [ $attempt -eq $max_attempts ]; then
+              echo "Health check failed after $max_attempts attempts."
+              docker compose -f docker-compose.prod.yml logs
+              exit 1
+            fi
+
+            echo "Deployment successful!"
+          EOF
+
+      - name: Notify Slack on success
+        if: success() && env.SLACK_WEBHOOK != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"✅ Fasted Calendar deployed successfully to mitch-cloud\"}" \
+            "$SLACK_WEBHOOK"
+
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"❌ Fasted Calendar deployment to mitch-cloud failed\"}" \
+            "$SLACK_WEBHOOK"
