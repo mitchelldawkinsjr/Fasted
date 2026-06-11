@@ -1,0 +1,64 @@
+# Production stack (VPS): static PWA + PocketBase for optional cloud sync.
+# Joins `360ws-network` so NPM can reach containers by name.
+#
+# Prerequisites: docker network create 360ws-network (see scripts/vps-bootstrap.sh)
+# Deploy path: /opt/360ws/clients/docker-app/fasted-calendar
+#
+# NPM Proxy Hosts:
+#   fasted.360web.cloud      → http://fasted-calendar-app:80
+#   api.fasted.360web.cloud  → http://fasted-calendar-pocketbase:8090
+
+name: fasted-calendar
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_POCKETBASE_URL: ${VITE_POCKETBASE_URL:-https://api.fasted.360web.cloud}
+    container_name: fasted-calendar-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PUBLISH_PORT:-8022}:80"
+    networks:
+      - proxy
+    labels:
+      - "com.360ws.app=fasted-calendar"
+      - "com.360ws.type=docker-app"
+      - "com.360ws.service=app"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:latest
+    container_name: fasted-calendar-pocketbase
+    restart: unless-stopped
+    ports:
+      - "${POCKETBASE_PUBLISH_PORT:-8023}:8090"
+    volumes:
+      - pocketbase-data:/pb_data
+    networks:
+      - proxy
+    labels:
+      - "com.360ws.app=fasted-calendar"
+      - "com.360ws.type=docker-app"
+      - "com.360ws.service=pocketbase"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8090/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+networks:
+  proxy:
+    external: true
+    name: 360ws-network
+
+volumes:
+  pocketbase-data:
