@@ -56,7 +56,7 @@ export function InstallPromptToast() {
 
   return (
     <div
-      className="fixed bottom-[7.5rem] left-4 right-4 z-[55] mx-auto max-w-lg animate-fade-in-up"
+      className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-3 right-3 z-[55] mx-auto max-w-lg animate-fade-in-up"
       role="status"
       aria-live="polite"
       aria-label="Add to home screen"
