@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Fasted Calendar - Timeline</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,600;0,700;1,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-primary": "#ffffff", "surface-variant": "#e1e3d9", primary: "#173d00", "inverse-on-surface": "#f0f2e7", "secondary-container": "#d2eabf", "surface-bright": "#f9faf0", "on-background": "#191d16", "outline-variant": "#c2c9b8", "on-surface": "#191d16", "surface-container-high": "#e7e9df", "inverse-primary": "#a0d57e", "on-tertiary-fixed-variant": "#574500", "on-tertiary-fixed": "#241a00", "on-tertiary-container": "#4f3e00", secondary: "#506442", surface: "#f9faf0", "surface-dim": "#d9dbd1", "on-secondary-container": "#566a48", "on-secondary-fixed-variant": "#394c2c", "on-primary-fixed-variant": "#245107", "error-container": "#ffdad6", "on-secondary": "#ffffff", "primary-fixed": "#bbf297", "surface-container": "#edefe5", "inverse-surface": "#2e312b", "on-primary-fixed": "#092100", "surface-container-low": "#f3f5ea", "tertiary-container": "#cca830", outline: "#73796b", "on-surface-variant": "#42493c", error: "#ba1a1a", "primary-fixed-dim": "#a0d57e", "secondary-fixed-dim": "#b7cea4", "secondary-fixed": "#d2eabf", "on-error": "#ffffff", "tertiary-fixed-dim": "#e9c34a", "surface-tint": "#3b6a20", "surface-container-highest": "#e1e3d9", "tertiary-fixed": "#ffe088", "surface-container-lowest": "#ffffff", tertiary: "#735c00", "on-secondary-fixed": "#0f2005", "on-error-container": "#93000a", "on-primary-container": "#96cb75", "on-tertiary": "#ffffff", background: "#f9faf0", "primary-container": "#29560d", "phase-1": "#8397b8", "phase-2": "#735c00", "phase-3": "#4b5f7e", "phase-4": "#ba1a1a", "phase-5": "#334865", "phase-6": "#e9c349", "phase-7": "#021a35", "phase-8": "#574500"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"container-margin": "24px", "stack-md": "16px", "stack-lg": "32px", gutter: "16px", "stack-sm": "8px", unit: "8px", "section-gap": "48px"}, fontFamily: {"headline-md": ["Playfair Display"], "display-scripture": ["Playfair Display"], "body-lg": ["Inter"], "headline-lg": ["Playfair Display"], "headline-lg-mobile": ["Playfair Display"], "label-caps": ["Inter"], "body-md": ["Inter"], headline: ["Playfair Display"], display: ["Playfair Display"], body: ["Inter"], label: ["Inter"]}, fontSize: {"headline-md": ["22px", {lineHeight: "30px", fontWeight: "600"}], "display-scripture": ["32px", {lineHeight: "44px", fontWeight: "600"}], "body-lg": ["18px", {lineHeight: "28px", fontWeight: "400"}], "headline-lg": ["28px", {lineHeight: "36px", fontWeight: "700"}], "headline-lg-mobile": ["24px", {lineHeight: "32px", fontWeight: "700"}], "label-caps": ["12px", {lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600"}], "body-md": ["16px", {lineHeight: "24px", fontWeight: "400"}]}}}};</script>
+<style>
+        .grace-shadow { box-shadow: 0 4px 20px rgba(26, 47, 75, 0.06); }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-dot { font-variation-settings: 'FILL' 1; }
+        body { background-color: #fbf9f8; overflow-x: hidden; }
+        .linen-texture {
+            background-image: radial-gradient(#d1d1d1 0.5px, transparent 0.5px);
+            background-size: 16px 16px;
+            opacity: 0.2;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface">
+<!-- Top App Bar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-container-margin py-unit shadow-[0_4px_20px_rgba(26,47,75,0.06)] bg-surface dark:bg-surface-dim">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed">menu_book</span>
+<h1 class="font-display-scripture text-display-scripture text-primary dark:text-primary-fixed leading-none">Fasted Calendar</h1>
+</div>
+<button class="hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed text-[28px]">account_circle</span>
+</button>
+</header>
+<main class="pt-24 pb-32 px-container-margin max-w-[1024px] mx-auto min-h-screen relative">
+<div class="absolute inset-0 linen-texture pointer-events-none"></div>
+<!-- Page Intro -->
+<section class="mb-stack-lg animate-in fade-in slide-in-from-bottom-4 duration-700">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-2">Sacred Timeline</h2>
+<p class="font-body-md text-on-surface-variant max-w-md">Your path of discipline and renewal from June 13 to December 19, 2026.</p>
+</section>
+<!-- Bento Layout: Month View & Quick Stats -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Calendar Grid -->
+<div class="md:col-span-8 bg-surface-container-lowest rounded-xl grace-shadow p-6 relative overflow-hidden border-l-4 border-phase-1">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md text-primary">June 2026</h3>
+<div class="flex gap-4">
+<button class="text-primary hover:opacity-70 transition-opacity"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="text-primary hover:opacity-70 transition-opacity"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+<div class="grid grid-cols-7 gap-1 text-center mb-2">
+<div class="font-label-caps text-label-caps text-outline">S</div>
+<div class="font-label-caps text-label-caps text-outline">M</div>
+<div class="font-label-caps text-label-caps text-outline">T</div>
+<div class="font-label-caps text-label-caps text-outline">W</div>
+<div class="font-label-caps text-label-caps text-outline">T</div>
+<div class="font-label-caps text-label-caps text-outline">F</div>
+<div class="font-label-caps text-label-caps text-outline">S</div>
+</div>
+<div class="grid grid-cols-7 gap-2" id="calendar-days">
+<!-- Blank spaces for start of June (starts on Monday June 1) -->
+<div class="aspect-square"></div>
+<!-- Days 1 to 12 (Pre-fast) -->
+<script>
+                        for(let i=1; i<=12; i++) {
+                            document.write(`<div class="aspect-square flex items-center justify-center rounded-lg text-outline-variant font-body-md">${i}</div>`);
+                        }
+                    </script>
+<!-- June 13: Start of Phase 1 -->
+<button class="aspect-square flex flex-col items-center justify-center rounded-lg bg-phase-1/10 border-2 border-phase-1 text-primary relative group active:scale-95 transition-transform" onclick="showDetails(13, 1)">
+<span class="font-bold text-lg">13</span>
+<span class="material-symbols-outlined text-[12px] text-phase-1 active-dot">water_drop</span>
+<div class="absolute -top-12 bg-primary text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Day 1: Start of Phase 1</div>
+</button>
+<!-- Days 14 to 30 -->
+<script>
+                        const phases = [
+                            {day: 14, phase: 1, type: 'water_drop'},
+                            {day: 15, phase: 1, type: 'water_drop'},
+                            {day: 16, phase: 1, type: 'water_drop'},
+                            {day: 17, phase: 1, type: 'water_drop'},
+                            {day: 18, phase: 1, type: 'water_drop'},
+                            {day: 19, phase: 1, type: 'local_fire_department'},
+                            {day: 20, phase: 1, type: 'local_fire_department'},
+                            {day: 21, phase: 2, type: 'water_drop'},
+                            {day: 22, phase: 2, type: 'water_drop'},
+                            {day: 23, phase: 2, type: 'water_drop'},
+                            {day: 24, phase: 2, type: 'water_drop'},
+                            {day: 25, phase: 2, type: 'local_fire_department'},
+                            {day: 26, phase: 2, type: 'local_fire_department'},
+                            {day: 27, phase: 2, type: 'local_fire_department'},
+                            {day: 28, phase: 3, type: 'water_drop'},
+                            {day: 29, phase: 3, type: 'water_drop'},
+                            {day: 30, phase: 3, type: 'water_drop'}
+                        ];
+
+                        phases.forEach(p => {
+                            document.write(`
+                                <button onclick="showDetails(${p.day}, ${p.phase})" class="aspect-square flex flex-col items-center justify-center rounded-lg bg-phase-${p.phase}/5 hover:bg-phase-${p.phase}/15 transition-colors text-on-surface-variant relative active:scale-95">
+                                    <span class="font-body-md">${p.day}</span>
+                                    <span class="material-symbols-outlined text-[12px] text-phase-${p.phase}">${p.type}</span>
+                                </button>
+                            `);
+                        });
+                    </script>
+</div>
+</div>
+<!-- Sidebar Info/Details -->
+<div class="md:col-span-4 flex flex-col gap-gutter">
+<!-- Day Highlight Card -->
+<div class="bg-primary text-on-primary rounded-xl grace-shadow p-6 flex flex-col justify-between min-h-[200px]" id="day-detail-card">
+<div>
+<span class="font-label-caps text-label-caps opacity-70 tracking-widest uppercase">Select a date</span>
+<h4 class="font-headline-md text-headline-md mt-1" id="detail-date">Timeline Overview</h4>
+<p class="font-body-md opacity-80 mt-4 leading-relaxed" id="detail-desc">Tap a color-coded date to see specific details about your fasting phase and spiritual focus.</p>
+</div>
+<div class="hidden flex items-center gap-2 mt-4 pt-4 border-t border-white/10" id="detail-footer">
+<span class="material-symbols-outlined text-secondary-fixed">auto_awesome</span>
+<span class="font-label-caps text-label-caps">Phase Active</span>
+</div>
+</div>
+<!-- Reflection Chip Group -->
+<div class="bg-surface-container-lowest rounded-xl grace-shadow p-6 border-l-4 border-secondary">
+<h5 class="font-label-caps text-label-caps text-primary mb-4">Phase Focus Areas</h5>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container rounded-full text-label-caps font-medium text-primary">Prayer</span>
+<span class="px-3 py-1 bg-surface-container rounded-full text-label-caps font-medium text-primary">Patience</span>
+<span class="px-3 py-1 bg-surface-container rounded-full text-label-caps font-medium text-primary">Clarity</span>
+<span class="px-3 py-1 bg-surface-container rounded-full text-label-caps font-medium text-primary">Physicality</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Legend Footer -->
+<footer class="mt-section-gap mb-stack-lg">
+<h4 class="font-label-caps text-label-caps text-outline mb-4 text-center">Fasting Symbol &amp; Phase Legend</h4>
+<div class="bg-white rounded-xl grace-shadow p-6 overflow-x-auto">
+<div class="flex flex-nowrap md:flex-wrap gap-6 items-start justify-between min-w-[600px]">
+<!-- Symbols -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm active-dot">water_drop</span>
+<span class="font-body-md text-xs">Liquid Intake Priority</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-sm active-dot">local_fire_department</span>
+<span class="font-body-md text-xs">Deep Ketosis Focus</span>
+</div>
+</div>
+<!-- Phases -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-phase-1"></div>
+<span class="font-body-md text-xs">Phase 1: Initiation</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-phase-2"></div>
+<span class="font-body-md text-xs">Phase 2: Depth</span>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-phase-3"></div>
+<span class="font-body-md text-xs">Phase 3: Clarity</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-phase-4"></div>
+<span class="font-body-md text-xs">Phase 4: Fortitude</span>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-phase-5"></div>
+<span class="font-body-md text-xs">Phase 5: Transformation</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-phase-6"></div>
+<span class="font-body-md text-xs">Phase 6: Renewal</span>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-phase-7"></div>
+<span class="font-body-md text-xs">Phase 7: Radiance</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-phase-8"></div>
+<span class="font-body-md text-xs">Phase 8: Culmination</span>
+</div>
+</div>
+</div>
+</div>
+</footer>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-2 bg-surface-container-lowest dark:bg-surface-container-high shadow-[0_-4px_20px_rgba(26,47,75,0.06)] rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">today</span>
+<span class="font-label-caps text-label-caps">Today</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined active-dot">calendar_month</span>
+<span class="font-label-caps text-label-caps">Calendar</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-caps text-label-caps">Journal</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">query_stats</span>
+<span class="font-label-caps text-label-caps">Progress</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-caps text-label-caps">Settings</span>
+</a>
+</nav>
+<script>
+        function showDetails(day, phase) {
+            const card = document.getElementById('day-detail-card');
+            const title = document.getElementById('detail-date');
+            const desc = document.getElementById('detail-desc');
+            const footer = document.getElementById('detail-footer');
+
+            // Simple data map
+            const phaseInfo = {
+                1: { title: "Initiation Phase", text: "Establishing your base rhythm. Focus on gentle movement and hydration." },
+                2: { title: "Depth Phase", text: "Cellular renewal intensifies. Mindful breathing and quiet reflection are encouraged." },
+                3: { title: "Clarity Phase", text: "Mental fog begins to lift. Use this energy for spiritual study and journaling." },
+                4: { title: "Fortitude Phase", text: "The mid-journey challenge. Deepening your prayer and commitment." }
+            };
+
+            const dayString = day === 13 ? "Day 1: June 13" : `June ${day}`;
+            
+            title.innerText = dayString;
+            desc.innerText = phaseInfo[phase]?.text || "Continuing your journey with steadfast intent.";
+            footer.classList.remove('hidden');
+            
+            // Visual feedback
+            card.classList.remove('animate-pulse');
+            void card.offsetWidth; // Trigger reflow
+            card.classList.add('animate-pulse');
+            setTimeout(() => card.classList.remove('animate-pulse'), 500);
+        }
+    </script>
+</body></html>
