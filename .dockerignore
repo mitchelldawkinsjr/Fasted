@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.gitignore
+docker/pb_data
+.env.local
+*.md
+.stitch
+agent-transcripts

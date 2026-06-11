@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Today - Fasted Calendar</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Playfair+Display:ital,wght@0,600;0,700;1,600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-primary": "#ffffff", "surface-variant": "#e1e3d9", primary: "#173d00", "inverse-on-surface": "#f0f2e7", "secondary-container": "#d2eabf", "surface-bright": "#f9faf0", "on-background": "#191d16", "outline-variant": "#c2c9b8", "on-surface": "#191d16", "surface-container-high": "#e7e9df", "inverse-primary": "#a0d57e", "on-tertiary-fixed-variant": "#574500", "on-tertiary-fixed": "#241a00", "on-tertiary-container": "#4f3e00", secondary: "#506442", surface: "#f9faf0", "surface-dim": "#d9dbd1", "on-secondary-container": "#566a48", "on-secondary-fixed-variant": "#394c2c", "on-primary-fixed-variant": "#245107", "error-container": "#ffdad6", "on-secondary": "#ffffff", "primary-fixed": "#bbf297", "surface-container": "#edefe5", "inverse-surface": "#2e312b", "on-primary-fixed": "#092100", "surface-container-low": "#f3f5ea", "tertiary-container": "#cca830", outline: "#73796b", "on-surface-variant": "#42493c", error: "#ba1a1a", "primary-fixed-dim": "#a0d57e", "secondary-fixed-dim": "#b7cea4", "secondary-fixed": "#d2eabf", "on-error": "#ffffff", "tertiary-fixed-dim": "#e9c34a", "surface-tint": "#3b6a20", "surface-container-highest": "#e1e3d9", "tertiary-fixed": "#ffe088", "surface-container-lowest": "#ffffff", tertiary: "#735c00", "on-secondary-fixed": "#0f2005", "on-error-container": "#93000a", "on-primary-container": "#96cb75", "on-tertiary": "#ffffff", background: "#f9faf0", "primary-container": "#29560d"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"container-margin": "24px", "stack-md": "16px", "stack-lg": "32px", gutter: "16px", "stack-sm": "8px", unit: "8px", "section-gap": "48px"}, fontFamily: {"headline-md": ["Playfair Display"], "display-scripture": ["Playfair Display"], "body-lg": ["Inter"], "headline-lg": ["Playfair Display"], "headline-lg-mobile": ["Playfair Display"], "label-caps": ["Inter"], "body-md": ["Inter"], headline: ["Playfair Display"], display: ["Playfair Display"], body: ["Inter"], label: ["Inter"]}, fontSize: {"headline-md": ["22px", {lineHeight: "30px", fontWeight: "600"}], "display-scripture": ["32px", {lineHeight: "44px", fontWeight: "600"}], "body-lg": ["18px", {lineHeight: "28px", fontWeight: "400"}], "headline-lg": ["28px", {lineHeight: "36px", fontWeight: "700"}], "headline-lg-mobile": ["24px", {lineHeight: "32px", fontWeight: "700"}], "label-caps": ["12px", {lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600"}], "body-md": ["16px", {lineHeight: "24px", fontWeight: "400"}]}}}};</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .grace-shadow {
+            box-shadow: 0 4px 20px rgba(26, 47, 75, 0.06);
+        }
+        body {
+            background-color: #fbf9f8; /* Tertiary Linen style */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .fast-phase-accent {
+            border-left: 4px solid #fed65b; /* Gold accent for Preparation phase */
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-container-margin py-unit shadow-[0_4px_20px_rgba(26,47,75,0.06)] bg-surface dark:bg-surface-dim">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed">menu_book</span>
+<h1 class="font-display-scripture text-headline-md text-primary dark:text-primary-fixed tracking-tight">Fasted Calendar</h1>
+</div>
+<div class="flex items-center">
+<button class="hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" style="font-size: 28px;">account_circle</span>
+</button>
+</div>
+</header>
+<main class="pt-[72px] pb-[100px] max-w-[1024px] mx-auto">
+<!-- Header: Phase Section -->
+<section class="px-container-margin py-stack-md">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-secondary uppercase tracking-widest">Phase 1: Preparation</span>
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mt-1">June 13, 2026</h2>
+</div>
+</section>
+<!-- Hero Section -->
+<section class="px-container-margin mb-stack-lg">
+<div class="relative h-64 md:h-96 rounded-xl overflow-hidden grace-shadow">
+<img alt="Sunrise over a quiet landscape" class="w-full h-full object-cover" data-alt="A cinematic, low-angle photograph of a breathtaking golden sunrise breaking over a serene, misty mountain valley. The lighting is ethereal and soft, creating a meditative and holy atmosphere typical of a spiritual sanctuary. The color palette is dominated by warm golds, soft whites, and deep navy shadows, embodying the refined minimalism of a high-end devotional journal. The image feels quiet, spacious, and profoundly peaceful." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWQRe6anMColkGH0C7l1K5oRbtub35xfGr41e4sCh8lmOmxzfKUov374quqn3Qif7cT1GlW8WEg7jiZ9kjuo59PKFhu42NV_rPADpYozTFU8FAHhocnjBNtr-q6Cs0JmM9V1VZoVr5dsxLHBqI4QXau37KC2MHn9dz6Llu3eRH3qqw6KXvB0hB1Pj1AmOXaaX_jJ6Rl-6-bDXKFOSmE_w1NI45sVf2JIugpmmL9WfGx_FFJ_qK1QwYWdHsIR6TZVRRml2xEN_eEkQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6 text-white">
+<p class="font-label-caps text-label-caps opacity-90 mb-1">CURRENT STATUS</p>
+<p class="font-headline-md text-headline-md">Fast Day: Water &amp; Juice Only</p>
+</div>
+</div>
+</section>
+<!-- Scripture & Prayer Focus (Bento Grid Style) -->
+<section class="px-container-margin grid grid-cols-1 md:grid-cols-2 gap-gutter mb-stack-lg">
+<!-- Scripture Card -->
+<div class="bg-surface-container-lowest p-stack-lg rounded-xl grace-shadow fast-phase-accent flex flex-col justify-center">
+<span class="material-symbols-outlined text-secondary mb-3">auto_stories</span>
+<blockquote class="italic font-display-scripture text-body-lg text-primary mb-4 leading-relaxed">
+                    "Man shall not live by bread alone, but by every word that comes from the mouth of God."
+                </blockquote>
+<cite class="not-italic font-label-caps text-label-caps text-outline">— Matthew 4:4</cite>
+</div>
+<!-- Prayer Focus Card -->
+<div class="bg-surface-container-lowest p-stack-lg rounded-xl grace-shadow flex flex-col">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary">flare</span>
+<h3 class="font-headline-md text-headline-md text-primary">Prayer Focus</h3>
+</div>
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+                    Clarity and Strength for the journey ahead.
+                </p>
+<div class="mt-auto pt-stack-md">
+<p class="text-secondary font-label-caps text-label-caps italic">
+                        "You are setting this time apart for something greater. Breathe and reflect."
+                    </p>
+</div>
+</div>
+</section>
+<!-- Check-in & Progress Section -->
+<section class="px-container-margin mb-stack-lg">
+<div class="bg-primary-container text-on-primary rounded-xl p-stack-lg grace-shadow">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">
+<div>
+<h3 class="font-headline-md text-headline-md mb-1">Daily Commitment</h3>
+<p class="text-on-primary-container font-body-md">Confirm your fast today to maintain your spiritual rhythm.</p>
+</div>
+<button class="bg-secondary-container text-on-secondary-container font-body-lg font-semibold py-3 px-8 rounded-lg hover:opacity-90 active:scale-95 transition-all shadow-lg">
+                        Check-in for Today
+                    </button>
+</div>
+<div class="mt-8">
+<div class="flex justify-between items-end mb-2">
+<span class="font-label-caps text-label-caps text-on-primary-container">STREAK TRACKER</span>
+<span class="font-headline-md text-headline-md text-secondary-container">Day 1 <span class="text-body-md font-normal text-on-primary-container">of 190</span></span>
+</div>
+<!-- Streak Visualizer -->
+<div class="h-2 w-full bg-white/10 rounded-full overflow-hidden flex gap-0.5">
+<div class="h-full bg-secondary-container rounded-l-full w-[0.52%]"></div>
+<div class="h-full bg-white/5 w-full"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Journal Reflection Preview -->
+<section class="px-container-margin mb-section-gap">
+<div class="flex items-center justify-between mb-stack-md">
+<h3 class="font-headline-md text-headline-md text-primary">Morning Reflection</h3>
+<span class="material-symbols-outlined text-outline">edit_note</span>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-2 bg-surface-container-high text-primary font-label-caps text-label-caps rounded-full border border-outline-variant/30">Gratitude</span>
+<span class="px-4 py-2 bg-surface-container-high text-primary font-label-caps text-label-caps rounded-full border border-outline-variant/30">Peace</span>
+<span class="px-4 py-2 bg-surface-container-high text-primary font-label-caps text-label-caps rounded-full border border-outline-variant/30">Focus</span>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-2 bg-surface-container-lowest dark:bg-surface-container-high shadow-[0_-4px_20px_rgba(26,47,75,0.06)] rounded-t-xl">
+<!-- Today (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">today</span>
+<span class="font-label-caps text-label-caps mt-0.5">Today</span>
+</a>
+<!-- Calendar -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-label-caps text-label-caps mt-0.5">Calendar</span>
+</a>
+<!-- Journal -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-caps text-label-caps mt-0.5">Journal</span>
+</a>
+<!-- Progress -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">query_stats</span>
+<span class="font-label-caps text-label-caps mt-0.5">Progress</span>
+</a>
+<!-- Settings -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-caps text-label-caps mt-0.5">Settings</span>
+</a>
+</nav>
+<script>
+        // Simple Micro-interactions
+        document.querySelectorAll('button, a').forEach(el => {
+            el.addEventListener('click', () => {
+                // Future logic for interactions
+            });
+        });
+
+        // Dynamic Greeting or Time-based atmospheric shifts can go here
+    </script>
+</body></html>
