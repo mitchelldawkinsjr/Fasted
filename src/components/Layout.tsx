@@ -25,7 +25,7 @@ export function Layout() {
   const title = pageTitles[pathname] ?? 'Fasted Calendar';
 
   return (
-    <div className="relative mx-auto min-h-screen max-w-lg pb-28">
+    <div className="relative mx-auto min-h-screen max-w-lg pb-[calc(4.75rem+env(safe-area-inset-bottom))]">
       <div className="pointer-events-none fixed inset-0 linen-texture" aria-hidden />
       <AppHeader title={title} showPhasesLink={pathname !== '/phases'} />
 
@@ -36,17 +36,18 @@ export function Layout() {
       <InstallPromptToast />
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl bg-surface-container-lowest px-4 pb-8 pt-2 shadow-grace-up"
+        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl bg-surface-container-lowest px-1 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-grace-up"
         aria-label="Main navigation"
       >
-        <div className="mx-auto flex max-w-lg justify-around">
+        <div className="mx-auto flex w-full max-w-lg">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
+              title={item.label}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center rounded-full px-3 py-1 transition-all active:scale-90 ${
+                `flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg px-0.5 py-1 transition-all active:scale-95 ${
                   isActive
                     ? 'bg-secondary-container text-on-secondary-container'
                     : 'text-on-surface-variant hover:bg-surface-variant'
@@ -55,8 +56,10 @@ export function Layout() {
             >
               {({ isActive }) => (
                 <>
-                  <Icon name={item.icon} filled={isActive} />
-                  <span className="label-caps mt-0.5">{item.label}</span>
+                  <Icon name={item.icon} filled={isActive} size={22} />
+                  <span className="mt-0.5 w-full truncate text-center text-[10px] font-semibold uppercase leading-tight tracking-wide">
+                    {item.label}
+                  </span>
                 </>
               )}
             </NavLink>
