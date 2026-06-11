@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { getPhaseById, PLAN_END, PLAN_START } from '../data/fastingPlan';
 import type { DailyFastPlan } from '../types';
 import { formatDisplayDate, getAllPlanDates } from '../lib/dateUtils';
 import { Icon } from './Icon';
+import { ImageLightbox } from './ImageLightbox';
 
 type Props = {
   plan: DailyFastPlan;
@@ -17,6 +19,7 @@ const FAST_TYPE_LABELS: Record<DailyFastPlan['fastType'], string> = {
 };
 
 export function TodayFastCard({ plan }: Props) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const phase = getPhaseById(plan.phaseId);
   const totalDays = getAllPlanDates().length;
   const dayNumber = getAllPlanDates().findIndex((d) => d === plan.date) + 1;
@@ -32,22 +35,52 @@ export function TodayFastCard({ plan }: Props) {
         </h2>
       </header>
 
-      <div className="relative h-64 overflow-hidden rounded-xl grace-shadow md:h-72">
+      <button
+        type="button"
+        onClick={() => phase?.imagePath && setLightboxOpen(true)}
+        className="group relative block h-64 w-full cursor-pointer overflow-hidden rounded-xl grace-shadow text-left transition-transform active:scale-[0.99] md:h-72"
+        aria-label={`View ${phase?.title ?? 'phase'} image`}
+      >
+        {phase?.imagePath && (
+          <img
+            src={phase.imagePath}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full object-cover object-top"
+          />
+        )}
         <div
           className="absolute inset-0"
           style={{
             background: `linear-gradient(135deg, ${phase?.themeColor ?? '#173d00'}88 0%, #173d00 50%, #092100 100%)`,
           }}
+          aria-hidden
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-white/10" />
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-white/10"
+          aria-hidden
+        />
         <div className="absolute bottom-6 left-6 right-6 text-white">
           <p className="label-caps mb-1 opacity-90">CURRENT STATUS</p>
           <p className="font-display text-headline-md">{FAST_TYPE_LABELS[plan.fastType]}</p>
         </div>
-        <div className="absolute right-4 top-4 opacity-30">
-          <Icon name={plan.isFastDay ? 'water_drop' : 'eco'} size={64} />
+        <div className="absolute right-4 top-4 flex items-start gap-2">
+          <span className="rounded-full bg-black/30 p-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+            <Icon name="zoom_in" size={20} className="text-white" />
+          </span>
+          <span className="opacity-30">
+            <Icon name={plan.isFastDay ? 'water_drop' : 'eco'} size={64} />
+          </span>
         </div>
-      </div>
+      </button>
+
+      {lightboxOpen && phase?.imagePath && (
+        <ImageLightbox
+          src={phase.imagePath}
+          alt={`${phase.title} phase illustration`}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
 
       <div
         className="stitch-card border-l-4 p-stack-lg"

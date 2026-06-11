@@ -1,8 +1,9 @@
 import confetti from 'canvas-confetti';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { getPhaseForDate } from '../data/fastingPlan';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
-import { saveCheckIn } from '../lib/storage';
+import { getJournalEntryByDate, saveCheckIn } from '../lib/storage';
 import type { Badge, CheckIn } from '../types';
 import { Icon } from './Icon';
 
@@ -21,6 +22,15 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const [win, setWin] = useState(existing?.win ?? '');
   const [celebrating, setCelebrating] = useState(false);
   const [message, setMessage] = useState('');
+  const [newBadges, setNewBadges] = useState<Badge[]>([]);
+
+  const phase = getPhaseForDate(date);
+
+  useEffect(() => {
+    if (getJournalEntryByDate(date)) {
+      setJournaled(true);
+    }
+  }, [date]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,26 +39,38 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
       followedPlan,
       prayedFocus,
       readScripture,
-      journaled,
+      journaled: journaled || Boolean(getJournalEntryByDate(date)),
       win: win.trim(),
       completedAt: new Date().toISOString(),
     };
     saveCheckIn(checkIn);
-    const newBadges = evaluateBadges(date);
+    const earned = evaluateBadges(date);
+    setNewBadges(earned);
     setMessage(getCelebrationMessage(date));
     setCelebrating(true);
 
     confetti({
-      particleCount: 80,
+      particleCount: earned.length > 0 ? 120 : 80,
       spread: 60,
       origin: { y: 0.7 },
       colors: ['#d2eabf', '#173d00', '#fed65b', '#f9faf0'],
     });
 
+    if (earned.length > 0) {
+      setTimeout(() => {
+        confetti({
+          particleCount: 40,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#fed65b', '#173d00', '#d2eabf'],
+        });
+      }, 400);
+    }
+
     setTimeout(() => {
-      onComplete(newBadges);
+      onComplete(earned);
       onClose();
-    }, 2200);
+    }, earned.length > 0 ? 3200 : 2200);
   };
 
   return (
@@ -60,15 +82,38 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
     >
       <div className="w-full max-w-md animate-fade-in-up rounded-xl bg-surface-container-lowest p-stack-lg shadow-grace">
         {celebrating ? (
-          <div className="animate-gentle-pulse py-8 text-center">
+          <div className="animate-gentle-pulse py-6 text-center">
             <Icon name="celebration" className="mb-2 text-4xl text-secondary" />
             <p className="font-display text-headline-md text-primary">{message}</p>
+            {newBadges.length > 0 && (
+              <div className="mt-stack-md space-y-2">
+                <p className="label-caps text-on-surface-variant">New milestone earned</p>
+                {newBadges.map((badge) => (
+                  <div
+                    key={badge.id}
+                    className="rounded-xl border border-secondary/30 bg-secondary/10 px-4 py-3"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <Icon name="military_tech" className="text-secondary" filled />
+                      <p className="font-display text-headline-md text-primary">{badge.title}</p>
+                    </div>
+                    <p className="mt-1 text-body-md text-on-surface-variant">{badge.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
             <h2 id="checkin-title" className="mb-stack-md font-display text-headline-md text-primary">
               Complete Today&apos;s Check-In
             </h2>
+
+            {phase && (
+              <p className="mb-stack-md rounded-xl bg-surface-container-high px-3 py-2 text-body-md text-on-surface-variant">
+                Phase {phase.id}: {phase.title}
+              </p>
+            )}
 
             <div className="space-y-3">
               <CheckRow label="Did you follow today's fasting plan?" checked={followedPlan} onChange={setFollowedPlan} />

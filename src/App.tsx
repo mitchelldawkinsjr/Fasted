@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { ScrollToTop } from './components/ScrollToTop';
 import { CalendarPage } from './pages/CalendarPage';
 import { JournalPage } from './pages/JournalPage';
 import { PhasesPage } from './pages/PhasesPage';
@@ -10,6 +11,7 @@ import { TodayPage } from './pages/TodayPage';
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<TodayPage />} />
