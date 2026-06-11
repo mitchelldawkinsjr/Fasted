@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Fasted Calendar - My Spiritual Journal</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Config -->
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"on-primary": "#ffffff", "surface-variant": "#e1e3d9", primary: "#173d00", "inverse-on-surface": "#f0f2e7", "secondary-container": "#d2eabf", "surface-bright": "#f9faf0", "on-background": "#191d16", "outline-variant": "#c2c9b8", "on-surface": "#191d16", "surface-container-high": "#e7e9df", "inverse-primary": "#a0d57e", "on-tertiary-fixed-variant": "#574500", "on-tertiary-fixed": "#241a00", "on-tertiary-container": "#4f3e00", secondary: "#506442", surface: "#f9faf0", "surface-dim": "#d9dbd1", "on-secondary-container": "#566a48", "on-secondary-fixed-variant": "#394c2c", "on-primary-fixed-variant": "#245107", "error-container": "#ffdad6", "on-secondary": "#ffffff", "primary-fixed": "#bbf297", "surface-container": "#edefe5", "inverse-surface": "#2e312b", "on-primary-fixed": "#092100", "surface-container-low": "#f3f5ea", "tertiary-container": "#cca830", outline: "#73796b", "on-surface-variant": "#42493c", error: "#ba1a1a", "primary-fixed-dim": "#a0d57e", "secondary-fixed-dim": "#b7cea4", "secondary-fixed": "#d2eabf", "on-error": "#ffffff", "tertiary-fixed-dim": "#e9c34a", "surface-tint": "#3b6a20", "surface-container-highest": "#e1e3d9", "tertiary-fixed": "#ffe088", "surface-container-lowest": "#ffffff", tertiary: "#735c00", "on-secondary-fixed": "#0f2005", "on-error-container": "#93000a", "on-primary-container": "#96cb75", "on-tertiary": "#ffffff", background: "#f9faf0", "primary-container": "#29560d"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"container-margin": "24px", "stack-md": "16px", "stack-lg": "32px", gutter: "16px", "stack-sm": "8px", unit: "8px", "section-gap": "48px"}, fontFamily: {"headline-md": ["Playfair Display"], "display-scripture": ["Playfair Display"], "body-lg": ["Inter"], "headline-lg": ["Playfair Display"], "headline-lg-mobile": ["Playfair Display"], "label-caps": ["Inter"], "body-md": ["Inter"], headline: ["Playfair Display"], display: ["Playfair Display"], body: ["Inter"], label: ["Inter"]}, fontSize: {"headline-md": ["22px", {lineHeight: "30px", fontWeight: "600"}], "display-scripture": ["32px", {lineHeight: "44px", fontWeight: "600"}], "body-lg": ["18px", {lineHeight: "28px", fontWeight: "400"}], "headline-lg": ["28px", {lineHeight: "36px", fontWeight: "700"}], "headline-lg-mobile": ["24px", {lineHeight: "32px", fontWeight: "700"}], "label-caps": ["12px", {lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600"}], "body-md": ["16px", {lineHeight: "24px", fontWeight: "400"}]}}}};</script>
+<style>
+        body {
+            background-color: #fbf9f8;
+            background-image: radial-gradient(#efeded 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .grace-shadow {
+            box-shadow: 0 4px 20px rgba(26, 47, 75, 0.06);
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface antialiased pb-32">
+<!-- Top AppBar (JSON Content) -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-container-margin py-unit shadow-[0_4px_20px_rgba(26,47,75,0.06)] bg-surface dark:bg-surface-dim">
+<div class="flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" data-icon="menu_book">menu_book</span>
+<h1 class="font-display-scripture text-display-scripture text-primary dark:text-primary-fixed text-xl">My Spiritual Journal</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" data-icon="picture_as_pdf">picture_as_pdf</span>
+</button>
+<button class="hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<main class="mt-20 px-container-margin max-w-screen-md mx-auto">
+<!-- Animated Background Detail -->
+<div class="fixed inset-0 pointer-events-none opacity-20 z-[-1]">
+</div>
+<!-- Search Bar Section -->
+<section class="mb-stack-lg">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-secondary transition-colors" data-icon="search">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:ring-1 focus:ring-secondary focus:border-secondary transition-all outline-none grace-shadow font-body-md" placeholder="Search past entries..." type="text"/>
+</div>
+</section>
+<!-- Bento Filter Chips -->
+<section class="flex gap-stack-sm mb-stack-md overflow-x-auto scroll-hide pb-2">
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-primary text-on-primary text-label-caps font-label-caps grace-shadow">All Reflections</button>
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant text-label-caps font-label-caps border border-outline-variant hover:bg-surface-variant transition-colors">Prayer</button>
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant text-label-caps font-label-caps border border-outline-variant hover:bg-surface-variant transition-colors">Gratitude</button>
+<button class="flex-shrink-0 px-4 py-1.5 rounded-full bg-surface-container-low text-on-surface-variant text-label-caps font-label-caps border border-outline-variant hover:bg-surface-variant transition-colors">Struggle</button>
+</section>
+<!-- Journal Entries List -->
+<div class="space-y-stack-md">
+<!-- Entry 1 -->
+<article class="bg-surface-container-lowest p-6 rounded-xl grace-shadow border-l-4 border-secondary transition-transform active:scale-[0.98] cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="text-label-caps font-label-caps text-on-surface-variant">October 24, 2023</span>
+<div class="bg-secondary-container text-on-secondary-container px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Metabolic Shift</div>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Day 12: Strength in the Silence</h3>
+<p class="font-body-md text-on-surface-variant line-clamp-2 leading-relaxed">
+                    Today the physical hunger faded into a quiet mental clarity. I spent an hour in the garden just listening. It is remarkable how much noise we carry...
+                </p>
+<div class="mt-4 flex gap-2">
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[10px] font-label-caps text-on-tertiary-fixed-variant">#PRAYER</span>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[10px] font-label-caps text-on-tertiary-fixed-variant">#SILENCE</span>
+</div>
+</article>
+<!-- Entry 2 -->
+<article class="bg-surface-container-lowest p-6 rounded-xl grace-shadow border-l-4 border-on-primary-container transition-transform active:scale-[0.98] cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="text-label-caps font-label-caps text-on-surface-variant">October 22, 2023</span>
+<div class="bg-primary-container text-on-primary-container px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Deep Ketosis</div>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">The Threshold of Patience</h3>
+<p class="font-body-md text-on-surface-variant line-clamp-2 leading-relaxed">
+                    The afternoon was difficult. My resolve wavered during the family dinner, but the meditation on "waiting" provided a necessary anchor...
+                </p>
+<div class="mt-4 flex gap-2">
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[10px] font-label-caps text-on-tertiary-fixed-variant">#STRUGGLE</span>
+</div>
+</article>
+<!-- Entry 3 (Empty State Mockup / Visual Break) -->
+<div class="relative overflow-hidden rounded-xl h-32 grace-shadow group cursor-pointer">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A serene close-up of a premium leather journal with a gold fountain pen resting on it, set against a background of soft linen fabric and warm, morning sunlight streaming through a window. The atmosphere is peaceful, organized, and deeply spiritual, reflecting a commitment to discipline and self-reflection." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdLuvzKoRc2Vm9SPcDs-60_pBfebZoe_R5Z4SRhQZ-JrLCEpwGCjJkPXk-o4L8s9ccCXMpOJwovKpu72HOdcV1B9-MMavye-hMFmBUKGUcKQN4Qsj1BROIjOO3gcHq76df1L9P3dG9Ur6xV5ijliwgzgPMjNCUo_mheRb712XMflfi2OeIUoM3Pl3pgSFkwZwBcsFwwkFQHZCwguSatYZq00xRetP6KsH2e8rb4J48FrYJ-3DTcCpCrlzAouak0h-USN_YRO9mr_o"/>
+</div>
+<div class="absolute inset-0 bg-primary/40 flex flex-col items-center justify-center text-on-primary p-4 text-center">
+<span class="material-symbols-outlined mb-1" data-icon="history">history</span>
+<span class="font-label-caps text-label-caps">View Full Archive</span>
+</div>
+</div>
+<!-- Entry 4 -->
+<article class="bg-surface-container-lowest p-6 rounded-xl grace-shadow border-l-4 border-secondary transition-transform active:scale-[0.98] cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="text-label-caps font-label-caps text-on-surface-variant">October 20, 2023</span>
+<div class="bg-secondary-container text-on-secondary-container px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Metabolic Shift</div>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">First Light Gratitude</h3>
+<p class="font-body-md text-on-surface-variant line-clamp-2 leading-relaxed">
+                    Woke up before the alarm. There is a specific kind of gratitude that only comes when the body is light and the mind is unburdened by digestion...
+                </p>
+<div class="mt-4 flex gap-2">
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[10px] font-label-caps text-on-tertiary-fixed-variant">#GRATITUDE</span>
+<span class="px-2 py-0.5 bg-surface-container-high rounded text-[10px] font-label-caps text-on-tertiary-fixed-variant">#MORNING</span>
+</div>
+</article>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-28 right-6 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-40 group">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+<span class="absolute right-full mr-4 bg-primary text-on-primary text-[10px] font-label-caps px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-sm">Write New Reflection</span>
+</button>
+<!-- Bottom Navigation (JSON Content) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-2 bg-surface-container-lowest dark:bg-surface-container-high shadow-[0_-4px_20px_rgba(26,47,75,0.06)] rounded-t-xl">
+<!-- Today -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="today">today</span>
+<span class="font-label-caps text-label-caps">Today</span>
+</a>
+<!-- Calendar -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-label-caps text-label-caps">Calendar</span>
+</a>
+<!-- Journal (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-full px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-label-caps text-label-caps">Journal</span>
+</a>
+<!-- Progress -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+<span class="font-label-caps text-label-caps">Progress</span>
+</a>
+<!-- Settings -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-tertiary-container transition-colors active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-caps text-label-caps">Settings</span>
+</a>
+</nav>
+<script>
+        // Simple Micro-interaction: Header shadow on scroll
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 10) {
+                header.classList.add('bg-opacity-90', 'backdrop-blur-md');
+            } else {
+                header.classList.remove('bg-opacity-90', 'backdrop-blur-md');
+            }
+        });
+
+        // Add ripple effect or subtle touch feedback to journal cards
+        document.querySelectorAll('article').forEach(card => {
+            card.addEventListener('click', function(e) {
+                // In a real app, this would navigate to detail
+                console.log('Navigating to reflection details...');
+            });
+        });
+    </script>
+</body></html>
