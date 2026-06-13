@@ -5,6 +5,7 @@ import type {
   JournalEntry,
   UserProgress,
 } from '../types';
+import { normalizeJournalTags } from './journalTags';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
 
@@ -61,6 +62,17 @@ export function switchStorageScope(userId: string | null): void {
   notify();
 }
 
+function normalizeJournalEntry(entry: JournalEntry): JournalEntry {
+  return {
+    ...entry,
+    tags: normalizeJournalTags(entry.tags),
+  };
+}
+
+function normalizeJournalEntries(entries: JournalEntry[]): JournalEntry[] {
+  return entries.map(normalizeJournalEntry);
+}
+
 function loadRaw(): UserProgress {
   try {
     const raw = localStorage.getItem(getActiveStorageKey());
@@ -69,6 +81,7 @@ function loadRaw(): UserProgress {
     return {
       ...DEFAULT_PROGRESS,
       ...parsed,
+      journalEntries: normalizeJournalEntries(parsed.journalEntries ?? []),
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
     };
   } catch {
@@ -107,6 +120,7 @@ export function persistFromCloud(data: UserProgress): void {
   const normalized: UserProgress = {
     ...DEFAULT_PROGRESS,
     ...data,
+    journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
     settings: { ...DEFAULT_SETTINGS, ...data.settings },
   };
   cache = normalized;
@@ -152,7 +166,9 @@ export function saveJournalEntry(entry: JournalEntry): void {
   const filtered = progress.journalEntries.filter((e) => e.id !== entry.id);
   persist({
     ...progress,
-    journalEntries: [...filtered, entry].sort((a, b) => b.date.localeCompare(a.date)),
+    journalEntries: [...filtered, normalizeJournalEntry(entry)].sort((a, b) =>
+      b.date.localeCompare(a.date),
+    ),
   });
 }
 
@@ -191,7 +207,7 @@ export function exportJournal(): string {
 }
 
 export function importJournalBackup(json: string): void {
-  const entries = JSON.parse(json) as JournalEntry[];
+  const entries = normalizeJournalEntries(JSON.parse(json) as JournalEntry[]);
   const progress = getProgress();
   const byId = new Map(progress.journalEntries.map((e) => [e.id, e]));
   entries.forEach((e) => byId.set(e.id, e));
@@ -208,6 +224,8 @@ export function exportJournalMarkdown(): string {
   return journalEntries
     .map(
       (e) => `## ${e.date}
+
+**Tags:** ${e.tags.length > 0 ? e.tags.join(', ') : 'None'}
 
 **Prayer focus:** ${e.prayerFocus}
 

@@ -1,22 +1,27 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
 import { JournalEditor } from '../components/JournalEditor';
+import { JournalTagBadges } from '../components/JournalTagPicker';
 import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
 import { confirmAction } from '../lib/confirm';
 import { formatDisplayDate, getDefaultJournalDate, getLocalDateString } from '../lib/dateUtils';
+import {
+  JOURNAL_TAG_LABELS,
+  JOURNAL_TAGS,
+  isJournalTag,
+} from '../lib/journalTags';
 import { messages } from '../lib/messages';
 import { deleteJournalEntry, exportJournalMarkdown } from '../lib/storage';
 import { toast } from '../lib/toast';
-import type { JournalEntry } from '../types';
+import type { JournalEntry, JournalTag } from '../types';
 
-type JournalFilter = 'all' | 'prayer' | 'gratitude' | 'victory';
+type JournalFilter = 'all' | JournalTag;
 
 const FILTER_CHIPS: { id: JournalFilter; label: string }[] = [
   { id: 'all', label: 'All Reflections' },
-  { id: 'prayer', label: 'Prayer' },
-  { id: 'gratitude', label: 'Gratitude' },
-  { id: 'victory', label: 'Victory' },
+  ...JOURNAL_TAGS.map((tag) => ({ id: tag, label: JOURNAL_TAG_LABELS[tag] })),
 ];
 
 function getEntryPreview(entry: JournalEntry): string {
@@ -33,26 +38,27 @@ function getEntryPreview(entry: JournalEntry): string {
 
 function matchesFilter(entry: JournalEntry, filter: JournalFilter): boolean {
   if (filter === 'all') return true;
-  if (filter === 'prayer') {
-    return Boolean(entry.prayerFocus.trim() || entry.prayedAbout.trim());
-  }
-  if (filter === 'gratitude') {
-    const text = `${entry.victory} ${entry.godTeaching} ${entry.prayerFocus}`.toLowerCase();
-    return text.includes('grat') || text.includes('thank') || text.includes('bless');
-  }
-  if (filter === 'victory') {
-    return Boolean(entry.victory.trim());
-  }
-  return true;
+  return entry.tags.includes(filter);
+}
+
+function getInitialTagsFromParams(searchParams: URLSearchParams): JournalTag[] {
+  const tag = searchParams.get('tag');
+  if (tag && isJournalTag(tag)) return [tag];
+  return [];
 }
 
 export function JournalPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const progress = useProgress();
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<JournalFilter>('all');
+  const tagParam = searchParams.get('tag');
+  const [filter, setFilter] = useState<JournalFilter>(() =>
+    tagParam && isJournalTag(tagParam) ? tagParam : 'all',
+  );
   const [editing, setEditing] = useState<JournalEntry | 'new' | null>(null);
   const today = getLocalDateString();
   const defaultDate = getDefaultJournalDate(today);
+  const initialTags = useMemo(() => getInitialTagsFromParams(searchParams), [searchParams]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -61,10 +67,13 @@ export function JournalPage() {
       if (!q) return true;
       return (
         entry.date.includes(q) ||
+        entry.tags.some((tag) => JOURNAL_TAG_LABELS[tag].toLowerCase().includes(q)) ||
         entry.prayerFocus.toLowerCase().includes(q) ||
         entry.prayedAbout.toLowerCase().includes(q) ||
         entry.godTeaching.toLowerCase().includes(q) ||
-        entry.victory.toLowerCase().includes(q)
+        entry.victory.toLowerCase().includes(q) ||
+        entry.hungerNotes.toLowerCase().includes(q) ||
+        entry.tomorrowIntention.toLowerCase().includes(q)
       );
     });
   }, [filter, progress.journalEntries, search]);
@@ -84,7 +93,17 @@ export function JournalPage() {
     setSearch('');
     setFilter('all');
     setEditing(null);
+    if (searchParams.has('tag')) {
+      setSearchParams({});
+    }
   };
+
+  const openNewEntry = () => {
+    setEditing('new');
+  };
+
+  const editorInitialTags =
+    editing === 'new' ? (filter !== 'all' ? [filter] : initialTags) : undefined;
 
   const handleDelete = async (entry: JournalEntry) => {
     const confirmed = await confirmAction({
@@ -107,8 +126,12 @@ export function JournalPage() {
         <JournalEditor
           entry={editing === 'new' ? undefined : editing}
           defaultDate={defaultDate}
+          initialTags={editorInitialTags}
           onSave={handleSaved}
-          onCancel={() => setEditing(null)}
+          onCancel={() => {
+            setEditing(null);
+            if (searchParams.has('tag')) setSearchParams({});
+          }}
         />
       </div>
     );
@@ -131,7 +154,7 @@ export function JournalPage() {
           </button>
           <button
             type="button"
-            onClick={() => setEditing('new')}
+            onClick={openNewEntry}
             className="btn-stitch-primary !px-4 !py-2 text-body-md"
           >
             + New
@@ -151,13 +174,13 @@ export function JournalPage() {
         />
       </div>
 
-      <section className="scroll-hide flex gap-stack-sm overflow-x-auto pb-2">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {FILTER_CHIPS.map((chip) => (
           <button
             key={chip.id}
             type="button"
             onClick={() => setFilter(chip.id)}
-            className={`shrink-0 rounded-full px-4 py-1.5 label-caps transition-colors ${
+            className={`w-full rounded-full px-2 py-1.5 text-center label-caps leading-tight transition-colors sm:px-3 ${
               filter === chip.id
                 ? 'bg-primary text-on-primary grace-shadow'
                 : 'border border-outline-variant bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
@@ -175,7 +198,7 @@ export function JournalPage() {
           description={messages.empty.journal.description}
           action={{
             label: messages.empty.journal.action,
-            onClick: () => setEditing('new'),
+            onClick: openNewEntry,
           }}
         />
       )}
@@ -190,6 +213,7 @@ export function JournalPage() {
             onClick: () => {
               setSearch('');
               setFilter('all');
+              if (searchParams.has('tag')) setSearchParams({});
             },
           }}
         />
@@ -233,6 +257,7 @@ export function JournalPage() {
               <p className="line-clamp-3 text-body-md leading-relaxed text-on-surface-variant">
                 {getEntryPreview(entry)}
               </p>
+              <JournalTagBadges tags={entry.tags} />
             </li>
           ))}
         </ul>
