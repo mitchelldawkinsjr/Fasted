@@ -89,6 +89,16 @@ export function getCheckIn(date: string): CheckIn | undefined {
   return getProgress().checkIns.find((c) => c.date === date);
 }
 
+export function createJournalEntryId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `journal-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 10)}`;
+}
+
 export function saveJournalEntry(entry: JournalEntry): void {
   const progress = getProgress();
   const filtered = progress.journalEntries.filter((e) => e.id !== entry.id);
