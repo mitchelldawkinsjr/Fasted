@@ -18,6 +18,12 @@ export function getPocketBase(): PocketBase {
   return client;
 }
 
+export type UserRecord = RecordModel & {
+  email?: string;
+  name?: string;
+  avatar?: string;
+};
+
 export type ProgressRecord = RecordModel & {
   user: string;
   data: unknown;
