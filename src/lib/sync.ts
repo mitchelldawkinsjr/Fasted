@@ -175,15 +175,29 @@ export async function signUp(
   email: string,
   password: string,
   passwordConfirm: string,
+  name: string,
 ): Promise<void> {
   const pb = getPocketBase();
   await pb.collection('users').create({
     email,
     password,
     passwordConfirm,
+    name: name.trim(),
+    emailVisibility: true,
   });
   await pb.collection('users').authWithPassword(email, password);
   await syncOnLogin();
+}
+
+export async function updateUserProfile(name: string): Promise<void> {
+  const pb = getPocketBase();
+  const userId = pb.authStore.record?.id;
+  if (!userId) throw new Error('You must be signed in to update your profile.');
+
+  const updated = await pb.collection('users').update(userId, {
+    name: name.trim(),
+  });
+  pb.authStore.save(pb.authStore.token, updated);
 }
 
 export function signOut(): void {
