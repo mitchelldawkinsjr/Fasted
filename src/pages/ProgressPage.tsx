@@ -1,15 +1,15 @@
 import { BadgeWall } from '../components/BadgeWall';
+import { InfoBanner } from '../components/InfoBanner';
 import { PhaseMilestonesCard } from '../components/PhaseMilestonesCard';
-import { FAST_PHASES, getPhaseForDate } from '../data/fastingPlan';
+import { StreakWidget } from '../components/StreakWidget';
+import { FAST_PHASES, PLAN_END, PLAN_START, getPhaseForDate } from '../data/fastingPlan';
 import { useProgress } from '../hooks/useProgress';
 import { getFastDaysCompleted, getNextReward, getPhasesCompletedCount } from '../lib/badges';
 import {
-  getCurrentCheckInStreak,
-  getLongestStreak,
   getPhaseCompletionPercent,
   getTotalCheckIns,
 } from '../lib/streaks';
-import { getLocalDateString } from '../lib/dateUtils';
+import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 
 export function ProgressPage() {
   const today = getLocalDateString();
@@ -32,14 +32,20 @@ export function ProgressPage() {
         </p>
       </section>
 
+      {!currentPhase && today < PLAN_START && (
+        <InfoBanner variant="preview" icon="event_upcoming">
+          Your journey begins {formatDisplayDate(PLAN_START)}. Milestones and phase progress unlock then.
+        </InfoBanner>
+      )}
+      {!currentPhase && today > PLAN_END && (
+        <InfoBanner variant="preview" icon="history">
+          The fasting plan ended {formatDisplayDate(PLAN_END)}. Your earned milestones remain below.
+        </InfoBanner>
+      )}
+
+      <StreakWidget today={today} />
+
       <section className="grid grid-cols-2 gap-gutter">
-        <div className="col-span-2 stitch-card flex min-h-[120px] flex-col justify-center border-l-4 border-secondary p-stack-md">
-          <span className="label-caps text-on-surface-variant opacity-70">Check-In Streak</span>
-          <div className="flex items-baseline gap-unit">
-            <span className="font-display text-[48px] text-primary">{getCurrentCheckInStreak(today)}</span>
-            <span className="font-display text-headline-md text-secondary">Days</span>
-          </div>
-        </div>
         <div className="stitch-card border-l-4 border-primary-container p-stack-md">
           <span className="label-caps text-on-surface-variant opacity-70">Total Check-Ins</span>
           <div className="mt-unit flex items-baseline gap-unit">
@@ -105,10 +111,6 @@ export function ProgressPage() {
           <p className="mt-1 font-display text-headline-md text-primary">{getFastDaysCompleted()}</p>
         </div>
         <div className="stitch-card p-stack-md text-center">
-          <span className="label-caps text-on-surface-variant">Longest Streak</span>
-          <p className="mt-1 font-display text-headline-md text-primary">{getLongestStreak()}</p>
-        </div>
-        <div className="col-span-2 stitch-card p-stack-md text-center">
           <span className="label-caps text-on-surface-variant">Journal Entries</span>
           <p className="mt-1 font-display text-headline-md text-primary">
             {progress.journalEntries.length}

@@ -42,6 +42,7 @@ services:
       - "${POCKETBASE_PUBLISH_PORT:-8023}:8090"
     volumes:
       - pocketbase-data:/pb_data
+      - ./docker/pb_migrations:/pb_migrations:ro
     networks:
       - proxy
     labels:

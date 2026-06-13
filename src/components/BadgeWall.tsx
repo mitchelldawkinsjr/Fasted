@@ -1,5 +1,7 @@
+import { EmptyState } from '../components/EmptyState';
 import { getAllBadgeDefinitions } from '../lib/badges';
 import { getLocalDateString } from '../lib/dateUtils';
+import { messages } from '../lib/messages';
 import { Icon } from './Icon';
 
 export function BadgeWall() {
@@ -7,12 +9,23 @@ export function BadgeWall() {
   const badges = getAllBadgeDefinitions(today);
   const globalBadges = badges.filter((b) => !b.phaseId);
   const phaseBadges = badges.filter((b) => b.phaseId);
+  const earnedCount = badges.filter((b) => b.earned).length;
 
   return (
     <section aria-labelledby="badges-heading">
       <h2 id="badges-heading" className="mb-stack-md font-display text-headline-md text-primary">
         Sacred Milestones
       </h2>
+
+      {earnedCount === 0 && (
+        <div className="mb-stack-lg">
+          <EmptyState
+            icon="military_tech"
+            title={messages.empty.badges.title}
+            description={messages.empty.badges.description}
+          />
+        </div>
+      )}
 
       <h3 className="mb-2 label-caps text-on-surface-variant">Journey Badges</h3>
       <div className="mb-stack-lg grid grid-cols-2 gap-gutter">
