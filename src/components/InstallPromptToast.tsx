@@ -1,37 +1,80 @@
-import { useEffect, useState } from 'react';
-import { Icon } from './Icon';
+import { useEffect } from 'react';
 import {
   dismissInstallToast,
   isIosSafari,
   isRunningAsInstalledPwa,
   wasInstallToastDismissed,
 } from '../lib/pwaInstall';
+import { dismissToast, toast } from '../lib/toast';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 };
 
-export function InstallPromptToast() {
-  const [visible, setVisible] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const ios = isIosSafari();
+let installToastId: string | null = null;
+let deferredPrompt: BeforeInstallPromptEvent | null = null;
 
+function dismissInstallPrompt() {
+  dismissInstallToast();
+  if (installToastId) {
+    dismissToast(installToastId);
+    installToastId = null;
+  }
+}
+
+function showInstallPrompt() {
+  if (installToastId || isRunningAsInstalledPwa() || wasInstallToastDismissed()) return;
+
+  const ios = isIosSafari();
+  const message = ios
+    ? 'Tap Share, then Add to Home Screen for quick access and offline use.'
+    : deferredPrompt
+      ? 'Install on your home screen for a faster, app-like experience and offline access.'
+      : 'Add Fasted Calendar from your browser menu for quick access and offline use.';
+
+  installToastId = toast.persistent({
+    title: 'Add to Home Screen',
+    message,
+    type: 'info',
+    position: 'bottom',
+    actions: [
+      ...(deferredPrompt && !ios
+        ? [
+            {
+              label: 'Install',
+              variant: 'primary' as const,
+              onClick: async () => {
+                if (!deferredPrompt) return;
+                await deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                dismissInstallPrompt();
+              },
+            },
+          ]
+        : []),
+      {
+        label: 'Not now',
+        variant: 'secondary' as const,
+        onClick: dismissInstallPrompt,
+      },
+    ],
+  });
+}
+
+export function InstallPromptToast() {
   useEffect(() => {
     if (isRunningAsInstalledPwa() || wasInstallToastDismissed()) return;
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      deferredPrompt = e as BeforeInstallPromptEvent;
     };
 
     window.addEventListener('beforeinstallprompt', onBeforeInstall);
 
-    const timer = window.setTimeout(() => {
-      if (!isRunningAsInstalledPwa() && !wasInstallToastDismissed()) {
-        setVisible(true);
-      }
-    }, 2000);
+    const timer = window.setTimeout(showInstallPrompt, 2000);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall);
@@ -39,76 +82,5 @@ export function InstallPromptToast() {
     };
   }, []);
 
-  const handleDismiss = () => {
-    dismissInstallToast();
-    setVisible(false);
-  };
-
-  const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
-    handleDismiss();
-  };
-
-  if (!visible) return null;
-
-  return (
-    <div
-      className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-3 right-3 z-[55] mx-auto max-w-lg animate-fade-in-up"
-      role="status"
-      aria-live="polite"
-      aria-label="Add to home screen"
-    >
-      <div className="stitch-card border-l-4 border-secondary p-4 shadow-grace-up">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary-container text-primary">
-            <Icon name="install_mobile" />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <p className="font-display text-headline-md text-primary">Add to Home Screen</p>
-            {ios ? (
-              <p className="mt-1 text-body-md leading-relaxed text-on-surface-variant">
-                Install Fasted Calendar for quick access and offline use. Tap{' '}
-                <Icon name="ios_share" className="align-middle text-base" /> Share, then{' '}
-                <strong>Add to Home Screen</strong>.
-              </p>
-            ) : deferredPrompt ? (
-              <p className="mt-1 text-body-md leading-relaxed text-on-surface-variant">
-                Install this app on your home screen for a faster, app-like experience and offline
-                access.
-              </p>
-            ) : (
-              <p className="mt-1 text-body-md leading-relaxed text-on-surface-variant">
-                Add Fasted Calendar to your home screen from your browser menu for quick access and
-                offline use.
-              </p>
-            )}
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              {deferredPrompt && !ios && (
-                <button type="button" onClick={handleInstall} className="btn-stitch-primary !px-4 !py-2 text-body-md">
-                  Install
-                </button>
-              )}
-              <button type="button" onClick={handleDismiss} className="btn-stitch-secondary !px-4 !py-2 text-body-md">
-                Not now
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="shrink-0 text-outline transition hover:text-primary"
-            aria-label="Dismiss"
-          >
-            <Icon name="close" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }

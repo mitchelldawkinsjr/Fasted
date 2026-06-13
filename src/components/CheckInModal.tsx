@@ -3,9 +3,13 @@ import { useEffect, useState } from 'react';
 import { getPhaseForDate } from '../data/fastingPlan';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
+import { formatError, messages } from '../lib/messages';
 import { getJournalEntryByDate, saveCheckIn } from '../lib/storage';
+import { toast } from '../lib/toast';
 import type { Badge, CheckIn } from '../types';
 import { Icon } from './Icon';
+import { InfoBanner } from './InfoBanner';
+import { LoadingButton } from './LoadingButton';
 
 type Props = {
   date: string;
@@ -21,8 +25,9 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const [journaled, setJournaled] = useState(existing?.journaled ?? false);
   const [win, setWin] = useState(existing?.win ?? '');
   const [celebrating, setCelebrating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [newBadges, setNewBadges] = useState<Badge[]>([]);
+  const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
 
   const phase = getPhaseForDate(date);
 
@@ -34,6 +39,8 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
+
     const checkIn: CheckIn = {
       date,
       followedPlan,
@@ -43,11 +50,20 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
       win: win.trim(),
       completedAt: new Date().toISOString(),
     };
-    saveCheckIn(checkIn);
+
+    try {
+      saveCheckIn(checkIn);
+    } catch (err) {
+      toast.error(formatError(err, messages.errors.saveCheckIn));
+      setSaving(false);
+      return;
+    }
+
     const earned = evaluateBadges(date);
-    setNewBadges(earned);
+    setEarnedBadges(earned);
     setMessage(getCelebrationMessage(date));
     setCelebrating(true);
+    setSaving(false);
 
     confetti({
       particleCount: earned.length > 0 ? 120 : 80,
@@ -70,7 +86,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
     setTimeout(() => {
       onComplete(earned);
       onClose();
-    }, earned.length > 0 ? 3200 : 2200);
+    }, earned.length > 0 ? 2800 : 1800);
   };
 
   return (
@@ -85,22 +101,12 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
           <div className="animate-gentle-pulse py-6 text-center">
             <Icon name="celebration" className="mb-2 text-4xl text-secondary" />
             <p className="font-display text-headline-md text-primary">{message}</p>
-            {newBadges.length > 0 && (
-              <div className="mt-stack-md space-y-2">
-                <p className="label-caps text-on-surface-variant">New milestone earned</p>
-                {newBadges.map((badge) => (
-                  <div
-                    key={badge.id}
-                    className="rounded-xl border border-secondary/30 bg-secondary/10 px-4 py-3"
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      <Icon name="military_tech" className="text-secondary" filled />
-                      <p className="font-display text-headline-md text-primary">{badge.title}</p>
-                    </div>
-                    <p className="mt-1 text-body-md text-on-surface-variant">{badge.description}</p>
-                  </div>
-                ))}
-              </div>
+            {earnedBadges.length > 0 && (
+              <p className="mt-stack-md text-body-md text-on-surface-variant">
+                {earnedBadges.length === 1
+                  ? 'A new milestone is waiting for you.'
+                  : `${earnedBadges.length} new milestones are waiting for you.`}
+              </p>
             )}
           </div>
         ) : (
@@ -110,9 +116,9 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
             </h2>
 
             {phase && (
-              <p className="mb-stack-md rounded-xl bg-surface-container-high px-3 py-2 text-body-md text-on-surface-variant">
+              <InfoBanner variant="phase" icon="flag" className="mb-stack-md">
                 Phase {phase.id}: {phase.title}
-              </p>
+              </InfoBanner>
             )}
 
             <div className="space-y-3">
@@ -136,12 +142,17 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
             </div>
 
             <div className="mt-stack-md flex gap-3">
-              <button type="button" onClick={onClose} className="btn-stitch-secondary flex-1">
+              <LoadingButton type="button" onClick={onClose} variant="secondary" className="flex-1">
                 Cancel
-              </button>
-              <button type="submit" className="btn-stitch-primary flex-1">
+              </LoadingButton>
+              <LoadingButton
+                type="submit"
+                loading={saving}
+                loadingLabel="Saving…"
+                className="flex-1"
+              >
                 Save Check-In
-              </button>
+              </LoadingButton>
             </div>
           </form>
         )}

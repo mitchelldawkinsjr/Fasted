@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { CloudSyncSection } from '../components/CloudSyncSection';
+import { LoadingButton } from '../components/LoadingButton';
+import { ProfileHeader } from '../components/ProfileHeader';
 import { SafetyNote } from '../components/SafetyNote';
 import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
+import { confirmAction } from '../lib/confirm';
+import { formatError, messages } from '../lib/messages';
 import {
   exportJournal,
   exportJournalMarkdown,
@@ -10,15 +14,24 @@ import {
   resetProgress,
   saveSettings,
 } from '../lib/storage';
+import { toast } from '../lib/toast';
 
 export function SettingsPage() {
   const progress = useProgress();
   const [reminderTime, setReminderTime] = useState(progress.settings.reminderTime);
   const [theme, setTheme] = useState(progress.settings.theme);
-  const [importStatus, setImportStatus] = useState('');
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
-  const handleSaveSettings = () => {
-    saveSettings({ reminderTime, theme });
+  const handleSaveSettings = async () => {
+    setSavingPrefs(true);
+    try {
+      saveSettings({ reminderTime, theme });
+      toast.success(messages.save.preferences);
+    } catch (err) {
+      toast.error(formatError(err, messages.errors.savePreferences));
+    } finally {
+      setSavingPrefs(false);
+    }
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,12 +41,16 @@ export function SettingsPage() {
     reader.onload = () => {
       try {
         importJournalBackup(reader.result as string);
-        setImportStatus('Journal imported successfully.');
+        toast.success(messages.import.journalSuccess);
       } catch {
-        setImportStatus('Import failed. Please check the file format.');
+        toast.error(messages.import.journalInvalid);
       }
     };
+    reader.onerror = () => {
+      toast.error(messages.import.fileReadError);
+    };
     reader.readAsText(file);
+    e.target.value = '';
   };
 
   const download = (content: string, filename: string, type: string) => {
@@ -46,11 +63,30 @@ export function SettingsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleReset = async () => {
+    const confirmed = await confirmAction({
+      ...messages.confirm.resetProgress,
+      confirmLabel: messages.confirm.resetProgress.confirm,
+      cancelLabel: messages.confirm.resetProgress.cancel,
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
+    try {
+      resetProgress();
+      toast.warning(messages.progress.reset);
+    } catch (err) {
+      toast.error(formatError(err, messages.progress.resetFailed));
+    }
+  };
+
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
+      <ProfileHeader />
+
       <section className="stitch-card overflow-hidden">
         <div className="border-b border-surface-variant px-gutter py-4">
           <h3 className="label-caps text-secondary">PREFERENCES</h3>
@@ -71,9 +107,15 @@ export function SettingsPage() {
             </select>
           </label>
 
-          <button type="button" onClick={handleSaveSettings} className="btn-stitch-primary w-full">
+          <LoadingButton
+            type="button"
+            onClick={() => void handleSaveSettings()}
+            loading={savingPrefs}
+            loadingLabel="Saving…"
+            className="w-full"
+          >
             Save Preferences
-          </button>
+          </LoadingButton>
         </div>
       </section>
 
@@ -84,7 +126,10 @@ export function SettingsPage() {
         <div className="divide-y divide-surface-variant">
           <button
             type="button"
-            onClick={() => download(exportJournal(), 'fasted-journal.json', 'application/json')}
+            onClick={() => {
+              download(exportJournal(), 'fasted-journal.json', 'application/json');
+              toast.info(messages.export.journalJson);
+            }}
             className="group flex w-full items-center justify-between p-gutter transition-colors hover:bg-surface-container"
           >
             <div className="flex items-center gap-4">
@@ -95,7 +140,10 @@ export function SettingsPage() {
           </button>
           <button
             type="button"
-            onClick={() => download(exportJournalMarkdown(), 'fasted-journal.md', 'text/markdown')}
+            onClick={() => {
+              download(exportJournalMarkdown(), 'fasted-journal.md', 'text/markdown');
+              toast.info(messages.export.journalMarkdown);
+            }}
             className="group flex w-full items-center justify-between p-gutter transition-colors hover:bg-surface-container"
           >
             <div className="flex items-center gap-4">
@@ -113,7 +161,6 @@ export function SettingsPage() {
             <input type="file" accept=".json" onChange={handleImport} className="hidden" />
           </label>
         </div>
-        {importStatus && <p className="p-gutter text-body-md text-on-surface-variant">{importStatus}</p>}
       </section>
 
       <CloudSyncSection />
@@ -124,11 +171,7 @@ export function SettingsPage() {
         </div>
         <button
           type="button"
-          onClick={() => {
-            if (confirm('Reset all check-ins, badges, and progress? Journal entries will also be cleared.')) {
-              resetProgress();
-            }
-          }}
+          onClick={() => void handleReset()}
           className="flex w-full items-center gap-4 p-gutter text-body-md text-error transition-colors hover:bg-error-container/30"
         >
           <Icon name="delete_forever" />
