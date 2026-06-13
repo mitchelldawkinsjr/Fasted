@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { evaluateBadges } from '../lib/badges';
 import { getLocalDateString } from '../lib/dateUtils';
 import { getProgress, subscribe } from '../lib/storage';
+import { isProgressStorageKey } from '../lib/storageKeys';
 import type { UserProgress } from '../types';
 
 export function useProgress(): UserProgress {
@@ -16,7 +17,7 @@ export function useProgress(): UserProgress {
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'fasted-calendar-progress') refresh();
+      if (isProgressStorageKey(e.key)) refresh();
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);

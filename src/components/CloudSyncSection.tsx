@@ -1,14 +1,42 @@
 import { useEffect, useState } from 'react';
+import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
 import { useAuth } from '../hooks/useAuth';
 import { useSyncStatus } from '../hooks/useSyncStatus';
+import { formatError, messages } from '../lib/messages';
 import { signIn, signOut, signUp, syncNow, updateUserProfile } from '../lib/sync';
+import type { SyncState } from '../lib/sync';
+import { toast } from '../lib/toast';
 
 function formatSyncedAt(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+}
+
+function SyncStatusPill({ state }: { state: SyncState }) {
+  const styles: Record<SyncState, string> = {
+    idle: 'bg-surface-container-high text-on-surface-variant',
+    syncing: 'bg-secondary/15 text-primary',
+    synced: 'bg-secondary/15 text-secondary',
+    offline: 'bg-tertiary-container/20 text-on-tertiary-container',
+    error: 'bg-error/10 text-error',
+  };
+
+  const labels: Record<SyncState, string> = {
+    idle: 'Not synced yet',
+    syncing: 'Syncing…',
+    synced: 'Synced',
+    offline: 'Offline',
+    error: 'Sync issue',
+  };
+
+  return (
+    <span className={`inline-flex rounded-full px-3 py-1 text-label-caps ${styles[state]}`}>
+      {labels[state]}
+    </span>
+  );
 }
 
 export function CloudSyncSection() {
@@ -20,7 +48,6 @@ export function CloudSyncSection() {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [profileName, setProfileName] = useState('');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -50,20 +77,19 @@ export function CloudSyncSection() {
   const handleAuth = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);
-    setMessage('');
     try {
       if (mode === 'sign-in') {
         await signIn(formEmail, password);
-        setMessage('Signed in. Your progress is syncing.');
+        toast.success(messages.sync.signedIn);
       } else {
         await signUp(formEmail, password, passwordConfirm, profileName);
-        setMessage('Account created. Your progress is syncing.');
+        toast.success(messages.sync.accountCreated);
       }
       setPassword('');
       setPasswordConfirm('');
       setProfileName('');
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Authentication failed');
+      toast.error(formatError(err, messages.sync.authFailed));
     } finally {
       setBusy(false);
     }
@@ -72,12 +98,11 @@ export function CloudSyncSection() {
   const handleProfileSave = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);
-    setMessage('');
     try {
       await updateUserProfile(profileName);
-      setMessage('Profile saved.');
+      toast.success(messages.save.profile);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Profile update failed');
+      toast.error(formatError(err, messages.sync.profileFailed));
     } finally {
       setBusy(false);
     }
@@ -85,12 +110,11 @@ export function CloudSyncSection() {
 
   const handleSyncNow = async () => {
     setBusy(true);
-    setMessage('');
     try {
       await syncNow();
-      setMessage('Synced to cloud.');
+      toast.success(messages.sync.synced);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Sync failed');
+      toast.error(formatError(err, messages.sync.failed));
     } finally {
       setBusy(false);
     }
@@ -98,19 +122,19 @@ export function CloudSyncSection() {
 
   const handleSignOut = () => {
     signOut();
-    setMessage('Signed out. Local data remains on this device.');
+    toast.info(messages.sync.signedOut);
   };
 
-  const statusLabel =
-    syncStatus.state === 'syncing'
-      ? 'Syncing…'
-      : syncStatus.state === 'synced' && syncStatus.lastSyncedAt
-        ? `Last synced ${formatSyncedAt(syncStatus.lastSyncedAt)}`
-        : syncStatus.state === 'offline'
-          ? 'Offline — saved locally'
-          : syncStatus.state === 'error'
-            ? syncStatus.error ?? 'Sync error'
-            : 'Not synced yet';
+  const statusDetail =
+    syncStatus.state === 'synced' && syncStatus.lastSyncedAt
+      ? `Last synced ${formatSyncedAt(syncStatus.lastSyncedAt)}`
+      : syncStatus.state === 'offline'
+        ? 'Saved locally on this device'
+        : syncStatus.state === 'error'
+          ? 'Check your connection and try again'
+          : syncStatus.state === 'syncing'
+            ? 'Uploading your latest progress'
+            : 'Sign in to back up your journey';
 
   return (
     <section className="stitch-card overflow-hidden">
@@ -125,6 +149,10 @@ export function CloudSyncSection() {
               <p className="text-label-caps text-on-surface-variant">Signed in as</p>
               <p className="text-body-md text-on-surface">{email}</p>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <SyncStatusPill state={syncStatus.state} />
+              <span className="text-label-caps text-on-surface-variant">{statusDetail}</span>
+            </div>
             <label className="block">
               <span className="mb-1 block text-body-md text-on-surface">Profile name</span>
               <input
@@ -136,10 +164,15 @@ export function CloudSyncSection() {
                 className={inputClass}
               />
             </label>
-            <button type="submit" disabled={busy} className="btn-stitch-secondary w-full">
+            <LoadingButton
+              type="submit"
+              loading={busy}
+              loadingLabel="Saving…"
+              variant="secondary"
+              className="w-full"
+            >
               Save Profile
-            </button>
-            <p className="text-label-caps text-on-surface-variant">{statusLabel}</p>
+            </LoadingButton>
           </form>
           <div className="p-gutter">
             <p className="text-body-md text-on-surface-variant">
@@ -252,13 +285,11 @@ export function CloudSyncSection() {
             </label>
           )}
 
-          <button type="submit" disabled={busy} className="btn-stitch-primary w-full">
-            {busy ? 'Please wait…' : mode === 'sign-in' ? 'Sign in' : 'Create account'}
-          </button>
+          <LoadingButton type="submit" loading={busy} className="w-full">
+            {mode === 'sign-in' ? 'Sign in' : 'Create account'}
+          </LoadingButton>
         </form>
       )}
-
-      {message && <p className="border-t border-surface-variant p-gutter text-body-md text-on-surface-variant">{message}</p>}
     </section>
   );
 }

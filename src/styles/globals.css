@@ -86,3 +86,23 @@
 .animate-gentle-pulse {
   animation: gentle-pulse 0.6s ease-in-out;
 }
+
+.dark {
+  color-scheme: dark;
+}
+
+.dark html {
+  @apply bg-inverse-surface text-inverse-on-surface;
+}
+
+.dark body {
+  @apply bg-inverse-surface text-inverse-on-surface;
+}
+
+.dark .stitch-card {
+  @apply bg-inverse-surface text-inverse-on-surface;
+}
+
+.dark .linen-texture {
+  opacity: 0.08;
+}

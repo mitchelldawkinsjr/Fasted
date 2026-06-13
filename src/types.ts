@@ -78,4 +78,6 @@ export type UserProgress = {
   journalEntries: JournalEntry[];
   badges: Badge[];
   settings: AppSettings;
+  /** ISO timestamp — used to reconcile local vs cloud copies when signed in. */
+  updatedAt?: string;
 };

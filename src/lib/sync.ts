@@ -1,5 +1,10 @@
 import type { UserProgress } from '../types';
-import { getProgress, persistFromCloud } from './storage';
+import {
+  getProgress,
+  migrateLegacyStorage,
+  persistFromCloud,
+  switchStorageScope,
+} from './storage';
 import {
   getPocketBase,
   isSyncConfigured,
@@ -24,6 +29,7 @@ let status: SyncStatus = {
 };
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
+let authListenerAttached = false;
 
 function notify() {
   listeners.forEach((fn) => fn());
@@ -67,6 +73,10 @@ function normalizeProgress(data: unknown): UserProgress | null {
     return null;
   }
   return candidate;
+}
+
+function progressTimestamp(progress: UserProgress): string {
+  return progress.updatedAt ?? '';
 }
 
 async function findProgressRecord(userId: string): Promise<ProgressRecord | null> {
@@ -128,25 +138,68 @@ export async function pullProgressFromCloud(): Promise<UserProgress | null> {
   return normalizeProgress(record.data);
 }
 
-export async function syncOnLogin(): Promise<void> {
-  const local = getProgress();
+/** Cloud-first reconcile: newer `updatedAt` wins; guest data seeds a new account once. */
+export async function reconcileWithCloud(options?: {
+  guestFallback?: UserProgress;
+}): Promise<void> {
+  if (!isLoggedIn()) return;
 
-  if (hasLocalProgress(local)) {
-    await pushProgressToCloud(local);
+  if (!navigator.onLine) {
+    setStatus({ state: 'offline', error: null });
     return;
   }
 
-  const remote = await pullProgressFromCloud();
-  if (remote) {
-    persistFromCloud(remote);
+  setStatus({ state: 'syncing', error: null });
+
+  try {
+    const local = getProgress();
+    const remote = await pullProgressFromCloud();
+
+    if (!remote) {
+      if (hasLocalProgress(local)) {
+        await pushProgressToCloud(local);
+        return;
+      }
+      if (options?.guestFallback && hasLocalProgress(options.guestFallback)) {
+        persistFromCloud(options.guestFallback);
+        await pushProgressToCloud(getProgress());
+        return;
+      }
+      setStatus({ state: 'idle', error: null });
+      return;
+    }
+
+    if (!hasLocalProgress(local)) {
+      persistFromCloud(remote);
+      setStatus({
+        state: 'synced',
+        lastSyncedAt: new Date().toISOString(),
+        error: null,
+      });
+      return;
+    }
+
+    if (progressTimestamp(remote) >= progressTimestamp(local)) {
+      persistFromCloud(remote);
+    } else {
+      await pushProgressToCloud(local);
+      return;
+    }
+
     setStatus({
       state: 'synced',
       lastSyncedAt: new Date().toISOString(),
       error: null,
     });
-  } else {
-    setStatus({ state: 'idle', error: null });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Sync failed';
+    setStatus({ state: 'error', error: message });
+    throw err;
   }
+}
+
+export async function syncOnLogin(guestFallback?: UserProgress): Promise<void> {
+  await reconcileWithCloud({ guestFallback });
 }
 
 export function scheduleCloudSync(): void {
@@ -162,13 +215,67 @@ export function scheduleCloudSync(): void {
 }
 
 export async function syncNow(): Promise<void> {
-  await pushProgressToCloud(getProgress());
+  await reconcileWithCloud();
+}
+
+function attachAuthScopeListener(): void {
+  if (!isSyncConfigured() || authListenerAttached) return;
+
+  const pb = getPocketBase();
+  pb.authStore.onChange(() => {
+    if (pb.authStore.isValid && pb.authStore.record?.id) {
+      switchStorageScope(pb.authStore.record.id);
+    } else {
+      switchStorageScope(null);
+    }
+  });
+  authListenerAttached = true;
+}
+
+/** Call once before the app renders — restores session scope and pulls cloud data. */
+export function initAuthSync(): void {
+  migrateLegacyStorage();
+  attachAuthScopeListener();
+
+  if (!isSyncConfigured()) {
+    switchStorageScope(null);
+    return;
+  }
+
+  const pb = getPocketBase();
+
+  if (pb.authStore.isValid && pb.authStore.record?.id) {
+    switchStorageScope(pb.authStore.record.id);
+    if (navigator.onLine) {
+      void reconcileWithCloud().catch(() => {
+        /* status updated in reconcileWithCloud */
+      });
+    } else {
+      setStatus({ state: 'offline', error: null });
+    }
+    return;
+  }
+
+  if (pb.authStore.record && !pb.authStore.isValid) {
+    pb.authStore.clear();
+  }
+  switchStorageScope(null);
+}
+
+async function completeAuth(userId: string, guestFallback?: UserProgress): Promise<void> {
+  switchStorageScope(userId);
+  await syncOnLogin(guestFallback);
 }
 
 export async function signIn(email: string, password: string): Promise<void> {
+  const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
+
   const pb = getPocketBase();
   await pb.collection('users').authWithPassword(email, password);
-  await syncOnLogin();
+  const userId = pb.authStore.record?.id;
+  if (!userId) throw new Error('Sign in failed');
+
+  await completeAuth(userId, guestFallback);
 }
 
 export async function signUp(
@@ -177,6 +284,8 @@ export async function signUp(
   passwordConfirm: string,
   name: string,
 ): Promise<void> {
+  const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
+
   const pb = getPocketBase();
   await pb.collection('users').create({
     email,
@@ -186,7 +295,10 @@ export async function signUp(
     emailVisibility: true,
   });
   await pb.collection('users').authWithPassword(email, password);
-  await syncOnLogin();
+  const userId = pb.authStore.record?.id;
+  if (!userId) throw new Error('Account created but sign in failed');
+
+  await completeAuth(userId, guestFallback);
 }
 
 export async function updateUserProfile(name: string): Promise<void> {
@@ -205,6 +317,7 @@ export function signOut(): void {
     clearTimeout(syncTimer);
     syncTimer = null;
   }
+  switchStorageScope(null);
   if (isSyncConfigured()) {
     getPocketBase().authStore.clear();
   }
