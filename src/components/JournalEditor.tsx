@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { PLAN_END, PLAN_START } from '../data/fastingPlan';
-import { saveJournalEntry } from '../lib/storage';
+import { createJournalEntryId, saveJournalEntry } from '../lib/storage';
 import type { JournalEntry } from '../types';
 
 type Props = {
@@ -33,7 +33,7 @@ export function JournalEditor({ entry, defaultDate, onSave, onCancel }: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const saved: JournalEntry = {
-      id: entry?.id ?? crypto.randomUUID(),
+      id: entry?.id ?? createJournalEntryId(),
       date,
       prayerFocus,
       prayedAbout,
