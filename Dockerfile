@@ -8,7 +8,7 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_POCKETBASE_URL=https://api.fasted.360web.cloud
+ARG VITE_POCKETBASE_URL=https://fasted.360web.cloud
 ENV VITE_POCKETBASE_URL=$VITE_POCKETBASE_URL
 
 RUN npm run build

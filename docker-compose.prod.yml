@@ -6,7 +6,8 @@
 #
 # NPM Proxy Hosts:
 #   fasted.360web.cloud      → http://fasted-calendar-app:80
-#   api.fasted.360web.cloud  → http://fasted-calendar-pocketbase:8090
+#   fasted.360web.cloud/api  → http://fasted-calendar-pocketbase:8090 (custom location)
+#   api.fasted.360web.cloud  → optional legacy subdomain (requires separate DNS)
 
 name: fasted-calendar
 
@@ -16,7 +17,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_POCKETBASE_URL: ${VITE_POCKETBASE_URL:-https://api.fasted.360web.cloud}
+        VITE_POCKETBASE_URL: ${VITE_POCKETBASE_URL:-https://fasted.360web.cloud}
     container_name: fasted-calendar-app
     restart: unless-stopped
     ports:
