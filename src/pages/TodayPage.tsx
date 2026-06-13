@@ -12,6 +12,7 @@ import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
 import { getDailyPlan } from '../lib/dailyPlan';
 import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/dateUtils';
+import { journalTagFromTodayLabel } from '../lib/journalTags';
 import { messages } from '../lib/messages';
 import { getCheckIn } from '../lib/storage';
 import { toast } from '../lib/toast';
@@ -109,16 +110,24 @@ export function TodayPage() {
           </Link>
         </div>
         <div className="flex flex-wrap gap-2">
-          {REFLECTION_TAGS.map((tag) => (
-            <Link
-              key={tag}
-              to="/journal"
-              onClick={() => toast.info(`Open your journal to reflect on ${tag.toLowerCase()}.`)}
-              className="rounded-full border border-outline-variant/30 bg-surface-container-high px-4 py-2 label-caps text-primary transition-colors hover:bg-surface-container"
-            >
-              {tag}
-            </Link>
-          ))}
+          {REFLECTION_TAGS.map((tag) => {
+            const journalTag = journalTagFromTodayLabel(tag);
+            const journalLink = journalTag ? `/journal?tag=${journalTag}` : '/journal';
+            return (
+              <Link
+                key={tag}
+                to={journalLink}
+                onClick={() => {
+                  if (!journalTag) {
+                    toast.info(`Open your journal to reflect on ${tag.toLowerCase()}.`);
+                  }
+                }}
+                className="rounded-full border border-outline-variant/30 bg-surface-container-high px-4 py-2 label-caps text-primary transition-colors hover:bg-surface-container"
+              >
+                {tag}
+              </Link>
+            );
+          })}
         </div>
         {!hasJournal && (
           <Link

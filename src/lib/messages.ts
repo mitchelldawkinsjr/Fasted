@@ -39,6 +39,7 @@ export const messages = {
     saveJournal: 'Could not save your reflection. Please try again.',
     saveCheckIn: 'Could not save your check-in. Please try again.',
     savePreferences: 'Could not save preferences.',
+    journalTagsRequired: 'Choose at least one reflection type (Prayer, Gratitude, or Victory).',
     generic: 'Something went wrong. Please try again.',
   },
   confirm: {
