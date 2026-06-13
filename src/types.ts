@@ -45,9 +45,12 @@ export type CheckIn = {
   completedAt: string;
 };
 
+export type JournalTag = 'prayer' | 'gratitude' | 'victory';
+
 export type JournalEntry = {
   id: string;
   date: string;
+  tags: JournalTag[];
   prayerFocus: string;
   prayedAbout: string;
   godTeaching: string;
