@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { getPocketBase, isSyncConfigured } from '../lib/pocketbase';
-import type { RecordModel } from 'pocketbase';
+import { getPocketBase, isSyncConfigured, type UserRecord } from '../lib/pocketbase';
 
 export function useAuth() {
-  const [user, setUser] = useState<RecordModel | null>(() => {
+  const [user, setUser] = useState<UserRecord | null>(() => {
     if (!isSyncConfigured()) return null;
     try {
-      return getPocketBase().authStore.record;
+      return getPocketBase().authStore.record as UserRecord | null;
     } catch {
       return null;
     }
@@ -16,10 +15,10 @@ export function useAuth() {
     if (!isSyncConfigured()) return;
 
     const pb = getPocketBase();
-    setUser(pb.authStore.record);
+    setUser(pb.authStore.record as UserRecord | null);
 
     return pb.authStore.onChange(() => {
-      setUser(pb.authStore.record);
+      setUser(pb.authStore.record as UserRecord | null);
     });
   }, []);
 
@@ -27,6 +26,7 @@ export function useAuth() {
     user,
     isConfigured: isSyncConfigured(),
     isLoggedIn: Boolean(user),
-    email: user?.email as string | undefined,
+    email: user?.email,
+    name: user?.name,
   };
 }
