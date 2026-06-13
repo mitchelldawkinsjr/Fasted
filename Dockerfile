@@ -8,7 +8,7 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_POCKETBASE_URL=https://api.app.example.com
+ARG VITE_POCKETBASE_URL=https://app.example.com
 ENV VITE_POCKETBASE_URL=$VITE_POCKETBASE_URL
 
 RUN npm run build

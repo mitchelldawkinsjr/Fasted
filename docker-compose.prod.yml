@@ -6,7 +6,8 @@
 #
 # NPM Proxy Hosts:
 #   app.example.com      → http://fasted-calendar-app:80
-#   api.app.example.com  → http://fasted-calendar-pocketbase:8090
+#   app.example.com/api  → http://fasted-calendar-pocketbase:8090 (custom location)
+#   api.app.example.com  → optional legacy subdomain (requires separate DNS)
 
 name: fasted-calendar
 
@@ -16,7 +17,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_POCKETBASE_URL: ${VITE_POCKETBASE_URL:-https://api.app.example.com}
+        VITE_POCKETBASE_URL: ${VITE_POCKETBASE_URL:-https://app.example.com}
     container_name: fasted-calendar-app
     restart: unless-stopped
     ports:

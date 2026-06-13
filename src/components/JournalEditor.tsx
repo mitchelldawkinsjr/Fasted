@@ -1,22 +1,25 @@
 import { useState } from 'react';
-import { LoadingButton } from '../components/LoadingButton';
+import { JournalTagPicker } from './JournalTagPicker';
+import { LoadingButton } from './LoadingButton';
 import { PLAN_END, PLAN_START } from '../data/fastingPlan';
 import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
 import { formatError, messages } from '../lib/messages';
 import { createJournalEntryId, saveJournalEntry } from '../lib/storage';
 import { toast } from '../lib/toast';
-import type { JournalEntry } from '../types';
+import type { JournalEntry, JournalTag } from '../types';
 
 type Props = {
   entry?: JournalEntry;
   defaultDate: string;
+  initialTags?: JournalTag[];
   onSave: () => void;
   onCancel?: () => void;
 };
 
-export function JournalEditor({ entry, defaultDate, onSave, onCancel }: Props) {
+export function JournalEditor({ entry, defaultDate, initialTags = [], onSave, onCancel }: Props) {
   const initialDate = clampDateToPlan(entry?.date ?? defaultDate ?? getDefaultJournalDate());
   const [date, setDate] = useState(initialDate);
+  const [tags, setTags] = useState<JournalTag[]>(entry?.tags ?? initialTags);
   const [prayerFocus, setPrayerFocus] = useState(entry?.prayerFocus ?? '');
   const [prayedAbout, setPrayedAbout] = useState(entry?.prayedAbout ?? '');
   const [godTeaching, setGodTeaching] = useState(entry?.godTeaching ?? '');
@@ -29,12 +32,19 @@ export function JournalEditor({ entry, defaultDate, onSave, onCancel }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (tags.length === 0) {
+      toast.error(messages.errors.journalTagsRequired);
+      return;
+    }
+
     setSaving(true);
 
     const savedDate = clampDateToPlan(date);
     const saved: JournalEntry = {
       id: entry?.id ?? createJournalEntryId(),
       date: savedDate,
+      tags,
       prayerFocus: prayerFocus.trim(),
       prayedAbout: prayedAbout.trim(),
       godTeaching: godTeaching.trim(),
@@ -81,6 +91,8 @@ export function JournalEditor({ entry, defaultDate, onSave, onCancel }: Props) {
           className={inputClass}
         />
       </label>
+
+      <JournalTagPicker value={tags} onChange={setTags} />
 
       {fields.map((field) => (
         <label key={field.label} className="block">
