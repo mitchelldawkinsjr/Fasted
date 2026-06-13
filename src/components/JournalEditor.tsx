@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { PLAN_END, PLAN_START } from '../data/fastingPlan';
 import { saveJournalEntry } from '../lib/storage';
 import type { JournalEntry } from '../types';
 
@@ -19,6 +20,15 @@ export function JournalEditor({ entry, defaultDate, onSave, onCancel }: Props) {
   const [tomorrowIntention, setTomorrowIntention] = useState(
     entry?.tomorrowIntention ?? '',
   );
+
+  const dateBounds = useMemo(() => {
+    const selectedDate = date || entry?.date || defaultDate;
+
+    return {
+      min: selectedDate < PLAN_START ? selectedDate : PLAN_START,
+      max: selectedDate > PLAN_END ? selectedDate : PLAN_END,
+    };
+  }, [date, defaultDate, entry?.date]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +63,14 @@ export function JournalEditor({ entry, defaultDate, onSave, onCancel }: Props) {
     <form onSubmit={handleSubmit} className="space-y-stack-md">
       <label className="block">
         <span className="mb-1 block text-body-md font-medium text-on-surface">Date</span>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} min="2026-06-13" max="2026-12-19" className={inputClass} />
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          min={dateBounds.min}
+          max={dateBounds.max}
+          className={inputClass}
+        />
       </label>
 
       {fields.map((field) => (
