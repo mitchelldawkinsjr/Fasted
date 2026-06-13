@@ -1,6 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
+import { LoadingButton } from '../components/LoadingButton';
 import { PLAN_END, PLAN_START } from '../data/fastingPlan';
+import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
+import { formatError, messages } from '../lib/messages';
 import { createJournalEntryId, saveJournalEntry } from '../lib/storage';
+import { toast } from '../lib/toast';
 import type { JournalEntry } from '../types';
 
 type Props = {
@@ -11,7 +15,8 @@ type Props = {
 };
 
 export function JournalEditor({ entry, defaultDate, onSave, onCancel }: Props) {
-  const [date, setDate] = useState(entry?.date ?? defaultDate);
+  const initialDate = clampDateToPlan(entry?.date ?? defaultDate ?? getDefaultJournalDate());
+  const [date, setDate] = useState(initialDate);
   const [prayerFocus, setPrayerFocus] = useState(entry?.prayerFocus ?? '');
   const [prayedAbout, setPrayedAbout] = useState(entry?.prayedAbout ?? '');
   const [godTeaching, setGodTeaching] = useState(entry?.godTeaching ?? '');
@@ -20,31 +25,34 @@ export function JournalEditor({ entry, defaultDate, onSave, onCancel }: Props) {
   const [tomorrowIntention, setTomorrowIntention] = useState(
     entry?.tomorrowIntention ?? '',
   );
-
-  const dateBounds = useMemo(() => {
-    const selectedDate = date || entry?.date || defaultDate;
-
-    return {
-      min: selectedDate < PLAN_START ? selectedDate : PLAN_START,
-      max: selectedDate > PLAN_END ? selectedDate : PLAN_END,
-    };
-  }, [date, defaultDate, entry?.date]);
+  const [saving, setSaving] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
+
+    const savedDate = clampDateToPlan(date);
     const saved: JournalEntry = {
       id: entry?.id ?? createJournalEntryId(),
-      date,
-      prayerFocus,
-      prayedAbout,
-      godTeaching,
-      hungerNotes,
-      victory,
-      tomorrowIntention,
+      date: savedDate,
+      prayerFocus: prayerFocus.trim(),
+      prayedAbout: prayedAbout.trim(),
+      godTeaching: godTeaching.trim(),
+      hungerNotes: hungerNotes.trim(),
+      victory: victory.trim(),
+      tomorrowIntention: tomorrowIntention.trim(),
       updatedAt: new Date().toISOString(),
     };
-    saveJournalEntry(saved);
-    onSave();
+
+    try {
+      saveJournalEntry(saved);
+      toast.success(entry ? messages.save.journalUpdated : messages.save.journal);
+      onSave();
+    } catch (err) {
+      toast.error(formatError(err, messages.errors.saveJournal));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const fields = [
@@ -60,15 +68,16 @@ export function JournalEditor({ entry, defaultDate, onSave, onCancel }: Props) {
     'w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md grace-shadow focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-stack-md">
+    <form onSubmit={handleSubmit} className="space-y-stack-md" noValidate>
       <label className="block">
         <span className="mb-1 block text-body-md font-medium text-on-surface">Date</span>
         <input
           type="date"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
-          min={dateBounds.min}
-          max={dateBounds.max}
+          onChange={(e) => setDate(clampDateToPlan(e.target.value))}
+          min={PLAN_START}
+          max={PLAN_END}
+          required
           className={inputClass}
         />
       </label>
@@ -87,13 +96,18 @@ export function JournalEditor({ entry, defaultDate, onSave, onCancel }: Props) {
 
       <div className="flex gap-3">
         {onCancel && (
-          <button type="button" onClick={onCancel} className="btn-stitch-secondary flex-1">
+          <LoadingButton type="button" onClick={onCancel} variant="secondary" className="flex-1">
             Cancel
-          </button>
+          </LoadingButton>
         )}
-        <button type="submit" className="btn-stitch-primary flex-1">
+        <LoadingButton
+          type="submit"
+          loading={saving}
+          loadingLabel="Saving…"
+          className="flex-1"
+        >
           Save Entry
-        </button>
+        </LoadingButton>
       </div>
     </form>
   );

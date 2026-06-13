@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { CheckInModal } from '../components/CheckInModal';
 import { DailyCommitmentCard } from '../components/DailyCommitmentCard';
 import { EncouragementCard } from '../components/EncouragementCard';
+import { InfoBanner } from '../components/InfoBanner';
 import { PrayerPointsCard } from '../components/PrayerPointsCard';
 import { SafetyNote } from '../components/SafetyNote';
 import { ScriptureCard } from '../components/ScriptureCard';
@@ -11,7 +12,10 @@ import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
 import { getDailyPlan } from '../lib/dailyPlan';
 import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/dateUtils';
+import { messages } from '../lib/messages';
 import { getCheckIn } from '../lib/storage';
+import { toast } from '../lib/toast';
+import type { Badge } from '../types';
 
 const REFLECTION_TAGS = ['Gratitude', 'Peace', 'Focus', 'Strength', 'Patience'];
 
@@ -57,15 +61,26 @@ export function TodayPage() {
 
   const hasJournal = progress.journalEntries.some((e) => e.date === viewDate);
 
+  const handleCheckInComplete = (badges: Badge[]) => {
+    if (badges.length > 0) {
+      badges.forEach((badge) => {
+        toast.success(messages.progress.badgeEarned(badge.title));
+      });
+    } else {
+      toast.success(messages.save.checkIn);
+    }
+    setShowCheckIn(false);
+  };
+
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
       {previewDate && previewDate !== today && (
-        <p className="rounded-xl bg-surface-container-high px-3 py-2 text-body-md text-on-surface-variant">
+        <InfoBanner variant="preview" icon="visibility">
           Previewing {formatDisplayDate(viewDate)}.{' '}
           <Link to="/" className="font-medium text-primary underline">
             Return to today
           </Link>
-        </p>
+        </InfoBanner>
       )}
 
       <TodayFastCard plan={plan} />
@@ -95,12 +110,14 @@ export function TodayPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {REFLECTION_TAGS.map((tag) => (
-            <span
+            <Link
               key={tag}
-              className="rounded-full border border-outline-variant/30 bg-surface-container-high px-4 py-2 label-caps text-primary"
+              to="/journal"
+              onClick={() => toast.info(`Open your journal to reflect on ${tag.toLowerCase()}.`)}
+              className="rounded-full border border-outline-variant/30 bg-surface-container-high px-4 py-2 label-caps text-primary transition-colors hover:bg-surface-container"
             >
               {tag}
-            </span>
+            </Link>
           ))}
         </div>
         {!hasJournal && (
@@ -120,7 +137,7 @@ export function TodayPage() {
           date={viewDate}
           existing={existingCheckIn}
           onClose={() => setShowCheckIn(false)}
-          onComplete={() => setShowCheckIn(false)}
+          onComplete={handleCheckInComplete}
         />
       )}
     </div>
