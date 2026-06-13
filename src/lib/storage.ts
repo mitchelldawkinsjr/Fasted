@@ -5,9 +5,17 @@ import type {
   JournalEntry,
   UserProgress,
 } from '../types';
+import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
 
-const STORAGE_KEY = 'fasted-calendar-progress';
+/** @deprecated Legacy key — migrated to {@link GUEST_STORAGE_KEY} on first load. */
+export const LEGACY_STORAGE_KEY = 'fasted-calendar-progress';
+
+export const GUEST_STORAGE_KEY = 'fasted-calendar-progress:guest';
+
+export function userStorageKey(userId: string): string {
+  return `fasted-calendar-progress:${userId}`;
+}
 
 const DEFAULT_SETTINGS: AppSettings = {
   reminderTime: '07:00',
@@ -23,9 +31,39 @@ const DEFAULT_PROGRESS: UserProgress = {
   settings: DEFAULT_SETTINGS,
 };
 
+/** `null` = guest (unsigned) scope. */
+let currentScope: string | null = null;
+let cache: UserProgress | null = null;
+const listeners = new Set<() => void>();
+
+function getActiveStorageKey(): string {
+  return currentScope ? userStorageKey(currentScope) : GUEST_STORAGE_KEY;
+}
+
+export function getStorageScope(): string | null {
+  return currentScope;
+}
+
+/** Move pre-scoping data into the guest key once. */
+export function migrateLegacyStorage(): void {
+  const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (!legacy) return;
+  if (!localStorage.getItem(GUEST_STORAGE_KEY)) {
+    localStorage.setItem(GUEST_STORAGE_KEY, legacy);
+  }
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
+}
+
+/** Switch the active local cache to a user account or guest mode. */
+export function switchStorageScope(userId: string | null): void {
+  currentScope = userId;
+  cache = null;
+  notify();
+}
+
 function loadRaw(): UserProgress {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getActiveStorageKey());
     if (!raw) return { ...DEFAULT_PROGRESS };
     const parsed = JSON.parse(raw) as UserProgress;
     return {
@@ -38,16 +76,26 @@ function loadRaw(): UserProgress {
   }
 }
 
-let cache: UserProgress | null = null;
-const listeners = new Set<() => void>();
-
 function notify() {
   listeners.forEach((fn) => fn());
 }
 
 function persist(data: UserProgress, options?: { skipCloudSync?: boolean }) {
-  cache = data;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const stamped: UserProgress = {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  };
+  cache = stamped;
+  try {
+    localStorage.setItem(getActiveStorageKey(), JSON.stringify(stamped));
+  } catch (err) {
+    cache = loadRaw();
+    const message =
+      err instanceof DOMException && err.name === 'QuotaExceededError'
+        ? messages.errors.storageFull
+        : messages.errors.storage;
+    throw new Error(message);
+  }
   notify();
   if (!options?.skipCloudSync) {
     scheduleCloudSync();
@@ -56,14 +104,14 @@ function persist(data: UserProgress, options?: { skipCloudSync?: boolean }) {
 
 /** Restore progress from cloud without triggering an upload. */
 export function persistFromCloud(data: UserProgress): void {
-  persist(
-    {
-      ...DEFAULT_PROGRESS,
-      ...data,
-      settings: { ...DEFAULT_SETTINGS, ...data.settings },
-    },
-    { skipCloudSync: true },
-  );
+  const normalized: UserProgress = {
+    ...DEFAULT_PROGRESS,
+    ...data,
+    settings: { ...DEFAULT_SETTINGS, ...data.settings },
+  };
+  cache = normalized;
+  localStorage.setItem(getActiveStorageKey(), JSON.stringify(normalized));
+  notify();
 }
 
 export function subscribe(listener: () => void): () => void {

@@ -53,6 +53,18 @@ export function isWithinPlan(dateStr: string): boolean {
   return dateStr >= PLAN_START && dateStr <= PLAN_END;
 }
 
+/** Keep journal/check-in dates inside the fasting plan window. */
+export function clampDateToPlan(dateStr: string): string {
+  if (!dateStr) return PLAN_START;
+  if (dateStr < PLAN_START) return PLAN_START;
+  if (dateStr > PLAN_END) return PLAN_END;
+  return dateStr;
+}
+
+export function getDefaultJournalDate(today: string = getLocalDateString()): string {
+  return clampDateToPlan(today);
+}
+
 export function getAllPlanDates(): string[] {
   const dates: string[] = [];
   const current = parseLocalDate(PLAN_START);

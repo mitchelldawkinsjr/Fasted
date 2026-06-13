@@ -1,7 +1,10 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { AppHeader } from './AppHeader';
 import { Icon } from './Icon';
+import { ConfirmModal } from './ConfirmModal';
 import { InstallPromptToast } from './InstallPromptToast';
+import { SyncToastWatcher } from './SyncToastWatcher';
+import { ToastHost } from './ToastHost';
 
 const navItems = [
   { to: '/', label: 'Today', icon: 'today' },
@@ -33,6 +36,9 @@ export function Layout() {
         <Outlet />
       </main>
 
+      <ToastHost />
+      <SyncToastWatcher />
+      <ConfirmModal />
       <InstallPromptToast />
 
       <nav

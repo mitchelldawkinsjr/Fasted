@@ -5,9 +5,19 @@ export function useAuth() {
   const [user, setUser] = useState<UserRecord | null>(() => {
     if (!isSyncConfigured()) return null;
     try {
-      return getPocketBase().authStore.record as UserRecord | null;
+      const pb = getPocketBase();
+      return pb.authStore.isValid ? (pb.authStore.record as UserRecord | null) : null;
     } catch {
       return null;
+    }
+  });
+
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    if (!isSyncConfigured()) return false;
+    try {
+      return getPocketBase().authStore.isValid;
+    } catch {
+      return false;
     }
   });
 
@@ -15,18 +25,23 @@ export function useAuth() {
     if (!isSyncConfigured()) return;
 
     const pb = getPocketBase();
-    setUser(pb.authStore.record as UserRecord | null);
 
-    return pb.authStore.onChange(() => {
-      setUser(pb.authStore.record as UserRecord | null);
-    });
+    const syncFromStore = () => {
+      const valid = pb.authStore.isValid;
+      setIsLoggedIn(valid);
+      setUser(valid ? (pb.authStore.record as UserRecord | null) : null);
+    };
+
+    syncFromStore();
+    return pb.authStore.onChange(syncFromStore);
   }, []);
 
   return {
     user,
     isConfigured: isSyncConfigured(),
-    isLoggedIn: Boolean(user),
+    isLoggedIn,
     email: user?.email,
     name: user?.name,
+    memberSince: user?.created,
   };
 }

@@ -22,13 +22,13 @@ export function AppHeader({ title = 'Fasted Calendar', showPhasesLink = true }: 
           </>
         )}
       </div>
-      <button
-        type="button"
+      <Link
+        to="/settings"
         className="text-primary transition-all hover:opacity-80 active:scale-95"
-        aria-label="Account"
+        aria-label="Account and settings"
       >
         <Icon name="account_circle" size={28} />
-      </button>
+      </Link>
     </header>
   );
 }
