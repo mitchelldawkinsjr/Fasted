@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Icon } from './Icon';
 import { useAuth } from '../hooks/useAuth';
 import { useSyncStatus } from '../hooks/useSyncStatus';
-import { signIn, signOut, signUp, syncNow } from '../lib/sync';
+import { signIn, signOut, signUp, syncNow, updateUserProfile } from '../lib/sync';
 
 function formatSyncedAt(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -12,14 +12,21 @@ function formatSyncedAt(iso: string): string {
 }
 
 export function CloudSyncSection() {
-  const { isConfigured, isLoggedIn, email } = useAuth();
+  const { isConfigured, isLoggedIn, email, name } = useAuth();
   const syncStatus = useSyncStatus();
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
   const [formEmail, setFormEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [profileName, setProfileName] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      setProfileName(name ?? '');
+    }
+  }, [isLoggedIn, name]);
 
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
@@ -49,13 +56,28 @@ export function CloudSyncSection() {
         await signIn(formEmail, password);
         setMessage('Signed in. Your progress is syncing.');
       } else {
-        await signUp(formEmail, password, passwordConfirm);
+        await signUp(formEmail, password, passwordConfirm, profileName);
         setMessage('Account created. Your progress is syncing.');
       }
       setPassword('');
       setPasswordConfirm('');
+      setProfileName('');
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Authentication failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleProfileSave = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setMessage('');
+    try {
+      await updateUserProfile(profileName);
+      setMessage('Profile saved.');
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Profile update failed');
     } finally {
       setBusy(false);
     }
@@ -98,10 +120,29 @@ export function CloudSyncSection() {
 
       {isLoggedIn ? (
         <div className="divide-y divide-surface-variant">
+          <form onSubmit={(e) => void handleProfileSave(e)} className="space-y-3 p-gutter">
+            <div>
+              <p className="text-label-caps text-on-surface-variant">Signed in as</p>
+              <p className="text-body-md text-on-surface">{email}</p>
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-body-md text-on-surface">Profile name</span>
+              <input
+                type="text"
+                autoComplete="name"
+                placeholder="Your name"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                className={inputClass}
+              />
+            </label>
+            <button type="submit" disabled={busy} className="btn-stitch-secondary w-full">
+              Save Profile
+            </button>
+            <p className="text-label-caps text-on-surface-variant">{statusLabel}</p>
+          </form>
           <div className="p-gutter">
-            <p className="text-body-md text-on-surface">{email}</p>
-            <p className="mt-1 text-label-caps text-on-surface-variant">{statusLabel}</p>
-            <p className="mt-2 text-body-md text-on-surface-variant">
+            <p className="text-body-md text-on-surface-variant">
               Journal and progress sync to your server when you save. Works offline; syncs when
               back online.
             </p>
@@ -169,6 +210,19 @@ export function CloudSyncSection() {
               className={inputClass}
             />
           </label>
+
+          {mode === 'sign-up' && (
+            <label className="block">
+              <span className="mb-1 block text-body-md text-on-surface">Profile name</span>
+              <input
+                type="text"
+                autoComplete="name"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                className={inputClass}
+              />
+            </label>
+          )}
 
           <label className="block">
             <span className="mb-1 block text-body-md text-on-surface">Password</span>
