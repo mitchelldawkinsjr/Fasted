@@ -12,13 +12,14 @@ import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
 import { getDailyPlan } from '../lib/dailyPlan';
 import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/dateUtils';
-import { journalTagFromTodayLabel } from '../lib/journalTags';
+import {
+  JOURNAL_ENTRY_TYPE_LABELS,
+  SIMPLE_JOURNAL_TYPES,
+} from '../lib/journalTags';
 import { messages } from '../lib/messages';
 import { getCheckIn } from '../lib/storage';
 import { toast } from '../lib/toast';
 import type { Badge } from '../types';
-
-const REFLECTION_TAGS = ['Gratitude', 'Peace', 'Focus', 'Strength', 'Patience'];
 
 export function TodayPage() {
   const [searchParams] = useSearchParams();
@@ -109,25 +110,16 @@ export function TodayPage() {
             <Icon name="edit_note" className="text-outline" />
           </Link>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {REFLECTION_TAGS.map((tag) => {
-            const journalTag = journalTagFromTodayLabel(tag);
-            const journalLink = journalTag ? `/journal?tag=${journalTag}` : '/journal';
-            return (
-              <Link
-                key={tag}
-                to={journalLink}
-                onClick={() => {
-                  if (!journalTag) {
-                    toast.info(`Open your journal to reflect on ${tag.toLowerCase()}.`);
-                  }
-                }}
-                className="rounded-full border border-outline-variant/30 bg-surface-container-high px-4 py-2 label-caps text-primary transition-colors hover:bg-surface-container"
-              >
-                {tag}
-              </Link>
-            );
-          })}
+        <div className="grid grid-cols-3 gap-2">
+          {SIMPLE_JOURNAL_TYPES.map((type) => (
+            <Link
+              key={type}
+              to={`/journal?type=${type}`}
+              className="rounded-full border border-outline-variant bg-surface-container-low px-2 py-1.5 text-center label-caps leading-tight text-on-surface-variant transition-colors hover:bg-surface-variant"
+            >
+              {JOURNAL_ENTRY_TYPE_LABELS[type]}
+            </Link>
+          ))}
         </div>
         {!hasJournal && (
           <Link
