@@ -45,20 +45,32 @@ export type CheckIn = {
   completedAt: string;
 };
 
-export type JournalTag = 'prayer' | 'gratitude' | 'victory';
+export type SimpleJournalType = 'prayer' | 'gratitude' | 'victory';
 
-export type JournalEntry = {
+export type JournalEntryType = 'daily-reflection' | SimpleJournalType;
+
+type JournalEntryBase = {
   id: string;
   date: string;
-  tags: JournalTag[];
+  updatedAt: string;
+};
+
+export type DailyReflectionEntry = JournalEntryBase & {
+  type: 'daily-reflection';
   prayerFocus: string;
   prayedAbout: string;
   godTeaching: string;
   hungerNotes: string;
   victory: string;
   tomorrowIntention: string;
-  updatedAt: string;
 };
+
+export type SimpleJournalEntry = JournalEntryBase & {
+  type: SimpleJournalType;
+  content: string;
+};
+
+export type JournalEntry = DailyReflectionEntry | SimpleJournalEntry;
 
 export type AppSettings = {
   reminderTime: string;
