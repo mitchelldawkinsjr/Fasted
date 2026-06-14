@@ -2,79 +2,66 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
 import { JournalEditor } from '../components/JournalEditor';
-import { JournalTagBadges } from '../components/JournalTagPicker';
+import { JournalViewer } from '../components/JournalViewer';
+import { JournalTypeBadge } from '../components/JournalTypePicker';
 import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
 import { confirmAction } from '../lib/confirm';
 import { formatDisplayDate, getDefaultJournalDate, getLocalDateString } from '../lib/dateUtils';
 import {
-  JOURNAL_TAG_LABELS,
-  JOURNAL_TAGS,
-  isJournalTag,
+  DEFAULT_JOURNAL_ENTRY_TYPE,
+  JOURNAL_ENTRY_TYPE_LABELS,
+  JOURNAL_ENTRY_TYPES,
+  getJournalEntryPreview,
+  getJournalEntryTitle,
+  isJournalEntryType,
+  journalEntryMatchesSearch,
 } from '../lib/journalTags';
 import { messages } from '../lib/messages';
 import { deleteJournalEntry, exportJournalMarkdown } from '../lib/storage';
 import { toast } from '../lib/toast';
-import type { JournalEntry, JournalTag } from '../types';
+import type { JournalEntry, JournalEntryType } from '../types';
 
-type JournalFilter = 'all' | JournalTag;
+type JournalFilter = 'all' | JournalEntryType;
 
 const FILTER_CHIPS: { id: JournalFilter; label: string }[] = [
   { id: 'all', label: 'All Reflections' },
-  ...JOURNAL_TAGS.map((tag) => ({ id: tag, label: JOURNAL_TAG_LABELS[tag] })),
+  ...JOURNAL_ENTRY_TYPES.map((type) => ({
+    id: type,
+    label: JOURNAL_ENTRY_TYPE_LABELS[type],
+  })),
 ];
-
-function getEntryPreview(entry: JournalEntry): string {
-  return (
-    entry.victory ||
-    entry.prayerFocus ||
-    entry.prayedAbout ||
-    entry.godTeaching ||
-    entry.hungerNotes ||
-    entry.tomorrowIntention ||
-    'Reflection saved'
-  );
-}
 
 function matchesFilter(entry: JournalEntry, filter: JournalFilter): boolean {
   if (filter === 'all') return true;
-  return entry.tags.includes(filter);
+  return entry.type === filter;
 }
 
-function getInitialTagsFromParams(searchParams: URLSearchParams): JournalTag[] {
-  const tag = searchParams.get('tag');
-  if (tag && isJournalTag(tag)) return [tag];
-  return [];
+function getInitialTypeFromParams(searchParams: URLSearchParams): JournalEntryType | undefined {
+  const type = searchParams.get('type') ?? searchParams.get('tag');
+  if (type && isJournalEntryType(type)) return type;
+  return undefined;
 }
 
 export function JournalPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const progress = useProgress();
   const [search, setSearch] = useState('');
-  const tagParam = searchParams.get('tag');
+  const typeParam = searchParams.get('type') ?? searchParams.get('tag');
   const [filter, setFilter] = useState<JournalFilter>(() =>
-    tagParam && isJournalTag(tagParam) ? tagParam : 'all',
+    typeParam && isJournalEntryType(typeParam) ? typeParam : 'all',
   );
+  const [viewing, setViewing] = useState<JournalEntry | null>(null);
   const [editing, setEditing] = useState<JournalEntry | 'new' | null>(null);
   const today = getLocalDateString();
   const defaultDate = getDefaultJournalDate(today);
-  const initialTags = useMemo(() => getInitialTagsFromParams(searchParams), [searchParams]);
+  const initialType = useMemo(() => getInitialTypeFromParams(searchParams), [searchParams]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return progress.journalEntries.filter((entry) => {
       if (!matchesFilter(entry, filter)) return false;
-      if (!q) return true;
-      return (
-        entry.date.includes(q) ||
-        entry.tags.some((tag) => JOURNAL_TAG_LABELS[tag].toLowerCase().includes(q)) ||
-        entry.prayerFocus.toLowerCase().includes(q) ||
-        entry.prayedAbout.toLowerCase().includes(q) ||
-        entry.godTeaching.toLowerCase().includes(q) ||
-        entry.victory.toLowerCase().includes(q) ||
-        entry.hungerNotes.toLowerCase().includes(q) ||
-        entry.tomorrowIntention.toLowerCase().includes(q)
-      );
+      return journalEntryMatchesSearch(entry, q);
     });
   }, [filter, progress.journalEntries, search]);
 
@@ -93,7 +80,7 @@ export function JournalPage() {
     setSearch('');
     setFilter('all');
     setEditing(null);
-    if (searchParams.has('tag')) {
+    if (searchParams.has('type') || searchParams.has('tag')) {
       setSearchParams({});
     }
   };
@@ -102,8 +89,12 @@ export function JournalPage() {
     setEditing('new');
   };
 
-  const editorInitialTags =
-    editing === 'new' ? (filter !== 'all' ? [filter] : initialTags) : undefined;
+  const editorInitialType =
+    editing === 'new'
+      ? filter !== 'all'
+        ? filter
+        : initialType ?? DEFAULT_JOURNAL_ENTRY_TYPE
+      : undefined;
 
   const handleDelete = async (entry: JournalEntry) => {
     const confirmed = await confirmAction({
@@ -114,8 +105,33 @@ export function JournalPage() {
     });
     if (!confirmed) return;
     deleteJournalEntry(entry.id);
+    setViewing(null);
     toast.info(messages.save.journalDeleted);
   };
+
+  const closeDetailView = () => {
+    setViewing(null);
+    if (searchParams.has('type') || searchParams.has('tag')) setSearchParams({});
+  };
+
+  if (viewing) {
+    return (
+      <div className="animate-fade-in-up">
+        <h2 className="mb-stack-md font-display text-headline-lg-mobile text-primary">
+          Reflection
+        </h2>
+        <JournalViewer
+          entry={viewing}
+          onBack={closeDetailView}
+          onEdit={() => {
+            setEditing(viewing);
+            setViewing(null);
+          }}
+          onDelete={() => void handleDelete(viewing)}
+        />
+      </div>
+    );
+  }
 
   if (editing) {
     return (
@@ -124,13 +140,14 @@ export function JournalPage() {
           {editing === 'new' ? 'New Reflection' : 'Edit Entry'}
         </h2>
         <JournalEditor
+          key={editing === 'new' ? `new-${editorInitialType}` : editing.id}
           entry={editing === 'new' ? undefined : editing}
           defaultDate={defaultDate}
-          initialTags={editorInitialTags}
+          initialType={editorInitialType}
           onSave={handleSaved}
           onCancel={() => {
             setEditing(null);
-            if (searchParams.has('tag')) setSearchParams({});
+            if (searchParams.has('type') || searchParams.has('tag')) setSearchParams({});
           }}
         />
       </div>
@@ -174,7 +191,7 @@ export function JournalPage() {
         />
       </div>
 
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {FILTER_CHIPS.map((chip) => (
           <button
             key={chip.id}
@@ -213,7 +230,7 @@ export function JournalPage() {
             onClick: () => {
               setSearch('');
               setFilter('all');
-              if (searchParams.has('tag')) setSearchParams({});
+              if (searchParams.has('type') || searchParams.has('tag')) setSearchParams({});
             },
           }}
         />
@@ -222,42 +239,44 @@ export function JournalPage() {
       {filtered.length > 0 && (
         <ul className="space-y-stack-md">
           {filtered.map((entry) => (
-            <li
-              key={entry.id}
-              className="stitch-card border-l-4 border-secondary p-6 transition-transform active:scale-[0.98]"
-            >
-              <div className="mb-2 flex items-start justify-between gap-2">
-                <span className="label-caps text-on-surface-variant">
-                  {formatDisplayDate(entry.date)}
-                </span>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setEditing(entry)}
-                    className="text-label-caps text-secondary underline"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(entry)}
-                    className="text-label-caps text-error underline"
-                  >
-                    Delete
-                  </button>
+            <li key={entry.id}>
+              <article className="stitch-card border-l-4 border-secondary p-6 transition-transform active:scale-[0.98]">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <span className="label-caps text-on-surface-variant">
+                    {formatDisplayDate(entry.date)}
+                  </span>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(entry)}
+                      className="text-label-caps text-secondary underline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDelete(entry)}
+                      className="text-label-caps text-error underline"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
-              {entry.prayerFocus ? (
-                <h3 className="mb-2 font-display text-headline-md text-primary">
-                  {entry.prayerFocus}
-                </h3>
-              ) : (
-                <h3 className="mb-2 font-display text-headline-md text-primary">Reflection</h3>
-              )}
-              <p className="line-clamp-3 text-body-md leading-relaxed text-on-surface-variant">
-                {getEntryPreview(entry)}
-              </p>
-              <JournalTagBadges tags={entry.tags} />
+                <button
+                  type="button"
+                  onClick={() => setViewing(entry)}
+                  className="w-full text-left"
+                  aria-label={`View reflection from ${formatDisplayDate(entry.date)}`}
+                >
+                  <JournalTypeBadge type={entry.type} className="mb-3 mt-0" />
+                  <h3 className="mb-2 font-display text-headline-md text-primary">
+                    {getJournalEntryTitle(entry)}
+                  </h3>
+                  <p className="line-clamp-3 text-body-md leading-relaxed text-on-surface-variant">
+                    {getJournalEntryPreview(entry)}
+                  </p>
+                </button>
+              </article>
             </li>
           ))}
         </ul>

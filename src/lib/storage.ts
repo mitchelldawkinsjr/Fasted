@@ -5,7 +5,7 @@ import type {
   JournalEntry,
   UserProgress,
 } from '../types';
-import { normalizeJournalTags } from './journalTags';
+import { journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
 
@@ -62,15 +62,8 @@ export function switchStorageScope(userId: string | null): void {
   notify();
 }
 
-function normalizeJournalEntry(entry: JournalEntry): JournalEntry {
-  return {
-    ...entry,
-    tags: normalizeJournalTags(entry.tags),
-  };
-}
-
-function normalizeJournalEntries(entries: JournalEntry[]): JournalEntry[] {
-  return entries.map(normalizeJournalEntry);
+function normalizeJournalEntriesFromStorage(entries: unknown[]): JournalEntry[] {
+  return normalizeJournalEntries(entries);
 }
 
 function loadRaw(): UserProgress {
@@ -78,12 +71,30 @@ function loadRaw(): UserProgress {
     const raw = localStorage.getItem(getActiveStorageKey());
     if (!raw) return { ...DEFAULT_PROGRESS };
     const parsed = JSON.parse(raw) as UserProgress;
-    return {
+    const journalEntries = normalizeJournalEntriesFromStorage(parsed.journalEntries ?? []);
+    const progress: UserProgress = {
       ...DEFAULT_PROGRESS,
       ...parsed,
-      journalEntries: normalizeJournalEntries(parsed.journalEntries ?? []),
+      journalEntries,
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
     };
+
+    const needsJournalMigration = (parsed.journalEntries ?? []).some(journalEntryNeedsMigration);
+    if (needsJournalMigration) {
+      try {
+        localStorage.setItem(
+          getActiveStorageKey(),
+          JSON.stringify({
+            ...progress,
+            updatedAt: progress.updatedAt ?? new Date().toISOString(),
+          }),
+        );
+      } catch {
+        // Keep serving normalized in-memory data even if rewrite fails.
+      }
+    }
+
+    return progress;
   } catch {
     return { ...DEFAULT_PROGRESS };
   }
@@ -120,7 +131,7 @@ export function persistFromCloud(data: UserProgress): void {
   const normalized: UserProgress = {
     ...DEFAULT_PROGRESS,
     ...data,
-    journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
+    journalEntries: normalizeJournalEntriesFromStorage(data.journalEntries ?? []),
     settings: { ...DEFAULT_SETTINGS, ...data.settings },
   };
   cache = normalized;
@@ -207,7 +218,7 @@ export function exportJournal(): string {
 }
 
 export function importJournalBackup(json: string): void {
-  const entries = normalizeJournalEntries(JSON.parse(json) as JournalEntry[]);
+  const entries = normalizeJournalEntriesFromStorage(JSON.parse(json) as unknown[]);
   const progress = getProgress();
   const byId = new Map(progress.journalEntries.map((e) => [e.id, e]));
   entries.forEach((e) => byId.set(e.id, e));
@@ -222,10 +233,11 @@ export function importJournalBackup(json: string): void {
 export function exportJournalMarkdown(): string {
   const { journalEntries } = getProgress();
   return journalEntries
-    .map(
-      (e) => `## ${e.date}
+    .map((e) => {
+      if (e.type === 'daily-reflection') {
+        return `## ${e.date}
 
-**Tags:** ${e.tags.length > 0 ? e.tags.join(', ') : 'None'}
+**Type:** Daily Reflection
 
 **Prayer focus:** ${e.prayerFocus}
 
@@ -238,7 +250,16 @@ export function exportJournalMarkdown(): string {
 **Victory today:** ${e.victory}
 
 **Tomorrow's intention:** ${e.tomorrowIntention}
-`,
-    )
+`;
+      }
+
+      const label = e.type.charAt(0).toUpperCase() + e.type.slice(1);
+      return `## ${e.date}
+
+**Type:** ${label}
+
+${e.content}
+`;
+    })
     .join('\n---\n\n');
 }
