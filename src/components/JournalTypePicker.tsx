@@ -31,7 +31,7 @@ export function JournalTypePicker({ value, onChange, prefilled = false, classNam
               type="button"
               onClick={() => onChange(type)}
               aria-pressed={selected}
-              className={`rounded-full px-2 py-1.5 text-center label-caps leading-tight transition-colors ${
+              className={`flex min-h-[2.75rem] items-center justify-center rounded-full px-2 py-1.5 text-center label-caps leading-tight transition-colors ${
                 selected
                   ? 'bg-primary text-on-primary grace-shadow'
                   : 'border border-outline-variant bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
