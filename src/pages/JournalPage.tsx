@@ -191,13 +191,13 @@ export function JournalPage() {
         />
       </div>
 
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <section className="grid grid-cols-2 gap-2">
         {FILTER_CHIPS.map((chip) => (
           <button
             key={chip.id}
             type="button"
             onClick={() => setFilter(chip.id)}
-            className={`w-full rounded-full px-2 py-1.5 text-center label-caps leading-tight transition-colors sm:px-3 ${
+            className={`flex min-h-[2.75rem] items-center justify-center rounded-full px-2 py-1.5 text-center label-caps leading-tight transition-colors ${
               filter === chip.id
                 ? 'bg-primary text-on-primary grace-shadow'
                 : 'border border-outline-variant bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'

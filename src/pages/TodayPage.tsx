@@ -14,7 +14,7 @@ import { getDailyPlan } from '../lib/dailyPlan';
 import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/dateUtils';
 import {
   JOURNAL_ENTRY_TYPE_LABELS,
-  SIMPLE_JOURNAL_TYPES,
+  JOURNAL_ENTRY_TYPES,
 } from '../lib/journalTags';
 import { messages } from '../lib/messages';
 import { getCheckIn } from '../lib/storage';
@@ -110,12 +110,12 @@ export function TodayPage() {
             <Icon name="edit_note" className="text-outline" />
           </Link>
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {SIMPLE_JOURNAL_TYPES.map((type) => (
+        <div className="grid grid-cols-2 gap-2">
+          {JOURNAL_ENTRY_TYPES.map((type) => (
             <Link
               key={type}
               to={`/journal?type=${type}`}
-              className="rounded-full border border-outline-variant bg-surface-container-low px-2 py-1.5 text-center label-caps leading-tight text-on-surface-variant transition-colors hover:bg-surface-variant"
+              className="flex min-h-[2.75rem] items-center justify-center rounded-full border border-outline-variant bg-surface-container-low px-2 py-1.5 text-center label-caps leading-tight text-on-surface-variant transition-colors hover:bg-surface-variant"
             >
               {JOURNAL_ENTRY_TYPE_LABELS[type]}
             </Link>
