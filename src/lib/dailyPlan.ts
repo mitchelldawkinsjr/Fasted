@@ -3,12 +3,7 @@ import { getPhaseById, getPhaseForDate } from '../data/fastingPlan';
 import type { DailyFastPlan, FastType } from '../types';
 import {
   getWeekIndexInPhase,
-  isFriday,
-  isMonday,
-  isSaturday,
-  isSunday,
-  isThursday,
-  isWednesday,
+  getDayOfWeek,
 } from './dateUtils';
 
 function buildDanielFastInstructions(phaseId: number): string[] {
@@ -34,7 +29,7 @@ function getEstherFastDetails(date: string, phaseStart: string): {
 } {
   const weekIndex = getWeekIndexInPhase(date, phaseStart);
 
-  if (weekIndex === 0 && isSunday(date)) {
+  if (weekIndex === 0 && getDayOfWeek(date) === 0) {
     return {
       isFastDay: true,
       fastType: 'twenty-four-hour-water',
@@ -47,7 +42,7 @@ function getEstherFastDetails(date: string, phaseStart: string): {
     };
   }
 
-  if (weekIndex === 1 && isSunday(date)) {
+  if (weekIndex === 1 && getDayOfWeek(date) === 0) {
     return {
       isFastDay: true,
       fastType: 'twenty-four-hour-water',
@@ -60,7 +55,7 @@ function getEstherFastDetails(date: string, phaseStart: string): {
     };
   }
 
-  if (weekIndex === 2 && isWednesday(date)) {
+  if (weekIndex === 2 && getDayOfWeek(date) === 3) {
     return {
       isFastDay: true,
       fastType: 'sunrise-to-sunset-water',
@@ -93,7 +88,7 @@ export function getDailyPlan(date: string): DailyFastPlan | null {
 
   switch (phase.id) {
     case 1:
-      if (isWednesday(date)) {
+      if (getDayOfWeek(date) === 3) {
         isFastDay = true;
         fastType = 'sunrise-to-sunset-water';
         instructions = [
@@ -113,7 +108,7 @@ export function getDailyPlan(date: string): DailyFastPlan | null {
       break;
 
     case 2:
-      if (isWednesday(date) || isFriday(date)) {
+      if (getDayOfWeek(date) === 3 || getDayOfWeek(date) === 5) {
         isFastDay = true;
         fastType = 'sunrise-to-sunset-with-coffee-tea';
         instructions = [
@@ -138,7 +133,7 @@ export function getDailyPlan(date: string): DailyFastPlan | null {
       break;
 
     case 4:
-      if (isMonday(date) || isThursday(date)) {
+      if (getDayOfWeek(date) === 1 || getDayOfWeek(date) === 4) {
         isFastDay = true;
         fastType = 'sunrise-to-sunset-water';
         instructions = [
@@ -157,7 +152,7 @@ export function getDailyPlan(date: string): DailyFastPlan | null {
       break;
 
     case 5:
-      if (isWednesday(date)) {
+      if (getDayOfWeek(date) === 3) {
         isFastDay = true;
         fastType = 'sunrise-to-sunset-water';
         instructions = [
@@ -192,14 +187,14 @@ export function getDailyPlan(date: string): DailyFastPlan | null {
     }
 
     case 8:
-      if (isMonday(date) || isThursday(date)) {
+      if (getDayOfWeek(date) === 1 || getDayOfWeek(date) === 4) {
         isFastDay = true;
         fastType = 'sunrise-to-sunset-water';
         instructions = [
           'Sunrise-to-sunset fast today—water only.',
           'Read: Isaiah 58, Psalm 103, Matthew 6, and James 5.',
         ];
-      } else if (isSaturday(date)) {
+      } else if (getDayOfWeek(date) === 6) {
         isFastDay = false;
         fastType = 'extended-prayer';
         instructions = [

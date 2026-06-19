@@ -4,6 +4,7 @@ import { EmptyState } from '../components/EmptyState';
 import { JournalEditor } from '../components/JournalEditor';
 import { JournalViewer } from '../components/JournalViewer';
 import { JournalTypeBadge } from '../components/JournalTypePicker';
+import { MoodBadge } from '../components/MoodPicker';
 import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
 import { confirmAction } from '../lib/confirm';
@@ -15,7 +16,9 @@ import {
   getJournalEntryPreview,
   getJournalEntryTitle,
   isJournalEntryType,
+  isDailyReflectionEntry,
   journalEntryMatchesSearch,
+  journalTypePillClass,
 } from '../lib/journalTags';
 import { messages } from '../lib/messages';
 import { deleteJournalEntry, exportJournalMarkdown } from '../lib/storage';
@@ -197,11 +200,7 @@ export function JournalPage() {
             key={chip.id}
             type="button"
             onClick={() => setFilter(chip.id)}
-            className={`flex min-h-[2.75rem] items-center justify-center rounded-full px-2 py-1.5 text-center label-caps leading-tight transition-colors ${
-              filter === chip.id
-                ? 'bg-primary text-on-primary grace-shadow'
-                : 'border border-outline-variant bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
-            }`}
+            className={journalTypePillClass(filter === chip.id)}
           >
             {chip.label}
           </button>
@@ -269,6 +268,9 @@ export function JournalPage() {
                   aria-label={`View reflection from ${formatDisplayDate(entry.date)}`}
                 >
                   <JournalTypeBadge type={entry.type} className="mb-3 mt-0" />
+                  {isDailyReflectionEntry(entry) && entry.dayMood && (
+                    <MoodBadge mood={entry.dayMood} className="mb-3 ml-0" />
+                  )}
                   <h3 className="mb-2 font-display text-headline-md text-primary">
                     {getJournalEntryTitle(entry)}
                   </h3>

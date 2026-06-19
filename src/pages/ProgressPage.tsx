@@ -1,3 +1,4 @@
+import { PhaseMoodChart } from '../components/PhaseMoodChart';
 import { BadgeWall } from '../components/BadgeWall';
 import { InfoBanner } from '../components/InfoBanner';
 import { PhaseMilestonesCard } from '../components/PhaseMilestonesCard';
@@ -9,6 +10,7 @@ import {
   getPhaseCompletionPercent,
   getTotalCheckIns,
 } from '../lib/streaks';
+import { getPhaseMoodSummary } from '../lib/moodStats';
 import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 
 export function ProgressPage() {
@@ -102,6 +104,11 @@ export function ProgressPage() {
           </section>
 
           <PhaseMilestonesCard phaseId={currentPhase.id} today={today} />
+
+          <PhaseMoodChart
+            summary={getPhaseMoodSummary(currentPhase.startDate, currentPhase.endDate, today)}
+            title={`Phase ${currentPhase.id} mood chart`}
+          />
         </>
       )}
 
@@ -123,8 +130,9 @@ export function ProgressPage() {
         <div className="space-y-stack-md">
           {FAST_PHASES.map((phase) => {
             const percent = getPhaseCompletionPercent(phase.startDate, phase.endDate);
+            const moodSummary = getPhaseMoodSummary(phase.startDate, phase.endDate, today);
             return (
-              <div key={phase.id} className="stitch-card p-stack-md">
+              <div key={phase.id} className="stitch-card space-y-stack-md p-stack-md">
                 <div className="mb-2 flex justify-between text-body-md">
                   <span className="font-medium text-primary">{phase.title}</span>
                   <span className="text-on-surface-variant">{percent}%</span>
@@ -135,6 +143,13 @@ export function ProgressPage() {
                     style={{ width: `${percent}%`, backgroundColor: phase.themeColor }}
                   />
                 </div>
+                {moodSummary.total > 0 && (
+                  <PhaseMoodChart
+                    summary={moodSummary}
+                    title="Mood breakdown"
+                    compact
+                  />
+                )}
               </div>
             );
           })}
