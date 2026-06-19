@@ -1,6 +1,7 @@
 import {
   JOURNAL_ENTRY_TYPE_LABELS,
   JOURNAL_ENTRY_TYPES,
+  journalTypePillClass,
 } from '../lib/journalTags';
 import type { JournalEntryType } from '../types';
 
@@ -31,11 +32,7 @@ export function JournalTypePicker({ value, onChange, prefilled = false, classNam
               type="button"
               onClick={() => onChange(type)}
               aria-pressed={selected}
-              className={`flex min-h-[2.75rem] items-center justify-center rounded-full px-2 py-1.5 text-center label-caps leading-tight transition-colors ${
-                selected
-                  ? 'bg-primary text-on-primary grace-shadow'
-                  : 'border border-outline-variant bg-surface-container-low text-on-surface-variant hover:bg-surface-variant'
-              }`}
+              className={journalTypePillClass(selected)}
             >
               {JOURNAL_ENTRY_TYPE_LABELS[type]}
             </button>
@@ -59,19 +56,4 @@ export function JournalTypeBadge({ type, className = '' }: BadgeProps) {
       </span>
     </div>
   );
-}
-
-/** @deprecated Use {@link JournalTypePicker} */
-export const JournalTagPicker = JournalTypePicker;
-
-/** @deprecated Use {@link JournalTypeBadge} */
-export function JournalTagBadges({
-  tags,
-  className = '',
-}: {
-  tags: JournalEntryType[];
-  className?: string;
-}) {
-  const type = tags[0] ?? 'daily-reflection';
-  return <JournalTypeBadge type={type} className={className} />;
 }

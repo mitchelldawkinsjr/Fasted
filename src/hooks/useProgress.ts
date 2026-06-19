@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { evaluateBadges } from '../lib/badges';
 import { getLocalDateString } from '../lib/dateUtils';
-import { getProgress, subscribe } from '../lib/storage';
-import { isProgressStorageKey } from '../lib/storageKeys';
+import { GUEST_STORAGE_KEY, LEGACY_STORAGE_KEY, getProgress, subscribe } from '../lib/storage';
 import type { UserProgress } from '../types';
+
+function isProgressStorageKey(key: string | null): boolean {
+  if (!key) return false;
+  return (
+    key === LEGACY_STORAGE_KEY ||
+    key === GUEST_STORAGE_KEY ||
+    key.startsWith('fasted-calendar-progress:')
+  );
+}
 
 export function useProgress(): UserProgress {
   const [progress, setProgress] = useState<UserProgress>(getProgress);
