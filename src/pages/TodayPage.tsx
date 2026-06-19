@@ -15,6 +15,7 @@ import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/date
 import {
   JOURNAL_ENTRY_TYPE_LABELS,
   JOURNAL_ENTRY_TYPES,
+  journalTypePillClass,
 } from '../lib/journalTags';
 import { messages } from '../lib/messages';
 import { getCheckIn } from '../lib/storage';
@@ -115,7 +116,7 @@ export function TodayPage() {
             <Link
               key={type}
               to={`/journal?type=${type}`}
-              className="flex min-h-[2.75rem] items-center justify-center rounded-full border border-outline-variant bg-surface-container-low px-2 py-1.5 text-center label-caps leading-tight text-on-surface-variant transition-colors hover:bg-surface-variant"
+              className={journalTypePillClass(false)}
             >
               {JOURNAL_ENTRY_TYPE_LABELS[type]}
             </Link>

@@ -274,11 +274,6 @@ export function getEncouragementForDay(
   return messages[dateHash(date) % messages.length];
 }
 
-/** @deprecated Use getEncouragementForDay with phase context. */
-export function getEncouragementForDate(date: string): string {
-  return GENERIC_ENCOURAGEMENTS[dateHash(date) % GENERIC_ENCOURAGEMENTS.length];
-}
-
 export const CHECK_IN_CELEBRATIONS = [
   'You showed up today. Small obedience still counts.',
   'Well done. Faithfulness in one day builds a lifetime of trust.',

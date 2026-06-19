@@ -1,6 +1,7 @@
 import { getPhaseForDate } from '../data/fastingPlan';
 import { getNextReward } from '../lib/badges';
-import { getPhaseDayCount, getCurrentCheckInStreak } from '../lib/streaks';
+import { getPhaseDates } from '../lib/phaseProgress';
+import { getCurrentStreak } from '../lib/streaks';
 import { Icon } from './Icon';
 import { PhaseMilestonesCard } from './PhaseMilestonesCard';
 
@@ -11,7 +12,7 @@ type Props = {
 };
 
 export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
-  const streak = getCurrentCheckInStreak(date);
+  const streak = getCurrentStreak(date);
   const phase = getPhaseForDate(date);
   const nextReward = phase
     ? getNextReward(phase.id, phase.startDate, phase.endDate, date)
@@ -64,7 +65,7 @@ export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
             <div className="flex items-end justify-between text-on-primary-container">
               <span className="label-caps">THIS PHASE</span>
               <span className="text-body-md">
-                {phase.title} · {getPhaseDayCount(phase.startDate, phase.endDate)} days
+                {phase.title} · {getPhaseDates(phase.startDate, phase.endDate).length} days
               </span>
             </div>
             <PhaseMilestonesCard phaseId={phase.id} today={date} compact />

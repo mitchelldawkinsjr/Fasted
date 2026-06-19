@@ -25,30 +25,6 @@ export function getDayOfWeek(dateStr: string): number {
   return parseLocalDate(dateStr).getDay();
 }
 
-export function isWednesday(dateStr: string): boolean {
-  return getDayOfWeek(dateStr) === 3;
-}
-
-export function isMonday(dateStr: string): boolean {
-  return getDayOfWeek(dateStr) === 1;
-}
-
-export function isThursday(dateStr: string): boolean {
-  return getDayOfWeek(dateStr) === 4;
-}
-
-export function isFriday(dateStr: string): boolean {
-  return getDayOfWeek(dateStr) === 5;
-}
-
-export function isSaturday(dateStr: string): boolean {
-  return getDayOfWeek(dateStr) === 6;
-}
-
-export function isSunday(dateStr: string): boolean {
-  return getDayOfWeek(dateStr) === 0;
-}
-
 export function isWithinPlan(dateStr: string): boolean {
   return dateStr >= PLAN_START && dateStr <= PLAN_END;
 }
