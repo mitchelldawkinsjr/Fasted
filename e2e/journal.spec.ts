@@ -26,6 +26,7 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
     'aria-pressed',
     'true',
   );
+  await page.getByRole('radio', { name: 'Good' }).click();
   await page.getByLabel('Prayer point I focused on').fill('Morning prayer focus');
   await page.getByLabel('Victory today').fill('Stayed faithful with water only');
   await page.getByRole('button', { name: 'Save Entry' }).click();
@@ -43,6 +44,7 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
 
   expect(stored?.journalEntries).toHaveLength(1);
   expect(stored.journalEntries[0].type).toBe('daily-reflection');
+  expect(stored.journalEntries[0].dayMood).toBe('good');
   expect(stored.journalEntries[0].prayerFocus).toBe('Morning prayer focus');
   expect(stored.journalEntries[0].victory).toBe('Stayed faithful with water only');
 });
@@ -114,6 +116,7 @@ test('morning reflection tag links to filtered journal', async ({ page }) => {
 
 test('opens a read-only view of a saved entry', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Great' }).click();
   await page.getByLabel('Prayer point I focused on').fill('Evening prayer focus');
   await page.getByLabel('What I prayed about').fill('Family healing and peace');
   await page.getByLabel('Victory today').fill('Completed the fast without complaint');
@@ -123,6 +126,7 @@ test('opens a read-only view of a saved entry', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: 'Reflection' })).toBeVisible();
   await expect(page.getByText('Evening prayer focus')).toBeVisible();
+  await expect(page.getByText('Great')).toBeVisible();
   await expect(page.getByText('Family healing and peace')).toBeVisible();
   await expect(page.getByText('Completed the fast without complaint')).toBeVisible();
   await expect(page.getByLabel('Prayer point I focused on')).toHaveCount(0);

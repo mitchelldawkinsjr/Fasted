@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
+import { MoodPicker } from './MoodPicker';
 import { PLAN_END, PLAN_START } from '../data/fastingPlan';
 import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
 import {
   DEFAULT_JOURNAL_ENTRY_TYPE,
+  DAILY_REFLECTION_FIELDS,
   JOURNAL_ENTRY_TYPE_LABELS,
   isDailyReflectionEntry,
 } from '../lib/journalTags';
 import { formatError, messages } from '../lib/messages';
 import { createJournalEntryId, saveJournalEntry } from '../lib/storage';
 import { toast } from '../lib/toast';
-import type { DailyReflectionEntry, JournalEntry, JournalEntryType } from '../types';
+import type { DailyReflectionEntry, DayMood, JournalEntry, JournalEntryType } from '../types';
 
 type Props = {
   entry?: JournalEntry;
@@ -26,6 +28,9 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   const [date, setDate] = useState(initialDate);
   const [entryType, setEntryType] = useState<JournalEntryType>(
     entry?.type ?? initialType ?? DEFAULT_JOURNAL_ENTRY_TYPE,
+  );
+  const [dayMood, setDayMood] = useState<DayMood | null>(
+    entry && isDailyReflectionEntry(entry) ? entry.dayMood ?? null : null,
   );
   const [content, setContent] = useState(
     entry && !isDailyReflectionEntry(entry) ? entry.content : '',
@@ -67,6 +72,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         .join('\n\n');
       setContent(joined);
     } else if (entryType !== 'daily-reflection' && nextType === 'daily-reflection') {
+      setDayMood(null);
       setPrayerFocus('');
       setPrayedAbout('');
       setGodTeaching('');
@@ -82,6 +88,11 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (entryType === 'daily-reflection' && !dayMood) {
+      toast.error(messages.errors.journalMoodRequired);
+      return;
+    }
 
     if (entryType !== 'daily-reflection' && !content.trim()) {
       toast.error(messages.errors.journalContentRequired);
@@ -102,6 +113,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         ? ({
             ...base,
             type: 'daily-reflection',
+            dayMood,
             prayerFocus: prayerFocus.trim(),
             prayedAbout: prayedAbout.trim(),
             godTeaching: godTeaching.trim(),
@@ -126,14 +138,20 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     }
   };
 
-  const dailyFields = [
-    { label: 'Prayer point I focused on', value: prayerFocus, set: setPrayerFocus },
-    { label: 'What I prayed about', value: prayedAbout, set: setPrayedAbout },
-    { label: 'What God is teaching me', value: godTeaching, set: setGodTeaching },
-    { label: 'Hunger / discipline notes', value: hungerNotes, set: setHungerNotes },
-    { label: 'Victory today', value: victory, set: setVictory },
-    { label: "Tomorrow's intention", value: tomorrowIntention, set: setTomorrowIntention },
-  ];
+  const dailyFieldState = {
+    prayerFocus: [prayerFocus, setPrayerFocus] as const,
+    prayedAbout: [prayedAbout, setPrayedAbout] as const,
+    godTeaching: [godTeaching, setGodTeaching] as const,
+    hungerNotes: [hungerNotes, setHungerNotes] as const,
+    victory: [victory, setVictory] as const,
+    tomorrowIntention: [tomorrowIntention, setTomorrowIntention] as const,
+  };
+
+  const dailyFields = DAILY_REFLECTION_FIELDS.map(({ key, label }) => ({
+    label,
+    value: dailyFieldState[key][0],
+    set: dailyFieldState[key][1],
+  }));
 
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md grace-shadow focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
@@ -162,19 +180,24 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       </section>
 
       {entryType === 'daily-reflection' ? (
-        dailyFields.map((field) => (
-          <label key={field.label} className="block">
-            <span className="mb-1 block text-body-md font-medium text-on-surface">
-              {field.label}
-            </span>
-            <textarea
-              value={field.value}
-              onChange={(e) => field.set(e.target.value)}
-              rows={2}
-              className={inputClass}
-            />
-          </label>
-        ))
+        <>
+          <section className="stitch-card p-stack-md">
+            <MoodPicker value={dayMood} onChange={setDayMood} />
+          </section>
+          {dailyFields.map((field) => (
+            <label key={field.label} className="block">
+              <span className="mb-1 block text-body-md font-medium text-on-surface">
+                {field.label}
+              </span>
+              <textarea
+                value={field.value}
+                onChange={(e) => field.set(e.target.value)}
+                rows={2}
+                className={inputClass}
+              />
+            </label>
+          ))}
+        </>
       ) : (
         <label className="block">
           <span className="mb-1 block text-body-md font-medium text-on-surface">

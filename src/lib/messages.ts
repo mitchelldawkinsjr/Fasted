@@ -40,6 +40,7 @@ export const messages = {
     saveCheckIn: 'Could not save your check-in. Please try again.',
     savePreferences: 'Could not save preferences.',
     journalContentRequired: 'Write something in your reflection before saving.',
+    journalMoodRequired: 'Choose how today felt before saving your daily reflection.',
     generic: 'Something went wrong. Please try again.',
   },
   confirm: {

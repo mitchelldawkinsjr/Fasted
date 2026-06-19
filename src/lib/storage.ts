@@ -5,11 +5,12 @@ import type {
   JournalEntry,
   UserProgress,
 } from '../types';
+import { getDayMoodLabel } from './dayMood';
 import { journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
 
-/** @deprecated Legacy key — migrated to {@link GUEST_STORAGE_KEY} on first load. */
+/** Legacy key — migrated to {@link GUEST_STORAGE_KEY} on first load. */
 export const LEGACY_STORAGE_KEY = 'fasted-calendar-progress';
 
 export const GUEST_STORAGE_KEY = 'fasted-calendar-progress:guest';
@@ -62,16 +63,12 @@ export function switchStorageScope(userId: string | null): void {
   notify();
 }
 
-function normalizeJournalEntriesFromStorage(entries: unknown[]): JournalEntry[] {
-  return normalizeJournalEntries(entries);
-}
-
 function loadRaw(): UserProgress {
   try {
     const raw = localStorage.getItem(getActiveStorageKey());
     if (!raw) return { ...DEFAULT_PROGRESS };
     const parsed = JSON.parse(raw) as UserProgress;
-    const journalEntries = normalizeJournalEntriesFromStorage(parsed.journalEntries ?? []);
+    const journalEntries = normalizeJournalEntries(parsed.journalEntries ?? []);
     const progress: UserProgress = {
       ...DEFAULT_PROGRESS,
       ...parsed,
@@ -131,7 +128,7 @@ export function persistFromCloud(data: UserProgress): void {
   const normalized: UserProgress = {
     ...DEFAULT_PROGRESS,
     ...data,
-    journalEntries: normalizeJournalEntriesFromStorage(data.journalEntries ?? []),
+    journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
     settings: { ...DEFAULT_SETTINGS, ...data.settings },
   };
   cache = normalized;
@@ -218,7 +215,7 @@ export function exportJournal(): string {
 }
 
 export function importJournalBackup(json: string): void {
-  const entries = normalizeJournalEntriesFromStorage(JSON.parse(json) as unknown[]);
+  const entries = normalizeJournalEntries(JSON.parse(json) as unknown[]);
   const progress = getProgress();
   const byId = new Map(progress.journalEntries.map((e) => [e.id, e]));
   entries.forEach((e) => byId.set(e.id, e));
@@ -238,7 +235,7 @@ export function exportJournalMarkdown(): string {
         return `## ${e.date}
 
 **Type:** Daily Reflection
-
+${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
 **Prayer focus:** ${e.prayerFocus}
 
 **What I prayed about:** ${e.prayedAbout}
