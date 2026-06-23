@@ -32,7 +32,12 @@
   }
 
   .stitch-card {
-    @apply rounded-xl bg-surface-container-lowest grace-shadow;
+    @apply min-w-0 rounded-xl bg-surface-container-lowest grace-shadow;
+  }
+
+  .text-wrap-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .label-caps {
@@ -55,6 +60,11 @@
 
   .scroll-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  .badge-locked {
+    filter: grayscale(100%);
+    opacity: 0.35;
   }
 }
 

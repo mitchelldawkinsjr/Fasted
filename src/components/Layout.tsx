@@ -19,6 +19,8 @@ const pageTitles: Record<string, string> = {
   '/calendar': 'Fasted Calendar',
   '/journal': 'My Spiritual Journal',
   '/progress': 'Fasted Calendar',
+  '/progress/mood': 'Your Sacred Journey',
+  '/progress/badges': 'Sacred Milestones',
   '/phases': 'Fasted Calendar',
   '/settings': 'Fasted Calendar',
 };

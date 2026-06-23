@@ -1,8 +1,9 @@
+import { Link } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
 import { getAllBadgeDefinitions } from '../lib/badges';
 import { getLocalDateString } from '../lib/dateUtils';
 import { messages } from '../lib/messages';
-import { Icon } from './Icon';
+import { BadgeSprite } from './BadgeSprite';
 
 export function BadgeWall() {
   const today = getLocalDateString();
@@ -13,9 +14,17 @@ export function BadgeWall() {
 
   return (
     <section aria-labelledby="badges-heading">
-      <h2 id="badges-heading" className="mb-stack-md font-display text-headline-md text-primary">
-        Sacred Milestones
-      </h2>
+      <div className="mb-stack-md flex items-end justify-between gap-3">
+        <h2 id="badges-heading" className="font-display text-headline-md text-primary">
+          Sacred Milestones
+        </h2>
+        <Link
+          to="/progress/badges"
+          className="label-caps shrink-0 text-secondary transition-opacity hover:opacity-80"
+        >
+          View all sprites
+        </Link>
+      </div>
 
       {earnedCount === 0 && (
         <div className="mb-stack-lg">
@@ -52,13 +61,15 @@ function BadgeCard({
   return (
     <div
       className={`stitch-card p-stack-md text-center transition-transform active:scale-95 ${
-        badge.earned ? 'border-l-4 border-secondary' : 'opacity-80'
+        badge.earned ? 'border-l-4 border-secondary' : ''
       }`}
     >
-      <Icon
-        name={badge.earned ? 'military_tech' : 'lock'}
-        className={`mb-2 text-3xl ${badge.earned ? 'text-secondary' : 'text-outline'}`}
-        filled={badge.earned}
+      <BadgeSprite
+        id={badge.id}
+        earned={badge.earned}
+        size={56}
+        title={badge.title}
+        className="mb-2"
       />
       <p className="text-body-md font-semibold text-primary">{badge.title}</p>
       <p className="mt-1 text-label-caps text-on-surface-variant">{badge.description}</p>

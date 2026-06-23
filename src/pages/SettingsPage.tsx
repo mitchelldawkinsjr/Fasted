@@ -179,9 +179,11 @@ export function SettingsPage() {
         </button>
       </section>
 
-      <section className="stitch-card p-gutter">
+      <section className="stitch-card min-w-0 overflow-hidden p-gutter">
         <h3 className="mb-2 font-display text-headline-md text-primary">Scripture Note</h3>
-        <p className="text-body-md text-on-surface-variant">{progress.settings.scriptureNote}</p>
+        <p className="text-wrap-anywhere text-body-md text-on-surface-variant">
+          {progress.settings.scriptureNote}
+        </p>
       </section>
 
       <SafetyNote />

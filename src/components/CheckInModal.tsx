@@ -7,6 +7,7 @@ import { formatError, messages } from '../lib/messages';
 import { getJournalEntryByDate, saveCheckIn } from '../lib/storage';
 import { toast } from '../lib/toast';
 import type { Badge, CheckIn } from '../types';
+import { BadgeSprite } from './BadgeSprite';
 import { Icon } from './Icon';
 import { InfoBanner } from './InfoBanner';
 import { LoadingButton } from './LoadingButton';
@@ -102,11 +103,30 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
             <Icon name="celebration" className="mb-2 text-4xl text-secondary" />
             <p className="font-display text-headline-md text-primary">{message}</p>
             {earnedBadges.length > 0 && (
-              <p className="mt-stack-md text-body-md text-on-surface-variant">
-                {earnedBadges.length === 1
-                  ? 'A new milestone is waiting for you.'
-                  : `${earnedBadges.length} new milestones are waiting for you.`}
-              </p>
+              <div className="mt-stack-md space-y-stack-sm">
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  {earnedBadges.map((badge) => (
+                    <BadgeSprite
+                      key={badge.id}
+                      id={badge.id}
+                      earned
+                      size={72}
+                      title={badge.title}
+                    />
+                  ))}
+                </div>
+                <p className="text-body-md text-on-surface-variant">
+                  {earnedBadges.length === 1 ? (
+                    <>
+                      You earned <strong className="text-primary">{earnedBadges[0].title}</strong>.
+                    </>
+                  ) : (
+                    <>
+                      You earned {earnedBadges.length} new sacred milestones.
+                    </>
+                  )}
+                </p>
+              </div>
             )}
           </div>
         ) : (

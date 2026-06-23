@@ -24,25 +24,18 @@ function emptyCounts(): PhaseMoodCounts {
   };
 }
 
-function getDailyReflectionsWithMood(): DailyReflectionEntry[] {
+export function getJournalEntriesWithMood(): DailyReflectionEntry[] {
   return getProgress().journalEntries.filter(
     (entry): entry is DailyReflectionEntry =>
       isDailyReflectionEntry(entry) && entry.dayMood != null,
   );
 }
 
-export function getPhaseMoodSummary(
-  phaseStart: string,
-  phaseEnd: string,
-  upToDate?: string,
-): PhaseMoodSummary {
-  const phaseDates = new Set(
-    getPhaseDates(phaseStart, phaseEnd).filter((date) => !upToDate || date <= upToDate),
-  );
+function buildMoodSummary(entries: DailyReflectionEntry[]): PhaseMoodSummary {
   const counts = emptyCounts();
 
-  for (const entry of getDailyReflectionsWithMood()) {
-    if (!phaseDates.has(entry.date) || !entry.dayMood) continue;
+  for (const entry of entries) {
+    if (!entry.dayMood) continue;
     counts[entry.dayMood] += 1;
   }
 
@@ -57,6 +50,26 @@ export function getPhaseMoodSummary(
     steady,
     difficult,
   };
+}
+
+export function getMonthMoodSummary(monthKey: string): PhaseMoodSummary {
+  return buildMoodSummary(
+    getJournalEntriesWithMood().filter((entry) => entry.date.startsWith(`${monthKey}-`)),
+  );
+}
+
+export function getPhaseMoodSummary(
+  phaseStart: string,
+  phaseEnd: string,
+  upToDate?: string,
+): PhaseMoodSummary {
+  const phaseDates = new Set(
+    getPhaseDates(phaseStart, phaseEnd).filter((date) => !upToDate || date <= upToDate),
+  );
+
+  return buildMoodSummary(
+    getJournalEntriesWithMood().filter((entry) => phaseDates.has(entry.date)),
+  );
 }
 
 export function getPhaseMoodPercentages(summary: PhaseMoodSummary): Record<DayMood, number> {

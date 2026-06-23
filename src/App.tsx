@@ -5,6 +5,8 @@ import { ThemeProvider } from './components/ThemeProvider';
 import { CalendarPage } from './pages/CalendarPage';
 import { JournalPage } from './pages/JournalPage';
 import { PhasesPage } from './pages/PhasesPage';
+import { BadgeGalleryPage } from './pages/BadgeGalleryPage';
+import { MoodVisualizerPage } from './pages/MoodVisualizerPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TodayPage } from './pages/TodayPage';
@@ -20,6 +22,8 @@ export default function App() {
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="journal" element={<JournalPage />} />
             <Route path="progress" element={<ProgressPage />} />
+            <Route path="progress/badges" element={<BadgeGalleryPage />} />
+            <Route path="progress/mood" element={<MoodVisualizerPage />} />
             <Route path="phases" element={<PhasesPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

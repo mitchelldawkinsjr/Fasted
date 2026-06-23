@@ -1,3 +1,4 @@
+import { JOURNAL_META_CHIP_CLASS } from './JournalTypePicker';
 import { DAY_MOOD_OPTIONS } from '../lib/dayMood';
 import type { DayMood } from '../types';
 
@@ -17,7 +18,7 @@ export function MoodPicker({ value, onChange, className = '' }: Props) {
         Tap the color that best matches your day — tracked for phase summaries.
       </p>
       <div
-        className="grid grid-cols-5 gap-2"
+        className="grid grid-cols-5 gap-1 sm:gap-2"
         role="radiogroup"
         aria-label="How did today feel?"
       >
@@ -31,20 +32,20 @@ export function MoodPicker({ value, onChange, className = '' }: Props) {
               aria-checked={selected}
               aria-label={option.label}
               onClick={() => onChange(option.value)}
-              className={`flex flex-col items-center gap-2 rounded-xl border p-2 transition-all ${
+              className={`flex min-w-0 flex-col items-center gap-1.5 rounded-xl border p-1.5 transition-colors sm:gap-2 sm:p-2 ${
                 selected
-                  ? 'border-primary bg-surface-container-high shadow-grace scale-[1.02]'
+                  ? 'border-primary bg-surface-container-high shadow-grace'
                   : 'border-outline-variant/40 bg-surface-container-low hover:bg-surface-container-high'
               }`}
             >
               <span
-                className={`h-10 w-10 rounded-full ${option.swatchClass} ${
-                  selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface-container-low' : ''
+                className={`h-8 w-8 shrink-0 rounded-full sm:h-10 sm:w-10 ${option.swatchClass} ${
+                  selected ? 'ring-2 ring-primary ring-offset-1 ring-offset-surface-container-low sm:ring-offset-2' : ''
                 }`}
                 aria-hidden
               />
               <span
-                className={`text-center text-[10px] font-label-caps leading-tight ${
+                className={`text-wrap-anywhere w-full text-center text-[10px] leading-tight sm:text-body-md sm:leading-snug ${
                   selected ? 'text-primary' : 'text-on-surface-variant'
                 }`}
               >
@@ -67,11 +68,9 @@ export function MoodBadge({ mood, className = '' }: BadgeProps) {
   const option = DAY_MOOD_OPTIONS.find((item) => item.value === mood) ?? DAY_MOOD_OPTIONS[2];
 
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full bg-surface-container-high px-2.5 py-1 text-label-caps text-on-surface-variant ${className}`}
-    >
+    <span className={`${JOURNAL_META_CHIP_CLASS} gap-1 ${className}`}>
       <span
-        className={`h-2.5 w-2.5 shrink-0 rounded-full ${option.swatchClass}`}
+        className={`h-2 w-2 shrink-0 rounded-full ${option.swatchClass}`}
         aria-hidden
       />
       {option.label}

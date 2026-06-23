@@ -15,7 +15,7 @@ export function PhaseMoodChart({ summary, title = 'Mood tracker', compact = fals
       <section className={`stitch-card ${compact ? 'p-stack-md' : 'p-stack-lg'}`}>
         <h3 className="label-caps mb-2 text-on-surface-variant">{title}</h3>
         <p className="text-body-md text-on-surface-variant">
-          Log daily reflections with a mood color to see your phase chart here.
+          Log daily reflections with a mood color to see your mood breakdown here.
         </p>
       </section>
     );
@@ -26,11 +26,11 @@ export function PhaseMoodChart({ summary, title = 'Mood tracker', compact = fals
       <h3 className="label-caps mb-1 text-on-surface-variant">{title}</h3>
       <p className="mb-stack-md text-body-md text-on-surface-variant">
         {summary.uplifting} uplifting · {summary.steady} steady · {summary.difficult} difficult
-        <span className="text-on-surface-variant/70"> ({summary.total} days logged)</span>
+        <span className="text-on-surface-variant/70"> ({summary.total} reflections)</span>
       </p>
 
       <div
-        className="mb-stack-md flex h-4 overflow-hidden rounded-full bg-surface-container"
+        className="mb-stack-md flex h-5 overflow-hidden rounded-full bg-surface-container"
         role="img"
         aria-label={`Mood breakdown: ${DAY_MOOD_OPTIONS.map(
           (option) => `${summary.counts[option.value]} ${option.label.toLowerCase()}`,
@@ -50,20 +50,18 @@ export function PhaseMoodChart({ summary, title = 'Mood tracker', compact = fals
         })}
       </div>
 
-      <ul className={`grid gap-2 ${compact ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-5'}`}>
+      <ul className={`grid gap-2 ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
         {DAY_MOOD_OPTIONS.map((option) => (
           <li
             key={option.value}
-            className="flex items-center justify-between gap-2 rounded-lg bg-surface-container-low px-3 py-2"
+            className="flex items-center justify-between gap-3 rounded-lg bg-surface-container-low px-3 py-2"
           >
             <span className="flex min-w-0 items-center gap-2">
               <span
-                className={`h-3 w-3 shrink-0 rounded-full ${option.swatchClass}`}
+                className={`h-3.5 w-3.5 shrink-0 rounded-full ${option.swatchClass}`}
                 aria-hidden
               />
-              <span className="truncate text-label-caps text-on-surface-variant">
-                {option.label}
-              </span>
+              <span className="text-body-md text-on-surface">{option.label}</span>
             </span>
             <span className="font-display text-body-md text-primary">
               {summary.counts[option.value]}
