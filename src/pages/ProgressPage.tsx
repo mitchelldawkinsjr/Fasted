@@ -1,16 +1,14 @@
-import { PhaseMoodChart } from '../components/PhaseMoodChart';
+import { MoodVisualizerPreview } from '../components/mood-visualizer/MoodVisualizerPreview';
 import { BadgeWall } from '../components/BadgeWall';
 import { InfoBanner } from '../components/InfoBanner';
 import { PhaseMilestonesCard } from '../components/PhaseMilestonesCard';
 import { StreakWidget } from '../components/StreakWidget';
 import { FAST_PHASES, PLAN_END, PLAN_START, getPhaseForDate } from '../data/fastingPlan';
 import { useProgress } from '../hooks/useProgress';
-import { getFastDaysCompleted, getNextReward, getPhasesCompletedCount } from '../lib/badges';
+import { getFastDaysCompleted, getNextReward } from '../lib/badges';
 import {
   getPhaseCompletionPercent,
-  getTotalCheckIns,
 } from '../lib/streaks';
-import { getPhaseMoodSummary } from '../lib/moodStats';
 import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 
 export function ProgressPage() {
@@ -20,7 +18,6 @@ export function ProgressPage() {
   const phasePercent = currentPhase
     ? getPhaseCompletionPercent(currentPhase.startDate, currentPhase.endDate)
     : 0;
-  const phasesCompleted = getPhasesCompletedCount(today);
   const nextReward = currentPhase
     ? getNextReward(currentPhase.id, currentPhase.startDate, currentPhase.endDate, today)
     : null;
@@ -46,25 +43,6 @@ export function ProgressPage() {
       )}
 
       <StreakWidget today={today} />
-
-      <section className="grid grid-cols-2 gap-gutter">
-        <div className="stitch-card border-l-4 border-primary-container p-stack-md">
-          <span className="label-caps text-on-surface-variant opacity-70">Total Check-Ins</span>
-          <div className="mt-unit flex items-baseline gap-unit">
-            <span className="font-display text-headline-md text-primary">{getTotalCheckIns()}</span>
-            <span className="label-caps text-on-surface-variant">Days</span>
-          </div>
-        </div>
-        <div className="stitch-card border-l-4 border-on-primary-container p-stack-md">
-          <span className="label-caps text-on-surface-variant opacity-70">Phases</span>
-          <div className="mt-unit flex items-baseline gap-unit">
-            <span className="font-display text-headline-md text-primary">
-              {phasesCompleted}/{FAST_PHASES.length}
-            </span>
-            <span className="label-caps text-on-surface-variant">Done</span>
-          </div>
-        </div>
-      </section>
 
       {currentPhase && (
         <>
@@ -104,13 +82,10 @@ export function ProgressPage() {
           </section>
 
           <PhaseMilestonesCard phaseId={currentPhase.id} today={today} />
-
-          <PhaseMoodChart
-            summary={getPhaseMoodSummary(currentPhase.startDate, currentPhase.endDate, today)}
-            title={`Phase ${currentPhase.id} mood chart`}
-          />
         </>
       )}
+
+      <MoodVisualizerPreview />
 
       <section className="grid grid-cols-2 gap-gutter">
         <div className="stitch-card p-stack-md text-center">
@@ -130,7 +105,6 @@ export function ProgressPage() {
         <div className="space-y-stack-md">
           {FAST_PHASES.map((phase) => {
             const percent = getPhaseCompletionPercent(phase.startDate, phase.endDate);
-            const moodSummary = getPhaseMoodSummary(phase.startDate, phase.endDate, today);
             return (
               <div key={phase.id} className="stitch-card space-y-stack-md p-stack-md">
                 <div className="mb-2 flex justify-between text-body-md">
@@ -143,13 +117,6 @@ export function ProgressPage() {
                     style={{ width: `${percent}%`, backgroundColor: phase.themeColor }}
                   />
                 </div>
-                {moodSummary.total > 0 && (
-                  <PhaseMoodChart
-                    summary={moodSummary}
-                    title="Mood breakdown"
-                    compact
-                  />
-                )}
               </div>
             );
           })}
