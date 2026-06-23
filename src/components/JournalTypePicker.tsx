@@ -43,6 +43,10 @@ export function JournalTypePicker({ value, onChange, prefilled = false, classNam
   );
 }
 
+/** Shared compact chip for journal metadata (type, mood, etc.). */
+export const JOURNAL_META_CHIP_CLASS =
+  'inline-flex items-center rounded bg-surface-container-high px-2 py-0.5 text-[10px] font-label-caps uppercase tracking-wider text-on-tertiary-fixed-variant';
+
 type BadgeProps = {
   type: JournalEntryType;
   className?: string;
@@ -50,10 +54,8 @@ type BadgeProps = {
 
 export function JournalTypeBadge({ type, className = '' }: BadgeProps) {
   return (
-    <div className={`mt-3 ${className}`}>
-      <span className="rounded bg-surface-container-high px-2 py-0.5 text-[10px] font-label-caps uppercase tracking-wider text-on-tertiary-fixed-variant">
-        #{JOURNAL_ENTRY_TYPE_LABELS[type].toUpperCase().replace(/\s+/g, ' ')}
-      </span>
-    </div>
+    <span className={`${JOURNAL_META_CHIP_CLASS} ${className}`}>
+      #{JOURNAL_ENTRY_TYPE_LABELS[type].toUpperCase().replace(/\s+/g, ' ')}
+    </span>
   );
 }
