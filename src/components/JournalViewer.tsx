@@ -26,7 +26,7 @@ function DailyReflectionBody({ entry }: { entry: Extract<JournalEntry, { type: '
       {filledFields.map((field) => (
         <section key={field.key}>
           <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
-          <p className="whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
+          <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
             {entry[field.key]}
           </p>
         </section>
@@ -42,7 +42,7 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
         <div>
           <p className="label-caps text-on-surface-variant">{formatDisplayDate(entry.date)}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <JournalTypeBadge type={entry.type} className="mb-0 mt-0" />
+            <JournalTypeBadge type={entry.type} />
             {isDailyReflectionEntry(entry) && entry.dayMood && (
               <MoodBadge mood={entry.dayMood} />
             )}
@@ -73,7 +73,7 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
           <h3 className="mb-1 text-body-md font-medium text-on-surface">
             {JOURNAL_ENTRY_TYPE_LABELS[entry.type]}
           </h3>
-          <p className="whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
+          <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
             {entry.content}
           </p>
         </section>

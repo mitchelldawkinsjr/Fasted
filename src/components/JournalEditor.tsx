@@ -181,7 +181,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
       {entryType === 'daily-reflection' ? (
         <>
-          <section className="stitch-card p-stack-md">
+          <section className="stitch-card min-w-0 overflow-hidden p-stack-md">
             <MoodPicker value={dayMood} onChange={setDayMood} />
           </section>
           {dailyFields.map((field) => (

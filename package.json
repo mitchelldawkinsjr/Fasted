@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:seed": "VITE_SEED_DATA=true vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test:e2e": "playwright test",
