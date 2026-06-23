@@ -195,8 +195,6 @@ function StreakTrack({ showLocked }: { showLocked: boolean }) {
   );
 }
 
-const GLOBAL_ACCENT_COLOR = '#506442';
-
 // ─── One-off global badges grid ────────────────────────────────────────────────
 function OneOffBadges({ showLocked }: { showLocked: boolean }) {
   const oneoffs = GLOBAL_BADGES.filter((b) => b.kind !== 'streak');
