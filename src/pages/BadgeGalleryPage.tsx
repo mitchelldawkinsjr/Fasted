@@ -76,7 +76,7 @@ function ProgressTile({
       </div>
 
       {/* Label */}
-      <figcaption className="space-y-0.5" style={{ maxWidth: BADGE_SIZE + 8 }}>
+      <figcaption className="space-y-0.5 text-center" style={{ maxWidth: BADGE_SIZE + 8 }}>
         <p className="text-center text-body-md font-semibold leading-tight text-primary">
           {tile.title}
         </p>
