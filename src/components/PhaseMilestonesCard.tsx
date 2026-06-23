@@ -2,6 +2,7 @@ import { getPhaseMilestonesForPhase } from '../data/phaseAchievements';
 import { getPhaseById } from '../data/fastingPlan';
 import { getPhaseBadgeDefinitions } from '../lib/badges';
 import { getMilestoneTarget } from '../lib/phaseProgress';
+import { BadgeSprite } from './BadgeSprite';
 import { Icon } from './Icon';
 
 type Props = {
@@ -93,10 +94,12 @@ export function PhaseMilestonesCard({ phaseId, today, compact = false }: Props) 
                 : 'border-outline-variant/30 bg-surface-container-low'
             }`}
           >
-            <Icon
-              name={badge.earned ? 'star' : 'lock'}
-              className={`mx-auto mb-1 ${badge.earned ? 'text-secondary' : 'text-outline'}`}
-              filled={badge.earned}
+            <BadgeSprite
+              id={badge.id}
+              earned={badge.earned}
+              size={40}
+              title={badge.title}
+              className="mb-1"
             />
             <p className="text-body-md font-semibold text-primary">{badge.title}</p>
             <p className="mt-1 text-label-caps text-on-surface-variant">

@@ -7,3 +7,6 @@ dist-ssr
 .DS_Store
 docker/pb_data
 tsconfig.tsbuildinfo
+test-results
+playwright-report
+e2e/overflow-screenshots/
