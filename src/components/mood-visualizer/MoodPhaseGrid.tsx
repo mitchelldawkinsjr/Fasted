@@ -18,7 +18,7 @@ export function MoodPhaseGrid() {
       <div>
         <h2 className="font-display text-headline-md italic text-primary">Mood by phase</h2>
         <p className="mt-1 text-body-md text-on-surface-variant">
-          Each row is one spiritual phase; each cell is a plan day with your reflection mood.
+          Each row is one spiritual phase; each cell is a plan day with your devotion mood.
         </p>
       </div>
 
@@ -85,7 +85,7 @@ export function MoodPhaseGrid() {
                           className="block h-6 w-6 transition-transform hover:scale-110"
                           style={{ backgroundColor: entry.color }}
                           title={`${formatDisplayDate(date)} — ${entry.label}`}
-                          aria-label={`${date}: ${entry.label}, view reflection`}
+                          aria-label={`${date}: ${entry.label}, view devotion`}
                         />
                       ) : (
                         <div
@@ -103,7 +103,7 @@ export function MoodPhaseGrid() {
       </div>
 
       <p className="border-t border-outline-variant pt-stack-md text-body-md italic text-on-surface-variant">
-        Each color marks a daily reflection mood — grace over guilt in every step of obedience.
+        Each color marks a morning devotion mood — grace over guilt in every step of obedience.
       </p>
     </div>
   );

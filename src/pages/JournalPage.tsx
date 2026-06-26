@@ -28,7 +28,7 @@ import type { JournalEntry, JournalEntryType } from '../types';
 type JournalFilter = 'all' | JournalEntryType;
 
 const FILTER_CHIPS: { id: JournalFilter; label: string }[] = [
-  { id: 'all', label: 'All Reflections' },
+  { id: 'all', label: 'All Devotions' },
   ...JOURNAL_ENTRY_TYPES.map((type) => ({
     id: type,
     label: JOURNAL_ENTRY_TYPE_LABELS[type],
@@ -166,7 +166,7 @@ export function JournalPage() {
           </Link>
         )}
         <h2 className="mb-stack-md font-display text-headline-lg-mobile text-primary">
-          Reflection
+          Devotion
         </h2>
         <JournalViewer
           entry={displayedEntry}
@@ -185,7 +185,7 @@ export function JournalPage() {
     return (
       <div className="animate-fade-in-up">
         <h2 className="mb-stack-md font-display text-headline-lg-mobile text-primary">
-          {editing === 'new' ? 'New Reflection' : 'Edit Entry'}
+          {editing === 'new' ? 'New Devotion' : 'Edit Entry'}
         </h2>
         <JournalEditor
           key={editing === 'new' ? `new-${editorInitialType}` : editing.id}
@@ -213,7 +213,7 @@ export function JournalPage() {
     <div className="space-y-stack-lg animate-fade-in-up">
       <header className="flex items-center justify-between gap-3">
         <p className="text-body-md text-on-surface-variant">
-          {progress.journalEntries.length} reflections
+          {progress.journalEntries.length} devotions
         </p>
         <div className="flex gap-2">
           <button
@@ -319,7 +319,7 @@ export function JournalPage() {
                   type="button"
                   onClick={() => setViewing(entry)}
                   className="w-full min-w-0 text-left"
-                  aria-label={`View reflection from ${formatDisplayDate(entry.date)}`}
+                  aria-label={`View devotion from ${formatDisplayDate(entry.date)}`}
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <JournalTypeBadge type={entry.type} />

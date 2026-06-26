@@ -311,7 +311,7 @@ test.describe('Visual overflow audit', () => {
       }
 
       await page.goto('/journal');
-      await page.getByRole('button', { name: /View reflection from/i }).first().click();
+      await page.getByRole('button', { name: /View devotion from/i }).first().click();
       await page.waitForTimeout(300);
       issues = await detectOverflow(page);
       shotName = `JournalViewer-${viewport.name}.png`;

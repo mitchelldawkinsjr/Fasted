@@ -30,8 +30,8 @@ export function MoodVisualizerPreview() {
           <h3 className="mt-1 font-display text-headline-md text-primary">How your days have felt</h3>
           <p className="mt-1 text-body-md text-on-surface-variant">
             {totalEntries > 0
-              ? `${totalEntries} reflection${totalEntries === 1 ? '' : 's'} · mostly ${averageLabel.toLowerCase()}`
-              : 'Log daily reflection moods to see your mood chart here.'}
+              ? `${totalEntries} devotion${totalEntries === 1 ? '' : 's'} · mostly ${averageLabel.toLowerCase()}`
+              : 'Log morning devotion moods to see your mood chart here.'}
           </p>
         </div>
         <Icon name="chevron_right" className="shrink-0 text-primary" />

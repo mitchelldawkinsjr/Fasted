@@ -18,7 +18,7 @@ type Props = {
 function DailyReflectionBody({ entry }: { entry: Extract<JournalEntry, { type: 'daily-reflection' }> }) {
   const filledFields = DAILY_REFLECTION_FIELDS.filter((field) => entry[field.key].trim());
   if (filledFields.length === 0) {
-    return <p className="text-body-md text-on-surface-variant">No reflection notes recorded.</p>;
+    return <p className="text-body-md text-on-surface-variant">No devotion notes recorded.</p>;
   }
 
   return (
@@ -78,7 +78,7 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
           </p>
         </section>
       ) : (
-        <p className="text-body-md text-on-surface-variant">No reflection notes recorded.</p>
+        <p className="text-body-md text-on-surface-variant">No devotion notes recorded.</p>
       )}
 
       <button type="button" onClick={onBack} className="btn-stitch-secondary w-full">

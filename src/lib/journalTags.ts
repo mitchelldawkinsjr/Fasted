@@ -17,7 +17,7 @@ export const JOURNAL_ENTRY_TYPES: JournalEntryType[] = [
 ];
 
 export const JOURNAL_ENTRY_TYPE_LABELS: Record<JournalEntryType, string> = {
-  'daily-reflection': 'Daily Reflection',
+  'daily-reflection': 'Morning Devotion',
   prayer: 'Prayer',
   gratitude: 'Gratitude',
   victory: 'Victory',
@@ -172,7 +172,7 @@ export function normalizeJournalEntries(entries: unknown[]): JournalEntry[] {
 
 export function getJournalEntryPreview(entry: JournalEntry): string {
   if (entry.type !== 'daily-reflection') {
-    return entry.content || 'Reflection saved';
+    return entry.content || 'Morning devotion saved';
   }
 
   const moodPrefix = entry.dayMood ? `${getDayMoodLabel(entry.dayMood)} day — ` : '';
@@ -185,7 +185,7 @@ export function getJournalEntryPreview(entry: JournalEntry): string {
       entry.godTeaching ||
       entry.hungerNotes ||
       entry.tomorrowIntention ||
-      'Reflection saved')
+      'Morning devotion saved')
   );
 }
 

@@ -16,12 +16,12 @@ export function JournalTypePicker({ value, onChange, prefilled = false, classNam
   return (
     <fieldset className={className}>
       <legend className="mb-2 block text-body-md font-medium text-on-surface">
-        Reflection type
+        Devotion type
       </legend>
       <p className="mb-3 text-label-caps text-on-surface-variant">
         {prefilled
-          ? 'Pre-selected below — tap to change the reflection type.'
-          : 'Daily Reflection uses the full form. Other types use a single entry box.'}
+          ? 'Pre-selected below — tap to change the devotion type.'
+          : 'Morning Devotion uses the full form. Other types use a single entry box.'}
       </p>
       <div className="grid grid-cols-2 gap-2">
         {JOURNAL_ENTRY_TYPES.map((type) => {

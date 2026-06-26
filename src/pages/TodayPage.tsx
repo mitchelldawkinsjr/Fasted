@@ -106,7 +106,7 @@ export function TodayPage() {
 
       <section>
         <div className="mb-stack-md flex items-center justify-between">
-          <h3 className="font-display text-headline-md text-primary">Morning Reflection</h3>
+          <h3 className="font-display text-headline-md text-primary">Morning Devotion</h3>
           <Link to="/journal" aria-label="Open journal">
             <Icon name="edit_note" className="text-outline" />
           </Link>

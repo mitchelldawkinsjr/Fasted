@@ -234,7 +234,7 @@ export function exportJournalMarkdown(): string {
       if (e.type === 'daily-reflection') {
         return `## ${e.date}
 
-**Type:** Daily Reflection
+**Type:** Morning Devotion
 ${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
 **Prayer focus:** ${e.prayerFocus}
 

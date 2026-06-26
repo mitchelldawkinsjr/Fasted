@@ -56,7 +56,7 @@ export function MoodWheel({
           <h2 id={titleId} className="font-display text-headline-md italic text-primary">
             Mood chart
           </h2>
-          <p className="label-caps text-on-surface-variant">Daily reflections</p>
+          <p className="label-caps text-on-surface-variant">Morning devotions</p>
         </div>
       )}
 
@@ -70,7 +70,7 @@ export function MoodWheel({
           aria-labelledby={compact ? undefined : titleId}
           aria-label={
             compact
-              ? `Mood chart for ${formatMonthLabel(monthKey)}, ${stats.total} reflections`
+              ? `Mood chart for ${formatMonthLabel(monthKey)}, ${stats.total} devotions`
               : undefined
           }
         >
@@ -104,7 +104,7 @@ export function MoodWheel({
                 role={entry && linkDays ? 'link' : undefined}
                 aria-label={
                   entry
-                    ? `Day ${day}, ${entry.label}, view reflection`
+                    ? `Day ${day}, ${entry.label}, view devotion`
                     : `Day ${day}, no mood logged`
                 }
               />
@@ -178,7 +178,7 @@ export function MoodWheel({
             <span className="font-display text-headline-md text-primary">{averageLabel}</span>
           </div>
           <div className="flex flex-col text-center sm:text-left">
-            <span className="label-caps text-outline">Reflections</span>
+            <span className="label-caps text-outline">Devotions</span>
             <span className="font-display text-headline-md text-primary">
               {stats.total}/{stats.daysInMonth}
             </span>

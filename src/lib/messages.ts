@@ -1,9 +1,9 @@
 /** Centralized user-facing copy for consistent tone across the app. */
 export const messages = {
   save: {
-    journal: 'Reflection saved.',
-    journalUpdated: 'Reflection updated.',
-    journalDeleted: 'Reflection deleted.',
+    journal: 'Devotion saved.',
+    journalUpdated: 'Devotion updated.',
+    journalDeleted: 'Devotion deleted.',
     checkIn: 'Check-in saved.',
     preferences: 'Preferences saved.',
     profile: 'Profile saved.',
@@ -36,16 +36,16 @@ export const messages = {
     storage: 'Could not save to browser storage. Check storage settings and try again.',
     storageFull:
       'Storage is full. Export or delete old entries, then try again.',
-    saveJournal: 'Could not save your reflection. Please try again.',
+    saveJournal: 'Could not save your devotion. Please try again.',
     saveCheckIn: 'Could not save your check-in. Please try again.',
     savePreferences: 'Could not save preferences.',
-    journalContentRequired: 'Write something in your reflection before saving.',
-    journalMoodRequired: 'Choose how today felt before saving your daily reflection.',
+    journalContentRequired: 'Write something in your devotion before saving.',
+    journalMoodRequired: 'Choose how you feel this morning before saving your morning devotion.',
     generic: 'Something went wrong. Please try again.',
   },
   confirm: {
     deleteJournal: {
-      title: 'Delete reflection?',
+      title: 'Delete devotion?',
       message: 'This entry will be removed from your journal on this device.',
       confirm: 'Delete',
       cancel: 'Keep',
@@ -60,12 +60,12 @@ export const messages = {
   },
   empty: {
     journal: {
-      title: 'No reflections yet',
+      title: 'No devotions yet',
       description: 'Start writing about what God is teaching you on this journey.',
-      action: 'Write your first reflection',
+      action: 'Write your first devotion',
     },
     journalSearch: {
-      title: 'No matching reflections',
+      title: 'No matching devotions',
       description: 'Try a different search or clear the filter.',
       action: 'Clear search',
     },

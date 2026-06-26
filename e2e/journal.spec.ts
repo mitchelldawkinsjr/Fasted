@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
 
 async function selectType(page: import('@playwright/test').Page, label: string) {
-  const group = page.getByRole('group', { name: 'Reflection type' });
+  const group = page.getByRole('group', { name: 'Devotion type' });
   const button = group.getByRole('button', { name: label, exact: true });
   await button.click();
   await expect(button).toHaveAttribute('aria-pressed', 'true');
@@ -18,11 +18,11 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
-test('saves a daily reflection with multiple fields', async ({ page }) => {
-  await expect(page.getByText('0 reflections')).toBeVisible();
+test('saves a morning devotion with multiple fields', async ({ page }) => {
+  await expect(page.getByText('0 devotions')).toBeVisible();
 
   await page.getByRole('button', { name: '+ New' }).click();
-  await expect(page.getByRole('button', { name: 'Daily Reflection' })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: 'Morning Devotion' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
@@ -31,11 +31,11 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
   await page.getByLabel('Victory today').fill('Stayed faithful with water only');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
-  await expect(page.getByText('Reflection saved.')).toBeVisible();
-  await expect(page.getByText('1 reflections')).toBeVisible();
+  await expect(page.getByText('Devotion saved.')).toBeVisible();
+  await expect(page.getByText('1 devotions')).toBeVisible();
   await expect(page.getByText('Morning prayer focus')).toBeVisible();
   await expect(page.getByText('Stayed faithful with water only')).toBeVisible();
-  await expect(page.getByText('#DAILY REFLECTION')).toBeVisible();
+  await expect(page.getByText('#MORNING DEVOTION')).toBeVisible();
 
   const stored = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
@@ -75,7 +75,7 @@ test('saved entry remains visible after clearing an active search filter', async
   await page.getByLabel('Victory').fill('Visible after save');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
-  await expect(page.getByText('1 reflections')).toBeVisible();
+  await expect(page.getByText('1 devotions')).toBeVisible();
   await expect(page.getByRole('listitem').filter({ hasText: 'Visible after save' })).toBeVisible();
   await expect(page.getByRole('searchbox', { name: 'Search journal entries' })).toHaveValue('');
 });
@@ -100,16 +100,16 @@ test('date stays within plan bounds on save', async ({ page }) => {
   expect(stored.journalEntries[0].type).toBe('gratitude');
 });
 
-test('morning reflection tag links to filtered journal', async ({ page }) => {
+test('morning devotion tag links to filtered journal', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Prayer' }).click();
   await expect(page).toHaveURL('/journal?type=prayer');
   await expect(page.getByRole('button', { name: 'Prayer', exact: true })).toHaveClass(/bg-primary/);
 
   await page.goto('/');
-  await page.getByRole('link', { name: 'Daily Reflection' }).click();
+  await page.getByRole('link', { name: 'Morning Devotion' }).click();
   await expect(page).toHaveURL('/journal?type=daily-reflection');
-  await expect(page.getByRole('button', { name: 'Daily Reflection', exact: true })).toHaveClass(
+  await expect(page.getByRole('button', { name: 'Morning Devotion', exact: true })).toHaveClass(
     /bg-primary/,
   );
 });
@@ -122,9 +122,9 @@ test('opens a read-only view of a saved entry', async ({ page }) => {
   await page.getByLabel('Victory today').fill('Completed the fast without complaint');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
-  await page.getByRole('button', { name: /View reflection from/i }).click();
+  await page.getByRole('button', { name: /View devotion from/i }).click();
 
-  await expect(page.getByRole('heading', { name: 'Reflection' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Devotion' })).toBeVisible();
   await expect(page.getByText('Evening prayer focus')).toBeVisible();
   await expect(page.getByText('Great')).toBeVisible();
   await expect(page.getByText('Family healing and peace')).toBeVisible();
@@ -132,7 +132,7 @@ test('opens a read-only view of a saved entry', async ({ page }) => {
   await expect(page.getByLabel('Prayer point I focused on')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Back to Journal' }).click();
-  await expect(page.getByText('1 reflections')).toBeVisible();
+  await expect(page.getByText('1 devotions')).toBeVisible();
 });
 
 test('filter chips show only entries with matching types', async ({ page }) => {

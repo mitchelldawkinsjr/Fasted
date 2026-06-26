@@ -12,15 +12,15 @@ export function MoodPicker({ value, onChange, className = '' }: Props) {
   return (
     <fieldset className={className}>
       <legend className="mb-1 block text-body-md font-medium text-on-surface">
-        How did today feel?
+        How do you feel this morning?
       </legend>
       <p className="mb-3 text-label-caps text-on-surface-variant">
-        Tap the color that best matches your day — tracked for phase summaries.
+        Tap the color that best matches your morning — tracked for phase summaries.
       </p>
       <div
         className="grid grid-cols-5 gap-1 sm:gap-2"
         role="radiogroup"
-        aria-label="How did today feel?"
+        aria-label="How do you feel this morning?"
       >
         {DAY_MOOD_OPTIONS.map((option) => {
           const selected = value === option.value;

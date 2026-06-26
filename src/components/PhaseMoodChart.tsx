@@ -15,7 +15,7 @@ export function PhaseMoodChart({ summary, title = 'Mood tracker', compact = fals
       <section className={`stitch-card ${compact ? 'p-stack-md' : 'p-stack-lg'}`}>
         <h3 className="label-caps mb-2 text-on-surface-variant">{title}</h3>
         <p className="text-body-md text-on-surface-variant">
-          Log daily reflections with a mood color to see your mood breakdown here.
+          Log morning devotions with a mood color to see your mood breakdown here.
         </p>
       </section>
     );
@@ -26,7 +26,7 @@ export function PhaseMoodChart({ summary, title = 'Mood tracker', compact = fals
       <h3 className="label-caps mb-1 text-on-surface-variant">{title}</h3>
       <p className="mb-stack-md text-body-md text-on-surface-variant">
         {summary.uplifting} uplifting · {summary.steady} steady · {summary.difficult} difficult
-        <span className="text-on-surface-variant/70"> ({summary.total} reflections)</span>
+        <span className="text-on-surface-variant/70"> ({summary.total} devotions)</span>
       </p>
 
       <div

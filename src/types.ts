@@ -45,7 +45,7 @@ export type CheckIn = {
   completedAt: string;
 };
 
-/** Five-point daily mood scale for Daily Reflection entries. */
+/** Five-point daily mood scale for Morning Devotion entries. */
 export type DayMood = 'amazing' | 'good' | 'okay' | 'bad' | 'horrible';
 
 export type SimpleJournalType = 'prayer' | 'gratitude' | 'victory';
@@ -60,7 +60,7 @@ type JournalEntryBase = {
 
 export type DailyReflectionEntry = JournalEntryBase & {
   type: 'daily-reflection';
-  /** How the day felt — required for new daily reflections. */
+  /** How the morning feels — required for new morning devotions. */
   dayMood?: DayMood | null;
   prayerFocus: string;
   prayedAbout: string;

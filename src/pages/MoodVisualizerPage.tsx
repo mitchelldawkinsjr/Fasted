@@ -59,7 +59,7 @@ export function MoodVisualizerPage() {
       <section className="space-y-unit text-center">
         <h2 className="font-display text-headline-lg-mobile text-primary">Mood Chart</h2>
         <p className="text-body-md text-on-surface-variant">
-          Daily reflection colors across your sacred journey.
+          Morning devotion colors across your sacred journey.
         </p>
       </section>
 
@@ -91,7 +91,7 @@ export function MoodVisualizerPage() {
       {totalEntries === 0 ? (
         <section className="stitch-card p-stack-lg text-center">
           <p className="text-body-md text-on-surface-variant">
-            No moods logged yet. Add a daily reflection in your journal to see your mood chart
+            No moods logged yet. Add a morning devotion in your journal to see your mood chart
             here.
           </p>
           <Link to="/journal" className="btn-stitch-primary mt-stack-md inline-block">
