@@ -161,20 +161,21 @@ create policy "authenticated create groups"
   on groups for insert
   with check (created_by = auth.uid());
 
--- Memberships
-create policy "members read memberships in their groups"
-  on group_memberships for select
-  using (public.is_group_member(group_id));
+-- Memberships (FOR ALL — PostgREST does not apply INSERT-only policies reliably)
+create policy "membership access"
+  on group_memberships for all
+  using (
+    user_id = auth.uid()
+    or public.is_group_member(group_id)
+    or public.is_group_leader(group_id)
+  )
+  with check (user_id = auth.uid() or public.is_group_leader(group_id));
 
-create policy "users join groups"
-  on group_memberships for insert
-  with check (user_id = auth.uid());
-
-create policy "users leave own membership"
+create policy "members leave group"
   on group_memberships for delete
   using (user_id = auth.uid());
 
-create policy "leaders manage memberships"
+create policy "leaders update memberships"
   on group_memberships for update
   using (public.is_group_leader(group_id))
   with check (public.is_group_leader(group_id));
