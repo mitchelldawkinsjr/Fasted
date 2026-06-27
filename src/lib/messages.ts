@@ -1,3 +1,5 @@
+import { formatAuthError, isNetworkError } from './authErrors';
+
 /** Centralized user-facing copy for consistent tone across the app. */
 export const messages = {
   save: {
@@ -25,6 +27,10 @@ export const messages = {
     offline: 'Offline — your progress is saved on this device.',
     failed: 'Sync failed. Your data is still saved on this device.',
     authFailed: 'Sign in failed. Check your email and password.',
+    invalidCredentials: 'Incorrect email or password. Please try again.',
+    networkFailed: 'Could not reach the server. Check your connection and try again.',
+    signedInSyncPending:
+      'Signed in. Your progress will sync when the connection is available.',
     oauthFailed: 'Social sign-in failed. Please try again or use email.',
     profileFailed: 'Profile update failed. Please try again.',
   },
@@ -78,8 +84,13 @@ export const messages = {
 } as const;
 
 export function formatError(err: unknown, fallback: string): string {
+  if (isNetworkError(err)) {
+    return messages.sync.networkFailed;
+  }
   if (err instanceof Error && err.message.trim()) {
     return err.message;
   }
   return fallback;
 }
+
+export { formatAuthError };

@@ -4,7 +4,24 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
 
 export function isSyncConfigured(): boolean {
-  return SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0;
+  return getSupabaseConfigIssue() === null;
+}
+
+/** Returns a user-facing config problem, or null when env vars look valid. */
+export function getSupabaseConfigIssue(): string | null {
+  const url = import.meta.env.VITE_SUPABASE_URL?.trim() ?? '';
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ?? '';
+
+  if (!url) return 'VITE_SUPABASE_URL is not set';
+  if (!anonKey) return 'VITE_SUPABASE_ANON_KEY is not set';
+
+  try {
+    new URL(url);
+  } catch {
+    return 'VITE_SUPABASE_URL is not a valid URL';
+  }
+
+  return null;
 }
 
 export const supabase = isSyncConfigured()

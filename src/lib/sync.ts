@@ -1,4 +1,6 @@
 import type { UserProgress } from '../types';
+import { formatAuthError, isNetworkError, withNetworkRetry } from './authErrors';
+import { messages } from './messages';
 import {
   getProgress,
   migrateLegacyStorage,
@@ -10,6 +12,10 @@ import {
   isSyncConfigured,
   PROGRESS_TABLE,
 } from './supabase';
+
+export type AuthResult = {
+  syncWarning?: string;
+};
 
 export type SyncState = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
 
@@ -284,18 +290,36 @@ async function completeAuth(userId: string, guestFallback?: UserProgress): Promi
   await syncOnLogin(guestFallback);
 }
 
-export async function signIn(email: string, password: string): Promise<void> {
+async function signInWithPassword(email: string, password: string) {
+  return withNetworkRetry(async () => {
+    const result = await getSupabase().auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (result.error && isNetworkError(result.error)) {
+      throw result.error;
+    }
+    return result;
+  });
+}
+
+export async function signIn(email: string, password: string): Promise<AuthResult> {
   const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
 
-  const { data, error } = await getSupabase().auth.signInWithPassword({
-    email,
-    password,
-  });
-  if (error) throw error;
+  const { data, error } = await signInWithPassword(email, password);
+  if (error) throw new Error(formatAuthError(error));
   const userId = data.user?.id;
-  if (!userId) throw new Error('Sign in failed');
+  if (!userId) throw new Error(messages.sync.authFailed);
 
-  await completeAuth(userId, guestFallback);
+  try {
+    await completeAuth(userId, guestFallback);
+  } catch (syncErr) {
+    const syncWarning = formatAuthError(syncErr, messages.sync.failed);
+    setStatus({ state: 'error', error: syncWarning });
+    return { syncWarning: messages.sync.signedInSyncPending };
+  }
+
+  return {};
 }
 
 export async function signUp(
@@ -303,25 +327,39 @@ export async function signUp(
   password: string,
   passwordConfirm: string,
   name: string,
-): Promise<void> {
+): Promise<AuthResult> {
   if (password !== passwordConfirm) {
     throw new Error('Passwords do not match');
   }
 
   const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
 
-  const { data, error } = await getSupabase().auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: name.trim() },
-    },
+  const { data, error } = await withNetworkRetry(async () => {
+    const result = await getSupabase().auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: { full_name: name.trim() },
+      },
+    });
+    if (result.error && isNetworkError(result.error)) {
+      throw result.error;
+    }
+    return result;
   });
-  if (error) throw error;
+  if (error) throw new Error(formatAuthError(error));
   const userId = data.user?.id;
   if (!userId) throw new Error('Account created but sign in failed');
 
-  await completeAuth(userId, guestFallback);
+  try {
+    await completeAuth(userId, guestFallback);
+  } catch (syncErr) {
+    const syncWarning = formatAuthError(syncErr, messages.sync.failed);
+    setStatus({ state: 'error', error: syncWarning });
+    return { syncWarning: messages.sync.signedInSyncPending };
+  }
+
+  return {};
 }
 
 export async function updateUserProfile(name: string): Promise<void> {
@@ -332,13 +370,19 @@ export async function updateUserProfile(name: string): Promise<void> {
 }
 
 export async function signInWithOAuth(provider: 'google' | 'facebook'): Promise<void> {
-  const { error } = await getSupabase().auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo: window.location.origin,
-    },
+  const { error } = await withNetworkRetry(async () => {
+    const result = await getSupabase().auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (result.error && isNetworkError(result.error)) {
+      throw result.error;
+    }
+    return result;
   });
-  if (error) throw error;
+  if (error) throw new Error(formatAuthError(error));
   // Session is picked up automatically by onAuthStateChange in useAuth after redirect
 }
 
