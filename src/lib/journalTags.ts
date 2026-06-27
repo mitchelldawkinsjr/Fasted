@@ -23,8 +23,10 @@ export const JOURNAL_ENTRY_TYPE_LABELS: Record<JournalEntryType, string> = {
   victory: 'Victory',
 };
 
+export const VERSE_OF_THE_DAY_LABEL = 'VERSE of the Day';
+
 export const DAILY_REFLECTION_FIELDS = [
-  { key: 'prayerFocus', label: 'Prayer point I focused on' },
+  { key: 'prayerFocus', label: VERSE_OF_THE_DAY_LABEL },
   { key: 'prayedAbout', label: 'What I prayed about' },
   { key: 'godTeaching', label: 'What God is teaching me' },
   { key: 'hungerNotes', label: 'Hunger / discipline notes' },

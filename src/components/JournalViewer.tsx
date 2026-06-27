@@ -1,5 +1,6 @@
 import { JournalTypeBadge } from './JournalTypePicker';
 import { MoodBadge } from './MoodPicker';
+import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
   DAILY_REFLECTION_FIELDS,
@@ -25,7 +26,11 @@ function DailyReflectionBody({ entry }: { entry: Extract<JournalEntry, { type: '
     <div className="space-y-stack-md">
       {filledFields.map((field) => (
         <section key={field.key}>
-          <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
+          {field.key === 'prayerFocus' ? (
+            <VerseOfTheDayLabel date={entry.date} as="heading" />
+          ) : (
+            <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
+          )}
           <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
             {entry[field.key]}
           </p>
