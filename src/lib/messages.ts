@@ -1,4 +1,4 @@
-import { formatAuthError, isNetworkError } from './authErrors';
+import { isNetworkError } from './authErrors';
 
 /** Centralized user-facing copy for consistent tone across the app. */
 export const messages = {
@@ -92,5 +92,3 @@ export function formatError(err: unknown, fallback: string): string {
   }
   return fallback;
 }
-
-export { formatAuthError };

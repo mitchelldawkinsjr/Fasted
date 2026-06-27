@@ -4,9 +4,10 @@ import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
 import { useAuth } from '../hooks/useAuth';
 import { useSyncStatus } from '../hooks/useSyncStatus';
-import { formatAuthError, formatError, messages } from '../lib/messages';
+import { formatAuthError } from '../lib/authErrors';
+import { formatError, messages } from '../lib/messages';
 import { consumeAuthReturnPath, peekAuthReturnPath, setAuthReturnPath } from '../lib/authReturnPath';
-import { signInWithOAuth, signOut, signUp, syncNow, updateUserProfile } from '../lib/sync';
+import { signIn, signInWithOAuth, signOut, signUp, syncNow, updateUserProfile } from '../lib/sync';
 import type { SyncState } from '../lib/sync';
 import { toast } from '../lib/toast';
 
@@ -42,7 +43,7 @@ function SyncStatusPill({ state }: { state: SyncState }) {
 }
 
 export function CloudSyncSection() {
-  const { isConfigured, isLoggedIn, email, name, signIn } = useAuth();
+  const { isConfigured, isLoggedIn, email, name } = useAuth();
   const syncStatus = useSyncStatus();
   const navigate = useNavigate();
   const location = useLocation();
@@ -98,15 +99,17 @@ export function CloudSyncSection() {
     try {
       if (mode === 'sign-in') {
         const result = await signIn(formEmail, password);
-        toast.success(messages.sync.signedIn);
         if (result.syncWarning) {
           toast.warning(result.syncWarning);
+        } else {
+          toast.success(messages.sync.signedIn);
         }
       } else {
         const result = await signUp(formEmail, password, passwordConfirm, profileName);
-        toast.success(messages.sync.accountCreated);
         if (result.syncWarning) {
           toast.warning(result.syncWarning);
+        } else {
+          toast.success(messages.sync.accountCreated);
         }
       }
       setPassword('');

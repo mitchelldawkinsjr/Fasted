@@ -1,14 +1,9 @@
 import type { AuthError } from '@supabase/supabase-js';
-import { messages } from './messages';
 
-const NETWORK_ERROR_PATTERNS = [
-  /^load failed$/i,
-  /^failed to fetch$/i,
-  /^networkerror/i,
-  /^network request failed$/i,
-  /^fetch failed$/i,
-  /^the internet connection appears to be offline/i,
-];
+const NETWORK_FAILED =
+  'Could not reach the server. Check your connection and try again.';
+const INVALID_CREDENTIALS = 'Incorrect email or password. Please try again.';
+const AUTH_FAILED = 'Sign in failed. Check your email and password.';
 
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message.trim();
@@ -20,48 +15,51 @@ function getErrorMessage(err: unknown): string {
 
 export function isNetworkError(err: unknown): boolean {
   if (typeof navigator !== 'undefined' && !navigator.onLine) return true;
-  const message = getErrorMessage(err);
+  const message = getErrorMessage(err).toLowerCase();
   if (!message) return false;
-  return NETWORK_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+  return (
+    message.includes('load failed') ||
+    message.includes('failed to fetch') ||
+    message.includes('network error') ||
+    message.includes('network request failed') ||
+    message.includes('fetch failed') ||
+    message.includes('offline')
+  );
 }
 
 function isInvalidCredentialsError(err: unknown): boolean {
   if (typeof err !== 'object' || err === null) return false;
   const authErr = err as AuthError;
-  if (authErr.status === 400) return true;
   const message = getErrorMessage(err).toLowerCase();
+
+  if (authErr.code === 'invalid_credentials') return true;
+
   return (
     message.includes('invalid login credentials') ||
-    message.includes('invalid email or password') ||
-    message.includes('email not confirmed')
+    message.includes('invalid email or password')
   );
 }
 
-export function formatAuthError(err: unknown, fallback?: string): string {
-  const defaultFallback = fallback ?? messages.sync.authFailed;
-
+export function formatAuthError(err: unknown, fallback = AUTH_FAILED): string {
   if (isNetworkError(err)) {
-    return messages.sync.networkFailed;
+    return NETWORK_FAILED;
   }
 
   if (isInvalidCredentialsError(err)) {
-    return messages.sync.invalidCredentials;
+    return INVALID_CREDENTIALS;
   }
 
   const message = getErrorMessage(err);
-  if (message && !NETWORK_ERROR_PATTERNS.some((pattern) => pattern.test(message))) {
+  if (message && !isNetworkError({ message })) {
     return message;
   }
 
-  return defaultFallback;
+  return fallback;
 }
 
-export async function withNetworkRetry<T>(
-  fn: () => Promise<T>,
-  options?: { attempts?: number; delayMs?: number },
-): Promise<T> {
-  const attempts = options?.attempts ?? 3;
-  const delayMs = options?.delayMs ?? 800;
+export async function withNetworkRetry<T>(fn: () => Promise<T>): Promise<T> {
+  const attempts = 3;
+  const delayMs = 800;
   let lastError: unknown;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {

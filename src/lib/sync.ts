@@ -35,6 +35,7 @@ let status: SyncStatus = {
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 let authListenerAttached = false;
+let pendingGuestMigration: UserProgress | undefined;
 
 function notify() {
   listeners.forEach((fn) => fn());
@@ -154,6 +155,16 @@ export async function pullProgressFromCloud(): Promise<UserProgress | null> {
   return normalizeProgress(record.data);
 }
 
+function clearPendingGuestMigration(): void {
+  pendingGuestMigration = undefined;
+}
+
+function rememberGuestMigration(guestFallback?: UserProgress): void {
+  if (guestFallback && hasLocalProgress(guestFallback)) {
+    pendingGuestMigration = guestFallback;
+  }
+}
+
 /** Cloud-first reconcile: newer `updatedAt` wins; guest data seeds a new account once. */
 export async function reconcileWithCloud(options?: {
   guestFallback?: UserProgress;
@@ -167,6 +178,8 @@ export async function reconcileWithCloud(options?: {
 
   setStatus({ state: 'syncing', error: null });
 
+  const guestFallback = options?.guestFallback ?? pendingGuestMigration;
+
   try {
     const local = getProgress();
     const remote = await pullProgressFromCloud();
@@ -174,11 +187,13 @@ export async function reconcileWithCloud(options?: {
     if (!remote) {
       if (hasLocalProgress(local)) {
         await pushProgressToCloud(local);
+        clearPendingGuestMigration();
         return;
       }
-      if (options?.guestFallback && hasLocalProgress(options.guestFallback)) {
-        persistFromCloud(options.guestFallback);
+      if (guestFallback && hasLocalProgress(guestFallback)) {
+        persistFromCloud(guestFallback);
         await pushProgressToCloud(getProgress());
+        clearPendingGuestMigration();
         return;
       }
       setStatus({ state: 'idle', error: null });
@@ -187,6 +202,7 @@ export async function reconcileWithCloud(options?: {
 
     if (!hasLocalProgress(local)) {
       persistFromCloud(remote);
+      clearPendingGuestMigration();
       setStatus({
         state: 'synced',
         lastSyncedAt: new Date().toISOString(),
@@ -199,9 +215,11 @@ export async function reconcileWithCloud(options?: {
       persistFromCloud(remote);
     } else {
       await pushProgressToCloud(local);
+      clearPendingGuestMigration();
       return;
     }
 
+    clearPendingGuestMigration();
     setStatus({
       state: 'synced',
       lastSyncedAt: new Date().toISOString(),
@@ -233,7 +251,7 @@ export function scheduleCloudSync(): void {
 }
 
 export async function syncNow(): Promise<void> {
-  await reconcileWithCloud();
+  await reconcileWithCloud({ guestFallback: pendingGuestMigration });
 }
 
 function attachAuthScopeListener(): void {
@@ -285,17 +303,9 @@ export function initAuthSync(): void {
   })();
 }
 
-async function completeAuth(userId: string, guestFallback?: UserProgress): Promise<void> {
-  switchStorageScope(userId);
-  await syncOnLogin(guestFallback);
-}
-
-async function signInWithPassword(email: string, password: string) {
+async function authWithRetry<T extends { error: unknown }>(call: () => Promise<T>): Promise<T> {
   return withNetworkRetry(async () => {
-    const result = await getSupabase().auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    const result = await call();
     if (result.error && isNetworkError(result.error)) {
       throw result.error;
     }
@@ -303,23 +313,35 @@ async function signInWithPassword(email: string, password: string) {
   });
 }
 
-export async function signIn(email: string, password: string): Promise<AuthResult> {
-  const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
-
-  const { data, error } = await signInWithPassword(email, password);
-  if (error) throw new Error(formatAuthError(error));
-  const userId = data.user?.id;
-  if (!userId) throw new Error(messages.sync.authFailed);
+async function completeAuthOrWarn(userId: string, guestFallback?: UserProgress): Promise<AuthResult> {
+  rememberGuestMigration(guestFallback);
+  switchStorageScope(userId);
 
   try {
-    await completeAuth(userId, guestFallback);
+    await syncOnLogin(pendingGuestMigration);
+    clearPendingGuestMigration();
+    return {};
   } catch (syncErr) {
     const syncWarning = formatAuthError(syncErr, messages.sync.failed);
     setStatus({ state: 'error', error: syncWarning });
     return { syncWarning: messages.sync.signedInSyncPending };
   }
+}
 
-  return {};
+export async function signIn(email: string, password: string): Promise<AuthResult> {
+  const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
+
+  const { data, error } = await authWithRetry(() =>
+    getSupabase().auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    }),
+  );
+  if (error) throw new Error(formatAuthError(error));
+  const userId = data.user?.id;
+  if (!userId) throw new Error(messages.sync.authFailed);
+
+  return completeAuthOrWarn(userId, guestFallback);
 }
 
 export async function signUp(
@@ -334,32 +356,20 @@ export async function signUp(
 
   const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
 
-  const { data, error } = await withNetworkRetry(async () => {
-    const result = await getSupabase().auth.signUp({
+  const { data, error } = await authWithRetry(() =>
+    getSupabase().auth.signUp({
       email: email.trim(),
       password,
       options: {
         data: { full_name: name.trim() },
       },
-    });
-    if (result.error && isNetworkError(result.error)) {
-      throw result.error;
-    }
-    return result;
-  });
+    }),
+  );
   if (error) throw new Error(formatAuthError(error));
   const userId = data.user?.id;
   if (!userId) throw new Error('Account created but sign in failed');
 
-  try {
-    await completeAuth(userId, guestFallback);
-  } catch (syncErr) {
-    const syncWarning = formatAuthError(syncErr, messages.sync.failed);
-    setStatus({ state: 'error', error: syncWarning });
-    return { syncWarning: messages.sync.signedInSyncPending };
-  }
-
-  return {};
+  return completeAuthOrWarn(userId, guestFallback);
 }
 
 export async function updateUserProfile(name: string): Promise<void> {
@@ -370,18 +380,14 @@ export async function updateUserProfile(name: string): Promise<void> {
 }
 
 export async function signInWithOAuth(provider: 'google' | 'facebook'): Promise<void> {
-  const { error } = await withNetworkRetry(async () => {
-    const result = await getSupabase().auth.signInWithOAuth({
+  const { error } = await authWithRetry(() =>
+    getSupabase().auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: window.location.origin,
       },
-    });
-    if (result.error && isNetworkError(result.error)) {
-      throw result.error;
-    }
-    return result;
-  });
+    }),
+  );
   if (error) throw new Error(formatAuthError(error));
   // Session is picked up automatically by onAuthStateChange in useAuth after redirect
 }
