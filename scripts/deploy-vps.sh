@@ -36,16 +36,9 @@ else
   exit 1
 fi
 
-if curl -fsS http://127.0.0.1:8023/api/health >/dev/null; then
-  echo "PocketBase health check passed (port 8023)"
-else
-  echo "PocketBase health check failed"
-  docker compose -f docker-compose.prod.yml logs pocketbase
-  exit 1
-fi
-
 echo "Deployment successful!"
 EOF
 
 echo ""
-echo "If first deploy, run on VPS: sudo bash ${DEPLOY_DIR}/scripts/npm-add-fasted.sh"
+echo "Ensure Supabase is running: bash ${DEPLOY_DIR}/scripts/setup-supabase-vps.sh (on VPS, first time only)"
+echo "Ensure NPM proxy: sudo bash ${DEPLOY_DIR}/scripts/npm-add-supabase.sh (on VPS)"

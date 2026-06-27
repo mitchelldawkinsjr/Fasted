@@ -6,11 +6,10 @@ import {
   switchStorageScope,
 } from './storage';
 import {
-  getPocketBase,
+  getSupabase,
   isSyncConfigured,
-  PROGRESS_COLLECTION,
-  type ProgressRecord,
-} from './pocketbase';
+  PROGRESS_TABLE,
+} from './supabase';
 
 export type SyncState = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
 
@@ -49,10 +48,11 @@ export function getSyncStatus(): SyncStatus {
   return status;
 }
 
-export function isLoggedIn(): boolean {
+export async function isLoggedIn(): Promise<boolean> {
   if (!isSyncConfigured()) return false;
   try {
-    return getPocketBase().authStore.isValid;
+    const { data } = await getSupabase().auth.getSession();
+    return !!data.session?.user;
   } catch {
     return false;
   }
@@ -79,22 +79,28 @@ function progressTimestamp(progress: UserProgress): string {
   return progress.updatedAt ?? '';
 }
 
-async function findProgressRecord(userId: string): Promise<ProgressRecord | null> {
-  const pb = getPocketBase();
-  try {
-    return await pb.collection(PROGRESS_COLLECTION).getFirstListItem<ProgressRecord>(
-      `user = "${userId}"`,
-    );
-  } catch {
-    return null;
+async function getCurrentUserId(): Promise<string | null> {
+  const { data } = await getSupabase().auth.getUser();
+  return data.user?.id ?? null;
+}
+
+async function findProgressRecord(userId: string): Promise<{ data: unknown; updated_at: string } | null> {
+  const { data, error } = await getSupabase()
+    .from(PROGRESS_TABLE)
+    .select('data, updated_at')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
   }
+  return data;
 }
 
 export async function pushProgressToCloud(data: UserProgress): Promise<void> {
-  if (!isLoggedIn()) return;
+  if (!(await isLoggedIn())) return;
 
-  const pb = getPocketBase();
-  const userId = pb.authStore.record?.id;
+  const userId = await getCurrentUserId();
   if (!userId) return;
 
   if (!navigator.onLine) {
@@ -105,14 +111,19 @@ export async function pushProgressToCloud(data: UserProgress): Promise<void> {
   setStatus({ state: 'syncing', error: null });
 
   try {
-    const existing = await findProgressRecord(userId);
-    const payload = { user: userId, data };
+    const updatedAt = data.updatedAt ?? new Date().toISOString();
+    const { error } = await getSupabase()
+      .from(PROGRESS_TABLE)
+      .upsert(
+        {
+          user_id: userId,
+          data,
+          updated_at: updatedAt,
+        },
+        { onConflict: 'user_id' },
+      );
 
-    if (existing) {
-      await pb.collection(PROGRESS_COLLECTION).update(existing.id, payload);
-    } else {
-      await pb.collection(PROGRESS_COLLECTION).create(payload);
-    }
+    if (error) throw error;
 
     setStatus({
       state: 'synced',
@@ -127,10 +138,9 @@ export async function pushProgressToCloud(data: UserProgress): Promise<void> {
 }
 
 export async function pullProgressFromCloud(): Promise<UserProgress | null> {
-  if (!isLoggedIn()) return null;
+  if (!(await isLoggedIn())) return null;
 
-  const pb = getPocketBase();
-  const userId = pb.authStore.record?.id;
+  const userId = await getCurrentUserId();
   if (!userId) return null;
 
   const record = await findProgressRecord(userId);
@@ -142,7 +152,7 @@ export async function pullProgressFromCloud(): Promise<UserProgress | null> {
 export async function reconcileWithCloud(options?: {
   guestFallback?: UserProgress;
 }): Promise<void> {
-  if (!isLoggedIn()) return;
+  if (!(await isLoggedIn())) return;
 
   if (!navigator.onLine) {
     setStatus({ state: 'offline', error: null });
@@ -203,15 +213,17 @@ export async function syncOnLogin(guestFallback?: UserProgress): Promise<void> {
 }
 
 export function scheduleCloudSync(): void {
-  if (!isLoggedIn()) return;
+  void isLoggedIn().then((loggedIn) => {
+    if (!loggedIn) return;
 
-  if (syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => {
-    syncTimer = null;
-    void pushProgressToCloud(getProgress()).catch(() => {
-      /* status updated in pushProgressToCloud */
-    });
-  }, 1500);
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      syncTimer = null;
+      void pushProgressToCloud(getProgress()).catch(() => {
+        /* status updated in pushProgressToCloud */
+      });
+    }, 1500);
+  });
 }
 
 export async function syncNow(): Promise<void> {
@@ -221,15 +233,21 @@ export async function syncNow(): Promise<void> {
 function attachAuthScopeListener(): void {
   if (!isSyncConfigured() || authListenerAttached) return;
 
-  const pb = getPocketBase();
-  pb.authStore.onChange(() => {
-    if (pb.authStore.isValid && pb.authStore.record?.id) {
-      switchStorageScope(pb.authStore.record.id);
+  const client = getSupabase();
+  client.auth.onAuthStateChange((_event, session) => {
+    if (session?.user?.id) {
+      switchStorageScope(session.user.id);
     } else {
       switchStorageScope(null);
     }
   });
   authListenerAttached = true;
+
+  void client.auth.getSession().then(({ data }) => {
+    if (data.session?.user?.id) {
+      switchStorageScope(data.session.user.id);
+    }
+  });
 }
 
 /** Call once before the app renders — restores session scope and pulls cloud data. */
@@ -242,24 +260,23 @@ export function initAuthSync(): void {
     return;
   }
 
-  const pb = getPocketBase();
+  void (async () => {
+    const { data } = await getSupabase().auth.getSession();
 
-  if (pb.authStore.isValid && pb.authStore.record?.id) {
-    switchStorageScope(pb.authStore.record.id);
-    if (navigator.onLine) {
-      void reconcileWithCloud().catch(() => {
-        /* status updated in reconcileWithCloud */
-      });
-    } else {
-      setStatus({ state: 'offline', error: null });
+    if (data.session?.user?.id) {
+      switchStorageScope(data.session.user.id);
+      if (navigator.onLine) {
+        void reconcileWithCloud().catch(() => {
+          /* status updated in reconcileWithCloud */
+        });
+      } else {
+        setStatus({ state: 'offline', error: null });
+      }
+      return;
     }
-    return;
-  }
 
-  if (pb.authStore.record && !pb.authStore.isValid) {
-    pb.authStore.clear();
-  }
-  switchStorageScope(null);
+    switchStorageScope(null);
+  })();
 }
 
 async function completeAuth(userId: string, guestFallback?: UserProgress): Promise<void> {
@@ -270,9 +287,12 @@ async function completeAuth(userId: string, guestFallback?: UserProgress): Promi
 export async function signIn(email: string, password: string): Promise<void> {
   const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
 
-  const pb = getPocketBase();
-  await pb.collection('users').authWithPassword(email, password);
-  const userId = pb.authStore.record?.id;
+  const { data, error } = await getSupabase().auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (error) throw error;
+  const userId = data.user?.id;
   if (!userId) throw new Error('Sign in failed');
 
   await completeAuth(userId, guestFallback);
@@ -284,42 +304,41 @@ export async function signUp(
   passwordConfirm: string,
   name: string,
 ): Promise<void> {
+  if (password !== passwordConfirm) {
+    throw new Error('Passwords do not match');
+  }
+
   const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
 
-  const pb = getPocketBase();
-  await pb.collection('users').create({
+  const { data, error } = await getSupabase().auth.signUp({
     email,
     password,
-    passwordConfirm,
-    name: name.trim(),
-    emailVisibility: true,
+    options: {
+      data: { full_name: name.trim() },
+    },
   });
-  await pb.collection('users').authWithPassword(email, password);
-  const userId = pb.authStore.record?.id;
+  if (error) throw error;
+  const userId = data.user?.id;
   if (!userId) throw new Error('Account created but sign in failed');
 
   await completeAuth(userId, guestFallback);
 }
 
 export async function updateUserProfile(name: string): Promise<void> {
-  const pb = getPocketBase();
-  const userId = pb.authStore.record?.id;
-  if (!userId) throw new Error('You must be signed in to update your profile.');
-
-  const updated = await pb.collection('users').update(userId, {
-    name: name.trim(),
+  const { error } = await getSupabase().auth.updateUser({
+    data: { full_name: name.trim() },
   });
-  pb.authStore.save(pb.authStore.token, updated);
+  if (error) throw error;
 }
 
-export function signOut(): void {
+export async function signOut(): Promise<void> {
   if (syncTimer) {
     clearTimeout(syncTimer);
     syncTimer = null;
   }
   switchStorageScope(null);
   if (isSyncConfigured()) {
-    getPocketBase().authStore.clear();
+    await getSupabase().auth.signOut();
   }
   setStatus({ state: 'idle', lastSyncedAt: null, error: null });
 }
