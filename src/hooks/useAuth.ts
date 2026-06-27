@@ -1,47 +1,49 @@
 import { useEffect, useState } from 'react';
-import { getPocketBase, isSyncConfigured, type UserRecord } from '../lib/pocketbase';
+import type { Session } from '@supabase/supabase-js';
+import { getSupabase, isSyncConfigured, type UserRecord } from '../lib/supabase';
+
+function sessionToUser(session: Session | null): UserRecord | null {
+  if (!session?.user) return null;
+  return {
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.user_metadata?.full_name as string | undefined,
+    createdAt: session.user.created_at,
+  };
+}
 
 export function useAuth() {
-  const [user, setUser] = useState<UserRecord | null>(() => {
-    if (!isSyncConfigured()) return null;
-    try {
-      const pb = getPocketBase();
-      return pb.authStore.isValid ? (pb.authStore.record as UserRecord | null) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    if (!isSyncConfigured()) return false;
-    try {
-      return getPocketBase().authStore.isValid;
-    } catch {
-      return false;
-    }
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    if (!isSyncConfigured()) return;
+    if (!isSyncConfigured()) {
+      setInitialized(true);
+      return;
+    }
 
-    const pb = getPocketBase();
+    const client = getSupabase();
 
-    const syncFromStore = () => {
-      const valid = pb.authStore.isValid;
-      setIsLoggedIn(valid);
-      setUser(valid ? (pb.authStore.record as UserRecord | null) : null);
-    };
+    void client.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setInitialized(true);
+    });
 
-    syncFromStore();
-    return pb.authStore.onChange(syncFromStore);
+    const { data: authListener } = client.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+    });
+
+    return () => authListener.subscription.unsubscribe();
   }, []);
+
+  const user = sessionToUser(session);
 
   return {
     user,
     isConfigured: isSyncConfigured(),
-    isLoggedIn,
+    isLoggedIn: initialized && !!session?.user,
     email: user?.email,
     name: user?.name,
-    memberSince: user?.created,
+    memberSince: user?.createdAt,
   };
 }
