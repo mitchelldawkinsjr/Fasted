@@ -22,6 +22,7 @@ const pageTitles: Record<string, string> = {
   '/progress/mood': 'Your Sacred Journey',
   '/progress/badges': 'Sacred Milestones',
   '/phases': 'Fasted Calendar',
+  '/groups': 'Your Groups',
   '/settings': 'Fasted Calendar',
 };
 
