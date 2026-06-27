@@ -7,7 +7,7 @@
 #
 # NPM Proxy Hosts:
 #   fasted.360web.cloud      → http://fasted-calendar-app:80
-#   db.fasted.360web.cloud   → http://supabase-kong:8000
+#   api.fasted.360web.cloud  → http://supabase-kong:8000 (Supabase API)
 
 name: fasted-calendar
 
@@ -17,7 +17,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-https://db.fasted.360web.cloud}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
     container_name: fasted-calendar-app
     restart: unless-stopped

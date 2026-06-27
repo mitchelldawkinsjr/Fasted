@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getPhaseById, PLAN_END, PLAN_START } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import type { DailyFastPlan } from '../types';
 import { formatDisplayDate, getAllPlanDates } from '../lib/dateUtils';
 import { Icon } from './Icon';
@@ -20,9 +20,11 @@ const FAST_TYPE_LABELS: Record<DailyFastPlan['fastType'], string> = {
 
 export function TodayFastCard({ plan }: Props) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const phase = getPhaseById(plan.phaseId);
-  const totalDays = getAllPlanDates().length;
-  const dayNumber = getAllPlanDates().findIndex((d) => d === plan.date) + 1;
+  const { phases, planStart, planEnd, journey } = useActiveJourney();
+  const phase = phases.find((p) => p.id === plan.phaseId);
+  const planDates = getAllPlanDates(journey);
+  const totalDays = planDates.length;
+  const dayNumber = planDates.findIndex((d) => d === plan.date) + 1;
 
   return (
     <section className="space-y-stack-lg animate-fade-in-up">
@@ -101,7 +103,7 @@ export function TodayFastCard({ plan }: Props) {
       </div>
 
       <p className="text-center text-label-caps text-on-surface-variant">
-        Day {dayNumber} of {totalDays} · {PLAN_START} – {PLAN_END}
+        Day {dayNumber} of {totalDays} · {planStart} – {planEnd}
       </p>
     </section>
   );
