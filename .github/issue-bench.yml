@@ -1,0 +1,17 @@
+project:
+  name: "Fasted Calendar"
+  defaultBranch: main
+agent:
+  model: composer-2.5
+  startingRef: main
+commands:
+  build: "npm run build"
+  test: "npm run test:e2e"
+prompt:
+  postImplementReminders: |
+    Leave the PR as a **draft** — do NOT run `gh pr ready`. Bugbot + Ponytail run when the PR opens (automatic via `.github/workflows/pr-review.yml`).
+    UI changes REQUIRE screenshots committed under `artifacts/issue-{N}/` and linked in the issue completion comment.
+    When the PR is opened with `Fixes #{N}`, GitHub Actions clears `agent-working` and starts review — do NOT swap labels yourself.
+    You MUST post the issue completion comment before stopping. Do not stop right after opening the PR.
+  agentStartedComment: |
+    The agent will implement the fix (PR stays draft until review bots finish), clear `agent-working` when the PR opens, post screenshots (if UI changed), and post a completion comment.

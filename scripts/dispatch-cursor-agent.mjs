@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
  * Dispatches a Cursor cloud agent to implement a GitHub issue.
- * Called from .github/workflows/issue-implement.yml when the `ready` label is applied.
+ * Synced from @issue-bench/dispatch v0.2.0 — update via issue-bench release or npx issue-bench init.
  */
 import { readFile, writeFile } from "node:fs/promises";
 import { execSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Agent, CursorAgentError } from "@cursor/sdk";
+import { loadConfig } from "./load-config.mjs";
 
 const issueNumber = process.env.ISSUE_NUMBER;
 const repo = process.env.REPO;
@@ -20,6 +21,13 @@ if (!issueNumber || !repo || !apiKey || !ghToken) {
   );
   process.exit(1);
 }
+
+const config = await loadConfig();
+const defaultBranch =
+  process.env.DEFAULT_BRANCH ||
+  config.agent.startingRef ||
+  config.project.defaultBranch ||
+  "main";
 
 const issueUrl = `https://github.com/${repo}/issues/${issueNumber}`;
 const repoUrl = `https://github.com/${repo}`;
@@ -38,6 +46,10 @@ async function ghIssueComment(body) {
   gh(`issue comment ${issueNumber} --repo ${repo} --body-file ${tmp}`);
 }
 
+function applyTemplate(template, vars) {
+  return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`);
+}
+
 const issue = JSON.parse(
   gh(`issue view ${issueNumber} --repo ${repo} --json title,body,labels,comments`)
 );
@@ -48,6 +60,10 @@ const commentBodies = (issue.comments ?? [])
   .map((c) => c.body)
   .filter(Boolean)
   .join("\n\n---\n\n");
+
+const reminders = applyTemplate(config.prompt.postImplementReminders, {
+  N: issueNumber,
+});
 
 const prompt = `${context}
 
@@ -68,19 +84,21 @@ ${commentBodies || "(no comments yet — read the issue body carefully)"}
 Implement this issue now.
 
 **Critical reminders:**
-- Leave the PR as a **draft** — do NOT run \`gh pr ready\`. Bugbot + Ponytail run when \`pr-opened\` is applied (automatic on PR open).
-- UI changes REQUIRE screenshots committed under \`artifacts/issue-${issueNumber}/\` and linked in the issue completion comment.
-- When the PR is opened with \`Fixes #${issueNumber}\`, GitHub Actions clears \`agent-working\` and starts review — do NOT swap labels yourself.
-- You MUST post the issue completion comment before stopping. Do not stop right after opening the PR.
+${reminders
+  .split("\n")
+  .map((line) => (line.startsWith("-") ? line : `- ${line}`))
+  .join("\n")}
 `;
+
+const { agentWorking, agentFailed, ready } = config.labels;
 
 let agent;
 try {
   agent = await Agent.create({
     apiKey,
-    model: { id: "composer-2.5" },
+    model: { id: config.agent.model },
     cloud: {
-      repos: [{ url: repoUrl, startingRef: "main" }],
+      repos: [{ url: repoUrl, startingRef: defaultBranch }],
       autoCreatePR: true,
       skipReviewerRequest: true,
       envVars: {
@@ -111,19 +129,19 @@ try {
 - **Run ID:** \`${run.id}\`
 - **Track progress:** [cursor.com/agents](https://cursor.com/agents)
 
-The agent will implement the fix (PR stays draft until review bots finish), clear \`agent-working\` when the PR opens, post screenshots (if UI changed), and post a completion comment.`
+${config.prompt.agentStartedComment}`
   );
 } catch (err) {
   if (err instanceof CursorAgentError) {
     console.error("Failed to start cloud agent:", err.message);
     try {
       gh(
-        `issue edit ${issueNumber} --repo ${repo} --remove-label agent-working --add-label agent-failed --add-label ready`
+        `issue edit ${issueNumber} --repo ${repo} --remove-label ${agentWorking} --add-label ${agentFailed} --add-label ${ready}`
       );
       await ghIssueComment(
         `❌ Cursor cloud agent **failed to start**: ${err.message}
 
-Re-add the \`ready\` label after fixing the blocker (API key, repo access, etc.).`
+Re-add the \`${ready}\` label after fixing the blocker (API key, repo access, etc.).`
       );
     } catch (ghErr) {
       console.error("Failed to update issue after agent error:", ghErr);
