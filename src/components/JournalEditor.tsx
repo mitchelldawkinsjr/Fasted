@@ -11,9 +11,10 @@ import {
   FITNESS_JOURNAL_LABEL,
   FOOD_JOURNAL_FIELDS,
   JOURNAL_ENTRY_TYPE_LABELS,
-  isContentSimpleJournalEntry,
-  isContentSimpleJournalType,
   isDailyReflectionEntry,
+  isSingleContentJournalEntry,
+  isSingleContentJournalType,
+  joinTrimmedValues,
 } from '../lib/journalTags';
 import { formatError, messages } from '../lib/messages';
 import { createJournalEntryId, saveJournalEntry } from '../lib/storage';
@@ -34,10 +35,6 @@ type Props = {
   onCancel?: () => void;
 };
 
-function joinTrimmed(values: string[]): string {
-  return values.map((value) => value.trim()).filter(Boolean).join('\n\n');
-}
-
 export function JournalEditor({ entry, defaultDate, initialType, onSave, onCancel }: Props) {
   const { planStart, planEnd } = useActiveJourney();
   const initialDate = clampDateToPlan(entry?.date ?? defaultDate ?? getDefaultJournalDate());
@@ -49,11 +46,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     entry && isDailyReflectionEntry(entry) ? entry.dayMood ?? null : null,
   );
   const [content, setContent] = useState(
-    entry && isContentSimpleJournalEntry(entry)
-      ? entry.content
-      : entry?.type === 'fitness'
-        ? entry.content
-        : '',
+    entry && isSingleContentJournalEntry(entry) ? entry.content : '',
   );
   const [breakfast, setBreakfast] = useState(entry?.type === 'food' ? entry.breakfast : '');
   const [lunch, setLunch] = useState(entry?.type === 'food' ? entry.lunch : '');
@@ -89,7 +82,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
   const getPreservedText = (): string => {
     if (entryType === 'daily-reflection') {
-      return joinTrimmed([
+      return joinTrimmedValues([
         prayerFocus,
         prayedAbout,
         godTeaching,
@@ -99,7 +92,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       ]);
     }
     if (entryType === 'food') {
-      return joinTrimmed([breakfast, lunch, dinner, snack]);
+      return joinTrimmedValues([breakfast, lunch, dinner, snack]);
     }
     return content.trim();
   };
@@ -107,7 +100,10 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   const handleTypeChange = (nextType: JournalEntryType) => {
     if (nextType === entryType) return;
 
-    const preservedText = getPreservedText();
+    let preservedText = getPreservedText();
+    if (entryType === 'daily-reflection' && !preservedText) {
+      preservedText = content.trim();
+    }
 
     if (nextType === 'daily-reflection') {
       setDayMood(null);
@@ -121,10 +117,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       clearSimpleFields();
       if (nextType === 'food' && preservedText) {
         setBreakfast(preservedText);
-      } else if (
-        (isContentSimpleJournalType(nextType) || nextType === 'fitness') &&
-        preservedText
-      ) {
+      } else if (isSingleContentJournalType(nextType) && preservedText) {
         setContent(preservedText);
       }
     }
@@ -140,12 +133,11 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       return;
     }
 
-    const hasSimpleContent =
-      isContentSimpleJournalType(entryType) || entryType === 'fitness'
-        ? content.trim().length > 0
-        : entryType === 'food'
-          ? [breakfast, lunch, dinner, snack].some((value) => value.trim().length > 0)
-          : false;
+    const hasSimpleContent = isSingleContentJournalType(entryType)
+      ? content.trim().length > 0
+      : entryType === 'food'
+        ? [breakfast, lunch, dinner, snack].some((value) => value.trim().length > 0)
+        : false;
 
     if (entryType !== 'daily-reflection' && !hasSimpleContent) {
       toast.error(messages.errors.journalContentRequired);

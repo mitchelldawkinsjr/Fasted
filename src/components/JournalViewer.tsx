@@ -8,8 +8,8 @@ import {
   FITNESS_JOURNAL_LABEL,
   FOOD_JOURNAL_FIELDS,
   JOURNAL_ENTRY_TYPE_LABELS,
-  isContentSimpleJournalEntry,
   isDailyReflectionEntry,
+  isSingleContentJournalEntry,
 } from '../lib/journalTags';
 import type { JournalEntry } from '../types';
 
@@ -102,7 +102,7 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
         />
       ) : entry.type === 'food' ? (
         <FieldListBody fields={FOOD_JOURNAL_FIELDS} getValue={(key) => entry[key]} />
-      ) : (isContentSimpleJournalEntry(entry) || entry.type === 'fitness') && entry.content.trim() ? (
+      ) : isSingleContentJournalEntry(entry) && entry.content.trim() ? (
         <section>
           <h3 className="mb-1 text-body-md font-medium text-on-surface">{simpleContentLabel}</h3>
           <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">

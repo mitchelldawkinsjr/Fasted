@@ -80,6 +80,12 @@ export function isContentSimpleJournalType(value: string): value is ContentSimpl
   return CONTENT_SIMPLE_JOURNAL_TYPES.includes(value as ContentSimpleJournalType);
 }
 
+export function isSingleContentJournalType(
+  value: string,
+): value is ContentSimpleJournalType | 'fitness' {
+  return isContentSimpleJournalType(value) || value === 'fitness';
+}
+
 export function isJournalEntryType(value: string): value is JournalEntryType {
   return JOURNAL_ENTRY_TYPES.includes(value as JournalEntryType);
 }
@@ -94,6 +100,16 @@ export function isContentSimpleJournalEntry(
   entry: JournalEntry,
 ): entry is JournalEntry & { type: ContentSimpleJournalType; content: string } {
   return isContentSimpleJournalType(entry.type);
+}
+
+export function isSingleContentJournalEntry(
+  entry: JournalEntry,
+): entry is JournalEntry & { content: string } {
+  return isSingleContentJournalType(entry.type);
+}
+
+export function joinTrimmedValues(values: string[]): string {
+  return values.map((value) => value.trim()).filter(Boolean).join('\n\n');
 }
 
 const DAILY_REFLECTION_FIELD_KEYS = DAILY_REFLECTION_FIELDS.map((field) => field.key);
@@ -144,17 +160,13 @@ function readFoodJournalFields(raw: LegacyJournalRecord) {
 }
 
 function joinFilledFoodFields(fields: ReturnType<typeof readFoodJournalFields>): string {
-  return FOOD_JOURNAL_FIELD_KEYS.map((key) => fields[key].trim())
-    .filter(Boolean)
-    .join('\n\n');
+  return joinTrimmedValues(FOOD_JOURNAL_FIELD_KEYS.map((key) => fields[key]));
 }
 
 function joinFilledReflectionFields(
   fields: ReturnType<typeof readDailyReflectionFields>,
 ): string {
-  return DAILY_REFLECTION_FIELD_KEYS.map((key) => fields[key].trim())
-    .filter(Boolean)
-    .join('\n\n');
+  return joinTrimmedValues(DAILY_REFLECTION_FIELD_KEYS.map((key) => fields[key]));
 }
 
 function normalizeLegacyTags(raw: LegacyJournalRecord): SimpleJournalType[] {
@@ -243,10 +255,14 @@ export function normalizeJournalEntry(raw: unknown): JournalEntry {
       };
     }
     if (legacyType === 'food') {
+      const foodFields = readFoodJournalFields(record);
+      if (!joinFilledFoodFields(foodFields)) {
+        foodFields.breakfast = joinFilledReflectionFields(reflectionFields);
+      }
       return {
         ...base,
         type: 'food',
-        ...readFoodJournalFields(record),
+        ...foodFields,
       };
     }
     if (legacyType === 'fitness') {
