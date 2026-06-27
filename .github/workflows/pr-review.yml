@@ -227,6 +227,7 @@ jobs:
     permissions:
       issues: write
       pull-requests: write
+      contents: write
 
     steps:
       - name: Update issue review labels and mark PR ready
