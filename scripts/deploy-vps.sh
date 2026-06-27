@@ -52,7 +52,9 @@ echo ".env written (VITE_SUPABASE_URL=$API_URL)"
 # Pass vars directly to docker compose — belt-and-suspenders.
 VITE_SUPABASE_URL="$API_URL" \
 VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
-docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml build --no-cache \
+  --build-arg VITE_SUPABASE_URL="$API_URL" \
+  --build-arg VITE_SUPABASE_ANON_KEY="$ANON_KEY"
 
 VITE_SUPABASE_URL="$API_URL" \
 VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
