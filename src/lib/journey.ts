@@ -1,5 +1,39 @@
 import { FASTED_JOURNEY, getTemplateById } from '../data/phaseTemplates';
-import type { FastPhase, Journey, UserProgress } from '../types';
+import type { FastPhase, Journey, JourneyPhase, UserProgress } from '../types';
+
+function isValidJourneyPhase(phase: JourneyPhase): boolean {
+  return (
+    typeof phase?.templateId === 'string' &&
+    phase.templateId.length > 0 &&
+    typeof phase.order === 'number' &&
+    Boolean(getTemplateById(phase.templateId))
+  );
+}
+
+export function isValidJourney(journey: Journey | undefined | null): journey is Journey {
+  return Boolean(
+    journey?.id &&
+      typeof journey.name === 'string' &&
+      journey.name.length > 0 &&
+      typeof journey.startDate === 'string' &&
+      /^\d{4}-\d{2}-\d{2}$/.test(journey.startDate) &&
+      Array.isArray(journey.phases) &&
+      journey.phases.some(isValidJourneyPhase),
+  );
+}
+
+export function normalizeJourneys(
+  journeys: Journey[] | undefined,
+  activeJourneyId?: string,
+): Pick<UserProgress, 'journeys' | 'activeJourneyId'> {
+  const valid = (journeys ?? []).filter(isValidJourney);
+  const normalized = valid.length > 0 ? valid : [FASTED_JOURNEY];
+  const activeId =
+    activeJourneyId && normalized.some((j) => j.id === activeJourneyId)
+      ? activeJourneyId
+      : normalized[0].id;
+  return { journeys: normalized, activeJourneyId: activeId };
+}
 
 function addDays(dateStr: string, count: number): string {
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -24,8 +58,9 @@ export type PhaseContext = {
 };
 
 export function getActiveJourney(progress: UserProgress): Journey {
-  const found = progress.journeys.find((j) => j.id === progress.activeJourneyId);
-  return found ?? progress.journeys[0] ?? FASTED_JOURNEY;
+  const { journeys, activeJourneyId } = normalizeJourneys(progress.journeys, progress.activeJourneyId);
+  const found = journeys.find((j) => j.id === activeJourneyId);
+  return found ?? journeys[0] ?? FASTED_JOURNEY;
 }
 
 export function getJourneyPhaseWindows(journey: Journey): PhaseWindow[] {

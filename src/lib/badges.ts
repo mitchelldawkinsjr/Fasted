@@ -69,6 +69,10 @@ function getEarnedBadgeMap(): Map<string, Badge> {
   return map;
 }
 
+function getPhaseByLegacyId(phaseId: number) {
+  return getPhases().find((p) => p.id === phaseId);
+}
+
 function getGlobalBadgeProgress(def: GlobalBadgeDef, today: string): number {
   const progress = getProgress();
 
@@ -82,7 +86,8 @@ function getGlobalBadgeProgress(def: GlobalBadgeDef, today: string): number {
     case 'journal':
       return progress.journalEntries.length;
     case 'plan-finish': {
-      const phase8 = getPhases().find((p) => p.id === 8)!;
+      const phase8 = getPhaseByLegacyId(8);
+      if (!phase8) return 0;
       return getMilestoneProgress(
         { id: 'phase-8-milestone-21', phaseId: 8, threshold: 21, metric: 'phase-check-ins', title: '', description: '' },
         phase8.startDate,
@@ -117,19 +122,22 @@ export function getAllBadgeDefinitions(today: string): BadgeProgress[] {
     };
   });
 
-  const phaseBadges: BadgeProgress[] = PHASE_MILESTONES.map((milestone) => {
-    const phase = getPhases().find((p) => p.id === milestone.phaseId)!;
+  const phaseBadges: BadgeProgress[] = PHASE_MILESTONES.flatMap((milestone) => {
+    const phase = getPhaseByLegacyId(milestone.phaseId);
+    if (!phase) return [];
     const stored = earned.get(milestone.id);
     const current = getMilestoneProgress(milestone, phase.startDate, phase.endDate);
     const target = getMilestoneTarget(milestone, phase.startDate, phase.endDate);
     const autoEarned = isMilestoneEarned(milestone, phase.startDate, phase.endDate);
-    return {
-      ...buildPhaseBadge(milestone),
-      earnedAt: stored?.earnedAt ?? (autoEarned ? today : undefined),
-      current,
-      target,
-      earned: Boolean(stored?.earnedAt) || autoEarned,
-    };
+    return [
+      {
+        ...buildPhaseBadge(milestone),
+        earnedAt: stored?.earnedAt ?? (autoEarned ? today : undefined),
+        current,
+        target,
+        earned: Boolean(stored?.earnedAt) || autoEarned,
+      },
+    ];
   });
 
   return [...globalBadges, ...phaseBadges];
@@ -221,7 +229,8 @@ export function evaluateBadges(today: string): Badge[] {
   }
 
   for (const milestone of PHASE_MILESTONES) {
-    const phase = getPhases().find((p) => p.id === milestone.phaseId)!;
+    const phase = getPhaseByLegacyId(milestone.phaseId);
+    if (!phase) continue;
     if (isMilestoneEarned(milestone, phase.startDate, phase.endDate)) {
       add(buildPhaseBadge(milestone));
     }

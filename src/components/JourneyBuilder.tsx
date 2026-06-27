@@ -80,15 +80,18 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
 
+  const backButtonClass =
+    'flex-1 rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface';
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 sm:items-center">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-4">
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface-container-lowest shadow-grace-up"
+        className="flex max-h-[min(90vh,calc(100dvh-6rem))] w-full max-w-lg flex-col rounded-2xl bg-surface-container-lowest shadow-grace-up sm:max-h-[90vh]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="journey-builder-title"
       >
-        <div className="flex items-center justify-between border-b border-surface-variant px-gutter py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-surface-variant px-gutter py-4">
           <h2 id="journey-builder-title" className="font-display text-headline-md text-primary">
             {title ?? 'Create Journey'}
           </h2>
@@ -97,28 +100,18 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
           </button>
         </div>
 
-        <div className="space-y-4 p-gutter">
+        <div className="min-h-0 flex-1 overflow-y-auto p-gutter">
           {step === 0 && (
-            <>
-              <label className="block">
-                <span className="mb-1 block text-body-md text-on-surface">Journey name</span>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Summer Consecration"
-                  className={inputClass}
-                />
-              </label>
-              <LoadingButton
-                type="button"
-                disabled={!name.trim()}
-                onClick={() => setStep(1)}
-                className="w-full"
-              >
-                Next
-              </LoadingButton>
-            </>
+            <label className="block">
+              <span className="mb-1 block text-body-md text-on-surface">Journey name</span>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Summer Consecration"
+                className={inputClass}
+              />
+            </label>
           )}
 
           {step === 1 && (
@@ -126,7 +119,7 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
               <p className="text-body-md text-on-surface-variant">
                 Choose phases and reorder. At least one phase is required.
               </p>
-              <ul className="space-y-2">
+              <ul className="mt-4 space-y-2">
                 {selected.map((templateId) => {
                   const template = PHASE_TEMPLATES.find((t) => t.id === templateId);
                   if (!template) return null;
@@ -163,7 +156,7 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
                   );
                 })}
               </ul>
-              <div className="flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 {PHASE_TEMPLATES.filter((t) => !selected.includes(t.id)).map((template) => (
                   <button
                     key={template.id}
@@ -175,42 +168,19 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
                   </button>
                 ))}
               </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setStep(0)} className="flex-1 rounded-xl bg-surface-container px-4 py-3">
-                  Back
-                </button>
-                <LoadingButton
-                  type="button"
-                  disabled={selected.length === 0}
-                  onClick={() => setStep(2)}
-                  className="flex-1"
-                >
-                  Next
-                </LoadingButton>
-              </div>
             </>
           )}
 
           {step === 2 && (
-            <>
-              <label className="block">
-                <span className="mb-1 block text-body-md text-on-surface">Start date</span>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className={inputClass}
-                />
-              </label>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setStep(1)} className="flex-1 rounded-xl bg-surface-container px-4 py-3">
-                  Back
-                </button>
-                <LoadingButton type="button" onClick={() => setStep(3)} className="flex-1">
-                  Review
-                </LoadingButton>
-              </div>
-            </>
+            <label className="block">
+              <span className="mb-1 block text-body-md text-on-surface">Start date</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className={inputClass}
+              />
+            </label>
           )}
 
           {step === 3 && draftJourney && (
@@ -218,7 +188,7 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
               <p className="text-body-md text-on-surface">
                 <strong>{draftJourney.name}</strong> starts {formatDisplayDate(startDate)}.
               </p>
-              <ul className="space-y-2">
+              <ul className="mt-4 space-y-2">
                 {windows.map((window) => {
                   const template = PHASE_TEMPLATES.find((t) => t.id === window.templateId);
                   return (
@@ -229,15 +199,58 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
                   );
                 })}
               </ul>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setStep(2)} className="flex-1 rounded-xl bg-surface-container px-4 py-3">
-                  Back
-                </button>
-                <LoadingButton type="button" loading={busy} onClick={() => void handleConfirm()} className="flex-1">
-                  {confirmLabel ?? 'Start Journey'}
-                </LoadingButton>
-              </div>
             </>
+          )}
+        </div>
+
+        <div className="shrink-0 border-t border-surface-variant p-gutter pb-[env(safe-area-inset-bottom)]">
+          {step === 0 && (
+            <LoadingButton
+              type="button"
+              disabled={!name.trim()}
+              onClick={() => setStep(1)}
+              className="w-full"
+            >
+              Next
+            </LoadingButton>
+          )}
+
+          {step === 1 && (
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setStep(0)} className={backButtonClass}>
+                Back
+              </button>
+              <LoadingButton
+                type="button"
+                disabled={selected.length === 0}
+                onClick={() => setStep(2)}
+                className="flex-1"
+              >
+                Next
+              </LoadingButton>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setStep(1)} className={backButtonClass}>
+                Back
+              </button>
+              <LoadingButton type="button" onClick={() => setStep(3)} className="flex-1">
+                Review
+              </LoadingButton>
+            </div>
+          )}
+
+          {step === 3 && draftJourney && (
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setStep(2)} className={backButtonClass}>
+                Back
+              </button>
+              <LoadingButton type="button" loading={busy} onClick={() => void handleConfirm()} className="flex-1">
+                {confirmLabel ?? 'Start Journey'}
+              </LoadingButton>
+            </div>
           )}
         </div>
       </div>

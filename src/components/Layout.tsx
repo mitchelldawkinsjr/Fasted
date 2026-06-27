@@ -6,6 +6,7 @@ import { ConfirmModal } from './ConfirmModal';
 import { InstallPromptToast } from './InstallPromptToast';
 import { SyncToastWatcher } from './SyncToastWatcher';
 import { ToastHost } from './ToastHost';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 
 const navItems = [
   { to: '/', label: 'Today', icon: 'today' },
@@ -31,7 +32,11 @@ const pageTitles: Record<string, string> = {
 
 export function Layout() {
   const { pathname } = useLocation();
-  const title = pageTitles[pathname] ?? DEFAULT_HEADER_TITLE;
+  const { journey } = useActiveJourney();
+  const pageTitle = pageTitles[pathname] ?? DEFAULT_HEADER_TITLE;
+  const journeyAwarePaths = new Set(['/', '/calendar', '/phases', '/progress']);
+  const title =
+    journeyAwarePaths.has(pathname) && !journey.isDefault ? journey.name : pageTitle;
 
   return (
     <div className="relative mx-auto min-h-screen max-w-lg pb-[calc(4.75rem+env(safe-area-inset-bottom))]">

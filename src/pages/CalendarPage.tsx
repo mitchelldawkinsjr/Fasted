@@ -7,28 +7,30 @@ import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 
 export function CalendarPage() {
   const today = getLocalDateString();
-  const { phases, planStart, planEnd } = useActiveJourney();
+  const { journey, phases, planStart, planEnd } = useActiveJourney();
   const beforePlan = today < planStart;
   const afterPlan = today > planEnd;
+  const phaseLinkLabel =
+    phases.length === 1 ? 'View Phase' : `View ${phases.length} Phases`;
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
       {beforePlan && (
         <InfoBanner variant="preview" icon="event_upcoming">
-          Your journey begins {formatDisplayDate(planStart)}. Browse the full timeline below.
+          {journey.name} begins {formatDisplayDate(planStart)}. Browse the full timeline below.
         </InfoBanner>
       )}
       {afterPlan && (
         <InfoBanner variant="preview" icon="history">
-          The fasting plan ended {formatDisplayDate(planEnd)}. Your timeline remains here.
+          {journey.name} ended {formatDisplayDate(planEnd)}. Your timeline remains here.
         </InfoBanner>
       )}
 
       <section>
-        <h2 className="font-display text-headline-lg-mobile text-primary">Sacred Timeline</h2>
+        <h2 className="font-display text-headline-lg-mobile text-primary">{journey.name}</h2>
         <p className="mt-2 max-w-md text-body-md text-on-surface-variant">
-          Your path of discipline and renewal from {formatDisplayDate(planStart)} to{' '}
-          {formatDisplayDate(planEnd)}.
+          {phases.length} {phases.length === 1 ? 'phase' : 'phases'} from{' '}
+          {formatDisplayDate(planStart)} to {formatDisplayDate(planEnd)}.
         </p>
       </section>
 
@@ -56,7 +58,7 @@ export function CalendarPage() {
       <CalendarGrid />
 
       <Link to="/phases" className="btn-stitch-secondary block text-center">
-        View The 8 Phases
+        {phaseLinkLabel}
       </Link>
     </div>
   );

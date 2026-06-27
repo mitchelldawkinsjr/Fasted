@@ -10,25 +10,26 @@ function formatPhaseDates(startDate: string, endDate: string): string {
 }
 
 export function PhasesPage() {
-  const { phases } = useActiveJourney();
+  const { journey, phases, planStart, planEnd } = useActiveJourney();
+  const phaseCountLabel = phases.length === 1 ? '1 phase' : `${phases.length} phases`;
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
       <section>
-        <h2 className="font-display text-headline-lg-mobile text-primary">
-          The 8 Spiritual Phases
-        </h2>
+        <h2 className="font-display text-headline-lg-mobile text-primary">{journey.name}</h2>
         <p className="mt-2 max-w-2xl text-body-md text-on-surface-variant">
-          Journey through the sacred rhythms of self-denial and spiritual awakening. Each phase
-          is a step closer to divine clarity.
+          {phaseCountLabel} from {formatDisplayDate(planStart)} to {formatDisplayDate(planEnd)}.
+          Each phase is a step in your chosen path of discipline and renewal.
         </p>
       </section>
 
-      <img
-        src="/assets/fasting-plan-all-phases.png"
-        alt="Full overview of all eight fasting phases"
-        className="w-full rounded-xl grace-shadow"
-      />
+      {journey.isDefault && (
+        <img
+          src="/assets/fasting-plan-all-phases.png"
+          alt="Full overview of all fasting phases"
+          className="w-full rounded-xl grace-shadow"
+        />
+      )}
 
       <div className="space-y-stack-md">
         {phases.map((phase) => (

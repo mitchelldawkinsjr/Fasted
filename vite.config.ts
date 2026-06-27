@@ -7,7 +7,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['assets/**/*'],
+      // Root icons only — globPatterns below already precaches public/assets/**.
+      includeAssets: ['favicon.ico', 'favicon-32x32.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'Fasted Calendar',
         short_name: 'Fasted',

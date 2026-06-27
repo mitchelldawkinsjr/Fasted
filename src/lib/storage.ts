@@ -7,6 +7,7 @@ import type {
   UserProgress,
 } from '../types';
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
+import { normalizeJourneys } from './journey';
 import { getDayMoodLabel } from './dayMood';
 import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
@@ -75,17 +76,15 @@ function loadRaw(): UserProgress {
     if (!raw) return { ...DEFAULT_PROGRESS };
     const parsed = JSON.parse(raw) as UserProgress;
     const journalEntries = normalizeJournalEntries(parsed.journalEntries ?? []);
+    const { journeys, activeJourneyId } = normalizeJourneys(parsed.journeys, parsed.activeJourneyId);
     const progress: UserProgress = {
       ...DEFAULT_PROGRESS,
       ...parsed,
       checkInStreak: parsed.checkInStreak ?? 0,
       journalEntries,
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
-      journeys:
-        Array.isArray(parsed.journeys) && parsed.journeys.length > 0
-          ? parsed.journeys
-          : [FASTED_JOURNEY],
-      activeJourneyId: parsed.activeJourneyId ?? FASTED_JOURNEY.id,
+      journeys,
+      activeJourneyId,
     };
 
     const needsJournalMigration = (parsed.journalEntries ?? []).some(journalEntryNeedsMigration);
@@ -137,15 +136,15 @@ function persist(data: UserProgress, options?: { skipCloudSync?: boolean }) {
 
 /** Restore progress from cloud without triggering an upload. */
 export function persistFromCloud(data: UserProgress): void {
+  const { journeys, activeJourneyId } = normalizeJourneys(data.journeys, data.activeJourneyId);
   const normalized: UserProgress = {
     ...DEFAULT_PROGRESS,
     ...data,
     checkInStreak: data.checkInStreak ?? 0,
     journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
     settings: { ...DEFAULT_SETTINGS, ...data.settings },
-    journeys:
-      Array.isArray(data.journeys) && data.journeys.length > 0 ? data.journeys : [FASTED_JOURNEY],
-    activeJourneyId: data.activeJourneyId ?? FASTED_JOURNEY.id,
+    journeys,
+    activeJourneyId,
   };
   cache = normalized;
   localStorage.setItem(getActiveStorageKey(), JSON.stringify(normalized));

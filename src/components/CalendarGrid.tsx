@@ -9,8 +9,9 @@ const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export function CalendarGrid() {
   const navigate = useNavigate();
-  const { phases } = useActiveJourney();
-  const dates = getAllPlanDates();
+  const { journey, phases } = useActiveJourney();
+  const dates = getAllPlanDates(journey);
+  const accentColor = phases[0]?.themeColor;
 
   const months: { label: string; cells: (string | null)[] }[] = [];
   let currentMonth = '';
@@ -42,7 +43,8 @@ export function CalendarGrid() {
       {months.map((month) => (
         <section
           key={month.label}
-          className="stitch-card overflow-hidden border-l-4 border-phase-1 p-6"
+          className="stitch-card overflow-hidden border-l-4 p-6"
+          style={accentColor ? { borderLeftColor: accentColor } : undefined}
         >
           <div className="mb-6 flex items-center justify-between">
             <h3 className="font-display text-headline-md text-primary">{month.label}</h3>
@@ -60,8 +62,8 @@ export function CalendarGrid() {
             {month.cells.map((date, idx) => {
               if (!date) return <div key={`blank-${month.label}-${idx}`} />;
 
-              const plan = getDailyPlan(date);
-              const phaseId = plan?.phaseId ?? 1;
+              const plan = getDailyPlan(date, journey);
+              const phaseId = plan?.phaseId ?? phases[0]?.id;
               const phase = phases.find((p) => p.id === phaseId);
               const checkIn = getCheckIn(date);
               const dayNum = parseLocalDate(date).getDate();
