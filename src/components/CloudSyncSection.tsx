@@ -4,6 +4,7 @@ import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
 import { useAuth } from '../hooks/useAuth';
 import { useSyncStatus } from '../hooks/useSyncStatus';
+import { formatAuthError } from '../lib/authErrors';
 import { formatError, messages } from '../lib/messages';
 import { consumeAuthReturnPath, peekAuthReturnPath, setAuthReturnPath } from '../lib/authReturnPath';
 import { signIn, signInWithOAuth, signOut, signUp, syncNow, updateUserProfile } from '../lib/sync';
@@ -97,18 +98,26 @@ export function CloudSyncSection() {
     setBusy(true);
     try {
       if (mode === 'sign-in') {
-        await signIn(formEmail, password);
-        toast.success(messages.sync.signedIn);
+        const result = await signIn(formEmail, password);
+        if (result.syncWarning) {
+          toast.warning(result.syncWarning);
+        } else {
+          toast.success(messages.sync.signedIn);
+        }
       } else {
-        await signUp(formEmail, password, passwordConfirm, profileName);
-        toast.success(messages.sync.accountCreated);
+        const result = await signUp(formEmail, password, passwordConfirm, profileName);
+        if (result.syncWarning) {
+          toast.warning(result.syncWarning);
+        } else {
+          toast.success(messages.sync.accountCreated);
+        }
       }
       setPassword('');
       setPasswordConfirm('');
       setProfileName('');
       redirectAfterAuth();
     } catch (err) {
-      toast.error(formatError(err, messages.sync.authFailed));
+      toast.error(formatAuthError(err, messages.sync.authFailed));
     } finally {
       setBusy(false);
     }
@@ -154,7 +163,7 @@ export function CloudSyncSection() {
       await signInWithOAuth(provider);
       // Page will redirect; AuthReturnRedirect handles return path after OAuth
     } catch (err) {
-      toast.error(formatError(err, messages.sync.oauthFailed));
+      toast.error(formatAuthError(err, messages.sync.oauthFailed));
       setBusy(false);
     }
   };

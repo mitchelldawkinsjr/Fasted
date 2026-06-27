@@ -14,6 +14,10 @@ export default defineConfig({
     command: 'npm run dev -- --host 127.0.0.1 --port 5173',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
+    env: {
+      VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? 'https://auth.test.invalid',
+      VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY ?? 'test-anon-key',
+    },
   },
   projects: [
     {
