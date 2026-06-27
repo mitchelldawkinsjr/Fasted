@@ -1,24 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Icon } from './Icon';
 
-const LOGO_SRC = '/assets/logo.png';
-
 type Props = {
   title?: string;
   showPhasesLink?: boolean;
 };
-
-function BrandLogo() {
-  return (
-    <img
-      src={LOGO_SRC}
-      alt="Fasted"
-      width={36}
-      height={36}
-      className="h-9 w-9 shrink-0 rounded-lg object-cover"
-    />
-  );
-}
 
 export function AppHeader({ title = 'Fasted Calendar', showPhasesLink = true }: Props) {
   return (
@@ -26,12 +12,12 @@ export function AppHeader({ title = 'Fasted Calendar', showPhasesLink = true }: 
       <div className="flex min-w-0 items-center gap-stack-sm">
         {showPhasesLink ? (
           <Link to="/phases" className="flex min-w-0 items-center gap-stack-sm text-primary transition-opacity hover:opacity-80">
-            <BrandLogo />
+            <Icon name="menu_book" />
             <h1 className="truncate font-display text-headline-md text-primary">{title}</h1>
           </Link>
         ) : (
           <>
-            <BrandLogo />
+            <Icon name="menu_book" className="text-primary" />
             <h1 className="truncate font-display text-headline-md text-primary">{title}</h1>
           </>
         )}

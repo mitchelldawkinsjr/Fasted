@@ -19,13 +19,7 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: '/icon-512.png',
+            src: '/assets/phases/phase-01-daniel-1-fast-pattern.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
