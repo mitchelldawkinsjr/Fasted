@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon';
 import { PhaseMoodChart } from '../components/PhaseMoodChart';
 import { MoodPhaseGrid } from '../components/mood-visualizer/MoodPhaseGrid';
 import { MoodWheel } from '../components/mood-visualizer/MoodWheel';
-import { FAST_PHASES } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import {
   clampMonthKey,
   formatMonthLabel,
@@ -20,6 +20,7 @@ type ViewMode = 'monthly' | 'phase';
 export function MoodVisualizerPage() {
   const [searchParams] = useSearchParams();
   const today = getLocalDateString();
+  const { phases } = useActiveJourney();
   const planMonths = useMemo(() => getPlanMonths(), []);
   const monthParam = searchParams.get('month');
   const initialMonth = clampMonthKey(
@@ -141,7 +142,7 @@ export function MoodVisualizerPage() {
 
           <section className="space-y-stack-md">
             <h3 className="label-caps text-on-surface-variant">Mood breakdown by phase</h3>
-            {FAST_PHASES.map((phase) => {
+            {phases.map((phase) => {
               const summary = getPhaseMoodSummary(phase.startDate, phase.endDate, today);
               if (summary.total === 0) return null;
               return (

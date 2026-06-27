@@ -5,8 +5,14 @@ set -euo pipefail
 
 SUPABASE_DIR="${SUPABASE_DIR:-/opt/360ws/clients/docker-app/supabase}"
 NETWORK="${DOCKER_NETWORK:-360ws-network}"
-SITE_URL="${SITE_URL:-https://fasted.360web.cloud}"
-API_URL="${API_URL:-https://db.fasted.360web.cloud}"
+
+if [ -z "${SITE_URL:-}" ] || [ -z "${API_URL:-}" ]; then
+  echo "ERROR: SITE_URL and API_URL must be set."
+  echo "  Example: SITE_URL=https://app.example.com API_URL=https://api.example.com bash $0"
+  exit 1
+fi
+SITE_URL="${SITE_URL}"
+API_URL="${API_URL}"
 
 echo "Supabase install directory: $SUPABASE_DIR"
 
@@ -63,6 +69,7 @@ sed -i "s|^SUPABASE_PUBLIC_URL=.*|SUPABASE_PUBLIC_URL=${API_URL}|" .env
 KONG_HOST_PORT="${KONG_HOST_PORT:-8050}"
 sed -i "s|^KONG_HTTP_PORT=.*|KONG_HTTP_PORT=${KONG_HOST_PORT}|" .env
 sed -i 's|^KONG_HTTPS_PORT=.*|KONG_HTTPS_PORT=8444|' .env
+sed -i 's|^ENABLE_EMAIL_AUTOCONFIRM=.*|ENABLE_EMAIL_AUTOCONFIRM=true|' .env
 
 # Join 360ws-network (patch compose if not already external)
 if ! grep -q 'name: 360ws-network' docker-compose.yml; then
@@ -90,6 +97,6 @@ echo "ANON_KEY (for VITE_SUPABASE_ANON_KEY):"
 grep '^ANON_KEY=' .env | cut -d= -f2-
 echo ""
 echo "Next steps:"
-echo "  1. sudo bash /opt/360ws/clients/docker-app/fasted-calendar/scripts/npm-add-supabase.sh"
+echo "  1. sudo bash /opt/360ws/clients/docker-app/fasted-calendar/scripts/npm-repoint-api-to-supabase.sh"
 echo "  2. Run SQL migration (supabase/migrations/20260627000000_initial.sql)"
-echo "  3. Update fasted-calendar .env with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY"
+echo "  3. Update fasted-calendar .env with VITE_SUPABASE_URL=${API_URL} and VITE_SUPABASE_ANON_KEY"

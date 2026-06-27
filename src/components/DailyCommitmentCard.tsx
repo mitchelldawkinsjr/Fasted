@@ -1,4 +1,4 @@
-import { getPhaseForDate } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getNextReward } from '../lib/badges';
 import { getPhaseDates } from '../lib/phaseProgress';
 import { getCurrentStreak } from '../lib/streaks';
@@ -12,6 +12,7 @@ type Props = {
 };
 
 export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
+  const { getPhaseForDate } = useActiveJourney();
   const streak = getCurrentStreak(date);
   const phase = getPhaseForDate(date);
   const nextReward = phase

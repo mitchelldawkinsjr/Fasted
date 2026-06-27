@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
 import { MoodPicker } from './MoodPicker';
-import { PLAN_END, PLAN_START } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
 import {
   DEFAULT_JOURNAL_ENTRY_TYPE,
@@ -24,6 +24,7 @@ type Props = {
 };
 
 export function JournalEditor({ entry, defaultDate, initialType, onSave, onCancel }: Props) {
+  const { planStart, planEnd } = useActiveJourney();
   const initialDate = clampDateToPlan(entry?.date ?? defaultDate ?? getDefaultJournalDate());
   const [date, setDate] = useState(initialDate);
   const [entryType, setEntryType] = useState<JournalEntryType>(
@@ -165,8 +166,8 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             type="date"
             value={date}
             onChange={(e) => setDate(clampDateToPlan(e.target.value))}
-            min={PLAN_START}
-            max={PLAN_END}
+            min={planStart}
+            max={planEnd}
             required
             className={inputClass}
           />

@@ -6,8 +6,53 @@ export type FastType =
   | 'twenty-four-hour-water'
   | 'extended-prayer';
 
+export type SchedulePattern =
+  | { kind: 'weekday-fast'; fastDays: number[]; fastType: FastType }
+  | { kind: 'consecutive-daniel'; includesWalk?: boolean }
+  | {
+      kind: 'rotating-weekly';
+      weeks: Array<{ weekIndex: number; dayOfWeek: number; fastType: FastType }>;
+    }
+  | {
+      kind: 'weekday-with-prayer';
+      fastDays: number[];
+      fastType: FastType;
+      prayerDays: number[];
+    };
+
+export type FastPhaseTemplate = {
+  id: string;
+  legacyId: number;
+  title: string;
+  durationDays: number;
+  themeColor: string;
+  scriptureReference: string;
+  scriptureTextNLT: string;
+  scheduleSummary: string;
+  schedulePattern: SchedulePattern;
+  allowed?: string[];
+  avoid?: string[];
+  dailyReadings?: string[];
+  prayerFocus: string[];
+  imagePath: string;
+  safetyNote?: string;
+};
+
+export type JourneyPhase = { templateId: string; order: number };
+
+export type Journey = {
+  id: string;
+  name: string;
+  startDate: string;
+  phases: JourneyPhase[];
+  isDefault?: boolean;
+  locked?: boolean;
+};
+
+/** Date-bound phase view (computed from a journey). */
 export type FastPhase = {
   id: number;
+  templateId: string;
   title: string;
   startDate: string;
   endDate: string;
@@ -98,6 +143,8 @@ export type UserProgress = {
   journalEntries: JournalEntry[];
   badges: Badge[];
   settings: AppSettings;
+  activeJourneyId: string;
+  journeys: Journey[];
   /** ISO timestamp — used to reconcile local vs cloud copies when signed in. */
   updatedAt?: string;
 };

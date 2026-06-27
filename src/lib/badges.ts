@@ -5,7 +5,7 @@ import {
   type GlobalBadgeDef,
   type PhaseMilestoneDef,
 } from '../data/phaseAchievements';
-import { FAST_PHASES } from '../data/fastingPlan';
+import { getPhases } from '../data/fastingPlan';
 import type { Badge, BadgeId } from '../types';
 import { getDailyPlan } from './dailyPlan';
 import { getAllPlanDates } from './dateUtils';
@@ -82,7 +82,7 @@ function getGlobalBadgeProgress(def: GlobalBadgeDef, today: string): number {
     case 'journal':
       return progress.journalEntries.length;
     case 'plan-finish': {
-      const phase8 = FAST_PHASES.find((p) => p.id === 8)!;
+      const phase8 = getPhases().find((p) => p.id === 8)!;
       return getMilestoneProgress(
         { id: 'phase-8-milestone-21', phaseId: 8, threshold: 21, metric: 'phase-check-ins', title: '', description: '' },
         phase8.startDate,
@@ -118,7 +118,7 @@ export function getAllBadgeDefinitions(today: string): BadgeProgress[] {
   });
 
   const phaseBadges: BadgeProgress[] = PHASE_MILESTONES.map((milestone) => {
-    const phase = FAST_PHASES.find((p) => p.id === milestone.phaseId)!;
+    const phase = getPhases().find((p) => p.id === milestone.phaseId)!;
     const stored = earned.get(milestone.id);
     const current = getMilestoneProgress(milestone, phase.startDate, phase.endDate);
     const target = getMilestoneTarget(milestone, phase.startDate, phase.endDate);
@@ -221,7 +221,7 @@ export function evaluateBadges(today: string): Badge[] {
   }
 
   for (const milestone of PHASE_MILESTONES) {
-    const phase = FAST_PHASES.find((p) => p.id === milestone.phaseId)!;
+    const phase = getPhases().find((p) => p.id === milestone.phaseId)!;
     if (isMilestoneEarned(milestone, phase.startDate, phase.endDate)) {
       add(buildPhaseBadge(milestone));
     }
@@ -238,7 +238,7 @@ export function getFastDaysCompleted(): number {
 
 export function getPhasesCompletedCount(_today: string): number {
   const earned = getEarnedBadgeMap();
-  return FAST_PHASES.filter((phase) => {
+  return getPhases().filter((phase) => {
     const milestones = PHASE_MILESTONES.filter((m) => m.phaseId === phase.id);
     const finalMilestone = milestones[milestones.length - 1];
     if (!finalMilestone) return false;

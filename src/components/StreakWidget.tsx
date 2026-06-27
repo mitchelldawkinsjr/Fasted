@@ -1,4 +1,4 @@
-import { FAST_PHASES } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getPhasesCompletedCount } from '../lib/badges';
 import { getCurrentStreak, getLongestStreak, getTotalCheckIns } from '../lib/streaks';
 
@@ -7,6 +7,7 @@ type Props = {
 };
 
 export function StreakWidget({ today }: Props) {
+  const { phases } = useActiveJourney();
   const current = getCurrentStreak(today);
   const longest = getLongestStreak();
   const checkIns = getTotalCheckIns();
@@ -18,7 +19,7 @@ export function StreakWidget({ today }: Props) {
     { label: 'Check-ins', value: String(checkIns), unit: 'days' },
     {
       label: 'Phases',
-      value: `${phasesCompleted}/${FAST_PHASES.length}`,
+      value: `${phasesCompleted}/${phases.length}`,
       unit: 'done',
     },
   ] as const;
