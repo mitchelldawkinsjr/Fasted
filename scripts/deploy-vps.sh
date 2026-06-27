@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# Deploy fasted-calendar to production VPS VPS (manual / CI helper).
+# Deploy fasted-calendar to a VPS (manual / CI helper).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-REMOTE="${VPS_REMOTE:-vps}"
+REMOTE="${VPS_REMOTE:?Set VPS_REMOTE to user@host}"
 DEPLOY_DIR="${DEPLOY_DIR:-/opt/apps/fasted-calendar}"
 SUPABASE_DIR="${SUPABASE_DIR:-/opt/apps/supabase}"
 APP_PORT="${APP_PUBLISH_PORT:-8022}"
+NETWORK="${DOCKER_NETWORK:-fasted-network}"
 
 echo "Deploying to ${REMOTE}:${DEPLOY_DIR}"
 
-ssh "$REMOTE" "mkdir -p ${DEPLOY_DIR} && docker network ls --format '{{.Name}}' | grep -q '^fasted-network\$' || docker network create fasted-network"
+ssh "$REMOTE" "mkdir -p ${DEPLOY_DIR} && docker network ls --format '{{.Name}}' | grep -q '^${NETWORK}\$' || docker network create ${NETWORK}"
 
 rsync -avz --delete \
   --exclude '.git' \
@@ -24,10 +25,6 @@ rsync -avz --delete \
   --exclude 'test-results' \
   "$ROOT/" "${REMOTE}:${DEPLOY_DIR}/"
 
-# Use a double-quoted ssh command (not bash -s heredoc) so that docker
-# compose never competes with bash for stdin — the approach confirmed to
-# work in manual testing.  Local variables like DEPLOY_DIR are expanded
-# here; remote variables are escaped with \$.
 ssh "$REMOTE" "
   set -e
   cd '${DEPLOY_DIR}'
@@ -57,7 +54,7 @@ ssh "$REMOTE" "
   sleep 10
   docker compose -f docker-compose.prod.yml ps
 
-  curl -fsS http://127.0.0.1:8022/ >/dev/null && echo 'App health check passed (port 8022)' || {
+  curl -fsS http://127.0.0.1:${APP_PORT}/ >/dev/null && echo 'App health check passed (port ${APP_PORT})' || {
     echo 'App health check failed'
     docker compose -f docker-compose.prod.yml logs app
     exit 1
@@ -67,5 +64,5 @@ ssh "$REMOTE" "
 "
 
 echo ""
-echo "Ensure Supabase is running: bash ${DEPLOY_DIR}/scripts/setup-supabase-vps.sh (on VPS, first time only)"
-echo "Ensure NPM proxy: sudo bash ${DEPLOY_DIR}/scripts/npm-add-supabase.sh (on VPS)"
+echo "Ensure Supabase is running: SITE_URL=... API_URL=... bash ${DEPLOY_DIR}/scripts/setup-supabase-vps.sh (on VPS, first time only)"
+echo "Ensure reverse proxy: APP_DOMAIN=... API_DOMAIN=... sudo bash ${DEPLOY_DIR}/scripts/npm-add-fasted.sh (on VPS)"

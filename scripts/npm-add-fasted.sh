@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Add app.example.com + api.app.example.com proxy hosts to Nginx Proxy Manager.
+# Add PWA + Supabase API proxy hosts to Nginx Proxy Manager.
 # Run on VPS with sudo access to /data/nginx/database.sqlite
 set -euo pipefail
 
+APP_DOMAIN="${APP_DOMAIN:?Set APP_DOMAIN (e.g. app.example.com)}"
+API_DOMAIN="${API_DOMAIN:?Set API_DOMAIN (e.g. api.example.com)}"
 DB="${NPM_DB:-/data/nginx/database.sqlite}"
 NOW=$(date "+%Y-%m-%d %H:%M:%S")
 
@@ -81,8 +83,8 @@ nginx -s reload"
   sudo sqlite3 "$DB" "SELECT id, domain_names, forward_host, forward_port, certificate_id, ssl_forced, enabled FROM proxy_host WHERE id=$host_id;"
 }
 
-add_proxy_host "app.example.com" "fasted-calendar-app" 80
-add_proxy_host "api.app.example.com" "supabase-kong" 8000
+add_proxy_host "$APP_DOMAIN" "fasted-calendar-app" 80
+add_proxy_host "$API_DOMAIN" "supabase-kong" 8000
 
 docker restart nginx-proxy
 sleep 8

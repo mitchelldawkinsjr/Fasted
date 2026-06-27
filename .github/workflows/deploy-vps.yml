@@ -1,4 +1,4 @@
-name: Deploy to production VPS
+name: Deploy to VPS
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
       - name: Warn when secrets are missing
         if: steps.check.outputs.configured != 'true' && github.event_name == 'push'
         run: |
-          echo "::warning::VPS deploy skipped. Add repository secrets VPS_SSH_KEY, VPS_HOST, and VPS_USER (same values as your other deployed repos), then re-run Deploy to production VPS from Actions."
+          echo "::warning::VPS deploy skipped. Add repository secrets VPS_SSH_KEY, VPS_HOST, and VPS_USER, then re-run this workflow from Actions."
 
   secrets-required:
     needs: secrets-check
@@ -50,11 +50,10 @@ jobs:
       - name: Fail — VPS secrets not configured
         run: |
           echo "::error::Add VPS_SSH_KEY, VPS_HOST, and VPS_USER under Settings → Secrets and variables → Actions."
-          echo "Use the same values as your other deployed repositories, then re-run this workflow."
           exit 1
 
   deploy:
-    name: Deploy Fasted Calendar to production VPS
+    name: Deploy Fasted Calendar
     needs: secrets-check
     if: needs.secrets-check.outputs.configured == 'true'
     runs-on: ubuntu-latest
@@ -74,7 +73,7 @@ jobs:
         run: |
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to production VPS
+      - name: Deploy to VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -85,12 +84,12 @@ jobs:
         if: success() && env.SLACK_WEBHOOK != ''
         run: |
           curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"✅ Fasted Calendar deployed successfully to production VPS\"}" \
+            --data "{\"text\":\"✅ Fasted Calendar deployed successfully\"}" \
             "$SLACK_WEBHOOK"
 
       - name: Notify Slack on failure
         if: failure() && env.SLACK_WEBHOOK != ''
         run: |
           curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"❌ Fasted Calendar deployment to production VPS failed\"}" \
+            --data "{\"text\":\"❌ Fasted Calendar deployment failed\"}" \
             "$SLACK_WEBHOOK"

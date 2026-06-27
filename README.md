@@ -1,6 +1,6 @@
 # Fasted Calendar PWA
 
-A spiritual fasting companion for **June 13 – December 19, 2026**. Open the app to see today’s fasting phase, scripture, prayer focus, encouragement, and journal your journey—with streaks, check-ins, and badges to build gentle momentum.
+A spiritual fasting companion for **June 13 – December 19, 2026**. Open the app to see today’s fasting phase, scripture, prayer focus, encouragement, and journal your journey—with streaks, check-ins, badges, and optional group community features.
 
 **Repository:** [github.com/mitchelldawkinsjr/Fasted](https://github.com/mitchelldawkinsjr/Fasted)
 
@@ -8,10 +8,12 @@ A spiritual fasting companion for **June 13 – December 19, 2026**. Open the ap
 
 - **Today** — Current phase, fast-day instructions, scripture, prayer points, and daily encouragement
 - **Calendar** — Color-coded plan from June 13 through December 19 with fast-day markers
-- **Journal** — Daily reflections with search and JSON/Markdown export
-- **Progress** — Streaks, phase completion, badges, and stats
+- **Journal** — Daily reflections, prayer/gratitude/victory entries, search, and JSON/Markdown export
+- **Progress** — Streaks, phase completion, badges, mood visualizer, and stats
 - **Phases** — Overview of all 8 fasting phases with artwork
-- **Settings** — Export/import journal, optional cloud sync, preferences, safety notes
+- **Journeys** — Built-in plan plus custom multi-phase journeys (Settings)
+- **Groups** — Optional community groups with shared journal, prayer requests, and leader dashboard (requires cloud sign-in)
+- **Settings** — Export/import journal, cloud sync, preferences, safety notes
 - **PWA** — Installable and works offline after first load
 
 ## Quick Start
@@ -23,6 +25,14 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173).
 
+Cloud sync is optional. To enable it locally:
+
+```bash
+cp .env.example .env.local
+# Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or leave unset to hide sync UI
+npm run dev
+```
+
 ## Build & Preview
 
 ```bash
@@ -30,43 +40,50 @@ npm run build
 npm run preview
 ```
 
+## Testing
+
+```bash
+npm run test:e2e
+```
+
 ## Design
 
-UI/UX is synced from the Stitch project **Biblical Fasting Journey** (`projects/[stitch-project-id]`). Design tokens live in `.stitch/DESIGN.md` with full HTML exports per screen.
+UI tokens and screen exports live in `.stitch/DESIGN.md` (Stitch project: **Biblical Fasting Journey**).
 
 ## Project Structure
 
 ```
 src/
-  components/   # UI components (cards, calendar, check-in, journal)
-  data/         # Fasting plan phases and encouragements
-  hooks/        # React hooks for local progress state
-  lib/          # Date logic, daily plan, storage, streaks, badges
-  pages/        # Today, Calendar, Journal, Progress, Phases, Settings
-public/assets/  # Phase images and overview graphic
+  components/   # UI (check-in, journal, groups, mood visualizer, layout)
+  data/         # Phase templates, encouragements, badge definitions
+  hooks/        # Progress, auth, journeys, groups
+  lib/          # Storage, sync, daily plan, streaks, Supabase client
+  pages/        # Today, Calendar, Journal, Progress, Phases, Groups, Settings
+supabase/
+  migrations/   # SQL for user_progress + groups/community tables
+public/assets/  # Phase images, badges, icons
+scripts/        # VPS deploy and Supabase setup helpers
+docker/         # Deployment docs (SETUP.md)
+e2e/            # Playwright specs
 ```
 
 ## Data & Storage
 
-All progress (check-ins, journal entries, badges, settings) is stored locally in `localStorage`. No backend required for offline use.
+All progress (check-ins, journal entries, badges, settings, journeys) is stored locally in `localStorage`. No backend is required for offline use.
 
 ### Optional cloud sync (Supabase)
 
-Sign in under **Settings → Cloud Sync** to back up your progress JSON to a self-hosted Supabase instance.
+Sign in under **Settings → Cloud Sync** to back up your progress JSON to a self-hosted Supabase instance. Groups and community features also require sign-in.
 
-```bash
-cp .env.example .env.local
-# Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
-npm run dev
-```
+See [`docker/SETUP.md`](docker/SETUP.md) for VPS + Docker + reverse-proxy deployment.
 
-See [`docker/SETUP.md`](docker/SETUP.md) for VPS + Docker + NPM deployment.
+Push to `main` can trigger GitHub Actions deploy when repository secrets `VPS_SSH_KEY`, `VPS_HOST`, and `VPS_USER` are configured.
 
-Push to `main` triggers GitHub Actions deploy when `VPS_SSH_KEY`, `VPS_HOST`, and `VPS_USER` secrets are configured (same as your other deployed repos).
+## Tech Stack
 
-## Agent Package
-
-This repo also includes `AGENTIC_PWA_BUILD_PROMPT.md` — the full product spec used to build the app.
+- Vite 5, React 18, React Router 6, Tailwind CSS 3, `vite-plugin-pwa`
+- Supabase client for optional auth + cloud sync (`@supabase/supabase-js`)
+- Playwright for e2e tests
 
 ## Health Note
 

@@ -33,7 +33,7 @@ migrate(
 
     const settings = app.settings();
     settings.meta.appName = 'Fasted Calendar';
-    settings.meta.appURL = 'https://api.app.example.com';
+    settings.meta.appURL = 'https://api.example.com';
     settings.allowedOrigins = [
       'https://app.example.com',
       'http://localhost:5173',

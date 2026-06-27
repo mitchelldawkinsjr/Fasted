@@ -1,13 +1,13 @@
 # Production stack (VPS): static PWA + optional Supabase cloud sync.
-# Joins `fasted-network` so NPM can reach containers by name.
+# Joins `fasted-network` so the reverse proxy can reach containers by name.
 #
 # Prerequisites: docker network create fasted-network (see scripts/vps-bootstrap.sh)
-# Deploy path: /opt/apps/fasted-calendar
+# Deploy path: /opt/apps/fasted-calendar (override with DEPLOY_DIR)
 # Supabase stack: /opt/apps/supabase (see scripts/setup-supabase-vps.sh)
 #
-# NPM Proxy Hosts:
-#   app.example.com      → http://fasted-calendar-app:80
-#   api.app.example.com  → http://supabase-kong:8000 (Supabase API)
+# Reverse proxy examples:
+#   app.example.com  → http://fasted-calendar-app:80
+#   api.example.com  → http://supabase-kong:8000
 
 name: fasted-calendar
 
@@ -36,34 +36,7 @@ services:
       retries: 3
       start_period: 15s
 
-  # PocketBase — commented out during Supabase cutover; kept for rollback.
-  # Uncomment and stop pointing app at Supabase to revert in an emergency.
-  # pocketbase:
-  #   image: ghcr.io/muchobien/pocketbase:latest
-  #   container_name: fasted-calendar-pocketbase
-  #   restart: unless-stopped
-  #   ports:
-  #     - "${POCKETBASE_PUBLISH_PORT:-8023}:8090"
-  #   volumes:
-  #     - pocketbase-data:/pb_data
-  #     - ./docker/pb_migrations:/pb_migrations:ro
-  #   networks:
-  #     - proxy
-  #   labels:
-  #     - "com.fasted.app=fasted-calendar"
-  #     - "com.fasted.type=docker-app"
-  #     - "com.fasted.service=pocketbase"
-  #   healthcheck:
-  #     test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8090/api/health"]
-  #     interval: 30s
-  #     timeout: 5s
-  #     retries: 5
-  #     start_period: 20s
-
 networks:
   proxy:
     external: true
     name: fasted-network
-
-volumes:
-  pocketbase-data:

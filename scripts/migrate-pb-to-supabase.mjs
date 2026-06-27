@@ -5,10 +5,10 @@
  * READ-ONLY against PocketBase. Idempotent upserts into Supabase.
  *
  * Required env:
- *   POCKETBASE_URL              e.g. https://api.app.example.com
+ *   POCKETBASE_URL              e.g. https://api.example.com
  *   POCKETBASE_ADMIN_EMAIL
  *   POCKETBASE_ADMIN_PASSWORD
- *   SUPABASE_URL                e.g. https://db.app.example.com
+ *   SUPABASE_URL                e.g. https://api.example.com
  *   SUPABASE_SERVICE_ROLE_KEY
  *
  * Usage:

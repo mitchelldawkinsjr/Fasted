@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "deploy:vps": "bash scripts/deploy-vps.sh",
-    "deploy:npm": "ssh vps 'sudo bash /opt/apps/fasted-calendar/scripts/npm-add-fasted.sh'"
+    "deploy:npm": "echo 'Run scripts/npm-add-fasted.sh on the VPS with APP_DOMAIN and API_DOMAIN set'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
