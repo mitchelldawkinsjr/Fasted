@@ -227,6 +227,12 @@ export function getDailyPlan(date: string, journey?: Journey): DailyFastPlan | n
   };
 }
 
+/** Primary scripture reference for a plan day (first listed reading). */
+export function getVerseOfTheDayReference(date: string, journey?: Journey): string | null {
+  const plan = getDailyPlan(date, journey);
+  return plan?.scriptureReferences[0] ?? null;
+}
+
 export function getFastDayDates(journey?: Journey): Set<string> {
   const dates = new Set<string>();
   for (const date of getAllJourneyDates(resolveJourney(journey))) {
