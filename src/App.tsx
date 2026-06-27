@@ -3,7 +3,11 @@ import { Layout } from './components/Layout';
 import { ScrollToTop } from './components/ScrollToTop';
 import { ThemeProvider } from './components/ThemeProvider';
 import { CalendarPage } from './pages/CalendarPage';
+import { GroupDetailPage } from './pages/GroupDetailPage';
+import { GroupsHubPage } from './pages/GroupsHubPage';
+import { JoinGroupPage } from './pages/JoinGroupPage';
 import { JournalPage } from './pages/JournalPage';
+import { LeaderDashboardPage } from './pages/LeaderDashboardPage';
 import { PhasesPage } from './pages/PhasesPage';
 import { BadgeGalleryPage } from './pages/BadgeGalleryPage';
 import { MoodVisualizerPage } from './pages/MoodVisualizerPage';
@@ -25,6 +29,10 @@ export default function App() {
             <Route path="progress/badges" element={<BadgeGalleryPage />} />
             <Route path="progress/mood" element={<MoodVisualizerPage />} />
             <Route path="phases" element={<PhasesPage />} />
+            <Route path="groups" element={<GroupsHubPage />} />
+            <Route path="groups/:id" element={<GroupDetailPage />} />
+            <Route path="groups/:id/dashboard" element={<LeaderDashboardPage />} />
+            <Route path="join/:code" element={<JoinGroupPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>
