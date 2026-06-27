@@ -11,6 +11,7 @@ import { getDayMoodLabel } from './dayMood';
 import { journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
+import { computeCheckInStreak } from './streaks';
 
 /** Legacy key — migrated to {@link GUEST_STORAGE_KEY} on first load. */
 export const LEGACY_STORAGE_KEY = 'fasted-calendar-progress';
@@ -30,6 +31,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 const DEFAULT_PROGRESS: UserProgress = {
   checkIns: [],
+  checkInStreak: 0,
   journalEntries: [],
   badges: [],
   settings: DEFAULT_SETTINGS,
@@ -76,6 +78,7 @@ function loadRaw(): UserProgress {
     const progress: UserProgress = {
       ...DEFAULT_PROGRESS,
       ...parsed,
+      checkInStreak: parsed.checkInStreak ?? 0,
       journalEntries,
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
       journeys:
@@ -137,6 +140,7 @@ export function persistFromCloud(data: UserProgress): void {
   const normalized: UserProgress = {
     ...DEFAULT_PROGRESS,
     ...data,
+    checkInStreak: data.checkInStreak ?? 0,
     journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
     settings: { ...DEFAULT_SETTINGS, ...data.settings },
     journeys:
@@ -161,9 +165,11 @@ export function getProgress(): UserProgress {
 export function saveCheckIn(checkIn: CheckIn): void {
   const progress = getProgress();
   const filtered = progress.checkIns.filter((c) => c.date !== checkIn.date);
+  const checkIns = [...filtered, checkIn].sort((a, b) => a.date.localeCompare(b.date));
   persist({
     ...progress,
-    checkIns: [...filtered, checkIn].sort((a, b) => a.date.localeCompare(b.date)),
+    checkIns,
+    checkInStreak: computeCheckInStreak(checkIns, checkIn.date),
   });
 }
 
