@@ -77,6 +77,9 @@ jobs:
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
+          DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+          SUPABASE_DIR: ${{ vars.SUPABASE_DIR }}
+          DOCKER_NETWORK: ${{ vars.DOCKER_NETWORK }}
         run: |
           VPS_REMOTE="${VPS_USER}@${VPS_HOST}" bash scripts/deploy-vps.sh
 

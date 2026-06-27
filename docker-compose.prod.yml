@@ -1,7 +1,7 @@
 # Production stack (VPS): static PWA + optional Supabase cloud sync.
-# Joins `fasted-network` so the reverse proxy can reach containers by name.
+# Joins `$DOCKER_NETWORK` (default: fasted-network) so the reverse proxy can reach containers by name.
 #
-# Prerequisites: docker network create fasted-network (see scripts/vps-bootstrap.sh)
+# Prerequisites: docker network create $DOCKER_NETWORK (see scripts/vps-bootstrap.sh)
 # Deploy path: /opt/apps/fasted-calendar (override with DEPLOY_DIR)
 # Supabase stack: /opt/apps/supabase (see scripts/setup-supabase-vps.sh)
 #
@@ -39,4 +39,4 @@ services:
 networks:
   proxy:
     external: true
-    name: fasted-network
+    name: ${DOCKER_NETWORK:-fasted-network}

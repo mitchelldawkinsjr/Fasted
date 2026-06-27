@@ -77,7 +77,7 @@ Sign in under **Settings → Cloud Sync** to back up your progress JSON to a sel
 
 See [`docker/SETUP.md`](docker/SETUP.md) for VPS + Docker + reverse-proxy deployment.
 
-Push to `main` can trigger GitHub Actions deploy when repository secrets `VPS_SSH_KEY`, `VPS_HOST`, and `VPS_USER` are configured.
+Push to `main` can trigger GitHub Actions deploy when repository secrets and variables are configured (see [`docker/SETUP.md`](docker/SETUP.md#github-actions)).
 
 ## Tech Stack
 

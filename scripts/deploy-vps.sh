@@ -43,6 +43,7 @@ ssh "$REMOTE" "
 
   export VITE_SUPABASE_URL=\"\$API_URL\"
   export VITE_SUPABASE_ANON_KEY=\"\$ANON_KEY\"
+  export DOCKER_NETWORK='${NETWORK}'
 
   docker compose -f docker-compose.prod.yml build --no-cache \
     --build-arg VITE_SUPABASE_URL=\"\$API_URL\" \

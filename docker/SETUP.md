@@ -14,6 +14,25 @@ Set these environment variables before running setup scripts:
 | `SUPABASE_DIR` | `/opt/apps/supabase` | Supabase docker stack path |
 | `DOCKER_NETWORK` | `fasted-network` | Shared Docker network name |
 
+## GitHub Actions
+
+CI deploy reads production paths from **repository variables** (Settings → Secrets and variables → Actions → Variables). SSH credentials stay in **secrets**.
+
+| Kind | Name | Purpose |
+|------|------|---------|
+| Secret | `VPS_SSH_KEY` | SSH private key |
+| Secret | `VPS_HOST` | VPS hostname |
+| Secret | `VPS_USER` | SSH user |
+| Variable | `DEPLOY_DIR` | App path on VPS |
+| Variable | `SUPABASE_DIR` | Supabase stack path on VPS |
+| Variable | `DOCKER_NETWORK` | Shared Docker network name |
+| Variable | `APP_DOMAIN` | PWA public hostname (NPM setup scripts) |
+| Variable | `API_DOMAIN` | Supabase API hostname (NPM setup scripts) |
+| Variable | `SITE_URL` | Full PWA URL for OAuth redirects |
+| Variable | `API_URL` | Full Supabase API URL |
+
+Only `DEPLOY_DIR`, `SUPABASE_DIR`, and `DOCKER_NETWORK` are used on every deploy. Domain/URL variables are for one-time VPS setup scripts run manually on the server.
+
 ## VPS production
 
 | Service | Container | Proxy domain |
