@@ -3,7 +3,7 @@ import { BadgeWall } from '../components/BadgeWall';
 import { InfoBanner } from '../components/InfoBanner';
 import { PhaseMilestonesCard } from '../components/PhaseMilestonesCard';
 import { StreakWidget } from '../components/StreakWidget';
-import { FAST_PHASES, PLAN_END, PLAN_START, getPhaseForDate } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import { useProgress } from '../hooks/useProgress';
 import { getFastDaysCompleted, getNextReward } from '../lib/badges';
 import {
@@ -14,6 +14,7 @@ import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 export function ProgressPage() {
   const today = getLocalDateString();
   const progress = useProgress();
+  const { phases, planStart, planEnd, getPhaseForDate } = useActiveJourney();
   const currentPhase = getPhaseForDate(today);
   const phasePercent = currentPhase
     ? getPhaseCompletionPercent(currentPhase.startDate, currentPhase.endDate)
@@ -31,14 +32,14 @@ export function ProgressPage() {
         </p>
       </section>
 
-      {!currentPhase && today < PLAN_START && (
+      {!currentPhase && today < planStart && (
         <InfoBanner variant="preview" icon="event_upcoming">
-          Your journey begins {formatDisplayDate(PLAN_START)}. Milestones and phase progress unlock then.
+          Your journey begins {formatDisplayDate(planStart)}. Milestones and phase progress unlock then.
         </InfoBanner>
       )}
-      {!currentPhase && today > PLAN_END && (
+      {!currentPhase && today > planEnd && (
         <InfoBanner variant="preview" icon="history">
-          The fasting plan ended {formatDisplayDate(PLAN_END)}. Your earned milestones remain below.
+          The fasting plan ended {formatDisplayDate(planEnd)}. Your earned milestones remain below.
         </InfoBanner>
       )}
 
@@ -103,7 +104,7 @@ export function ProgressPage() {
       <section>
         <h3 className="mb-stack-md font-display text-headline-md text-primary">Phase Completion</h3>
         <div className="space-y-stack-md">
-          {FAST_PHASES.map((phase) => {
+          {phases.map((phase) => {
             const percent = getPhaseCompletionPercent(phase.startDate, phase.endDate);
             return (
               <div key={phase.id} className="stitch-card space-y-stack-md p-stack-md">

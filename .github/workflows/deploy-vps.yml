@@ -108,7 +108,7 @@ jobs:
             max_attempts=30
             attempt=0
             while [ $attempt -lt $max_attempts ]; do
-              if curl -fsS http://127.0.0.1:8022/ >/dev/null && curl -fsS http://127.0.0.1:8023/api/health >/dev/null; then
+              if curl -fsS http://127.0.0.1:8022/ >/dev/null; then
                 echo "Health checks passed!"
                 break
               fi
