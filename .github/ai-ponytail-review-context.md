@@ -29,20 +29,14 @@ Deps the stdlib or platform already ships, single-implementation interfaces, fac
 1. Read the PR description and linked issue — scope should match the issue, not expand it
 2. Inspect the diff vs `main`
 3. Rank findings biggest cut first
-4. Post **one** PR comment via `gh`
+4. Return **one** PR comment in your output (see below) — do **not** run `gh` or post comments yourself
 5. End your final assistant message with exactly one status line (see Status line)
 
 ---
 
 ## PR comment format
 
-Post with:
-
-```bash
-gh pr comment <PR_NUMBER> --repo <OWNER/REPO> --body-file /tmp/ponytail-review.md
-```
-
-Use this structure:
+Wrap the comment body between `REVIEW_COMMENT_START` and `REVIEW_COMMENT_END`. Use this structure inside the block:
 
 ```markdown
 ## Ponytail review
@@ -63,11 +57,21 @@ Use this structure:
 
 If nothing to cut in the diff: `_Lean diff. Ship._` and **Verdict:** 0 findings · lean
 
+Example output shape:
+
+```
+REVIEW_COMMENT_START
+## Ponytail review
+...
+REVIEW_COMMENT_END
+REVIEW_STATUS=clean
+```
+
 ---
 
 ## Status line
 
-Your **last line of output** must be exactly one of:
+Your **last line of output** (after `REVIEW_COMMENT_END`) must be exactly one of:
 
 ```
 REVIEW_STATUS=clean

@@ -139,7 +139,7 @@ jobs:
     timeout-minutes: 90
     permissions:
       issues: write
-      pull-requests: read
+      pull-requests: write
       contents: read
     outputs:
       has_findings: ${{ steps.review.outputs.has_findings }}
@@ -183,7 +183,7 @@ jobs:
     timeout-minutes: 90
     permissions:
       issues: write
-      pull-requests: read
+      pull-requests: write
       contents: read
     outputs:
       has_findings: ${{ steps.review.outputs.has_findings }}

@@ -21,20 +21,14 @@ Review the **pull request diff against `main`**. Find correctness bugs, logic er
 1. Read the PR description and linked issue context
 2. Inspect the diff vs `main` (`git diff main...HEAD` or equivalent)
 3. Focus on files changed in this PR only
-4. Post **one** PR review comment via `gh` (see below)
+4. Return **one** PR review comment in your output (see below) — do **not** run `gh` or post comments yourself
 5. End your final assistant message with exactly one status line (see Status line)
 
 ---
 
 ## PR comment format
 
-Post with:
-
-```bash
-gh pr comment <PR_NUMBER> --repo <OWNER/REPO> --body-file /tmp/bugbot-review.md
-```
-
-Use this structure in the comment body:
+Wrap the comment body between `REVIEW_COMMENT_START` and `REVIEW_COMMENT_END`. Use this structure inside the block:
 
 ```markdown
 ## Bugbot review
@@ -53,13 +47,23 @@ _Severity: High = likely broken behavior or data loss; Medium = probable bug or 
 **Verdict:** <N> finding(s) · <clean or needs attention>
 ```
 
-If no issues: post the same header with an empty table replaced by: `_No bugs found in this diff._` and **Verdict:** 0 findings · clean
+If no issues: use the same header with an empty table replaced by: `_No bugs found in this diff._` and **Verdict:** 0 findings · clean
+
+Example output shape:
+
+```
+REVIEW_COMMENT_START
+## Bugbot review
+...
+REVIEW_COMMENT_END
+REVIEW_STATUS=clean
+```
 
 ---
 
 ## Status line
 
-Your **last line of output** must be exactly one of:
+Your **last line of output** (after `REVIEW_COMMENT_END`) must be exactly one of:
 
 ```
 REVIEW_STATUS=clean
