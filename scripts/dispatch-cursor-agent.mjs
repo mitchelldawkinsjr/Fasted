@@ -65,7 +65,13 @@ ${issue.body ?? "(empty)"}
 ### Comments (includes spec / acceptance criteria)
 ${commentBodies || "(no comments yet — read the issue body carefully)"}
 
-Implement this issue now. Follow the Required Workflow section exactly.
+Implement this issue now.
+
+**Critical reminders:**
+- Cursor creates **draft** PRs by default — you MUST run \`gh pr ready <pr-number>\` after opening the PR.
+- UI changes REQUIRE screenshots committed under \`artifacts/issue-${issueNumber}/\` and linked in the issue completion comment.
+- You MUST post the issue completion comment and swap labels (\`agent-working\` → \`pr-opened\`) before stopping.
+- Follow the Required Workflow and Completion Checklist in the context file exactly. Do not stop after opening the PR.
 `;
 
 let agent;
@@ -105,7 +111,7 @@ try {
 - **Run ID:** \`${run.id}\`
 - **Track progress:** [cursor.com/agents](https://cursor.com/agents)
 
-The agent will implement the fix, open a PR, post screenshots if UI changed, and update labels when done (\`pr-opened\`).`
+The agent will implement the fix, mark the PR ready for review, post screenshots (if UI changed), and update labels when done (\`pr-opened\`).`
   );
 } catch (err) {
   if (err instanceof CursorAgentError) {
