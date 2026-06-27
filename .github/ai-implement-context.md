@@ -65,20 +65,17 @@ Match existing naming (camelCase types, `saveX`/`getX` storage functions, Tailwi
 3. Make a **minimal, focused diff** — do not refactor unrelated code
 4. Run `npm ci && npm run build` before finishing
 5. Run relevant Playwright tests if UI changed: `npm run test:e2e`
-6. Open a PR with title referencing the issue, body with `Fixes #{N}`, summary, and test plan
-7. **Mark the PR ready for review** (Cursor opens draft PRs by default):
-   ```bash
-   gh pr ready <pr-number> --repo mitchelldawkinsjr/Fasted
-   ```
-8. **Mandatory screenshots** if the fix touches any React component, page, CSS, or user-visible copy (see Screenshots section)
-9. **Mandatory issue update** (use `gh` CLI — do this last, after PR is ready):
+6. Open a PR with title referencing the issue, body with `Fixes #{N}`, summary, and test plan — **leave it as a draft** (Cursor opens draft PRs by default; do **not** run `gh pr ready`)
+7. **Mandatory screenshots** if the fix touches any React component, page, CSS, or user-visible copy (see Screenshots section)
+8. **Mandatory issue update** (use `gh` CLI — do this last):
    ```bash
    gh issue comment <N> --repo mitchelldawkinsjr/Fasted --body-file /tmp/completion.md
    gh issue edit <N> --repo mitchelldawkinsjr/Fasted --remove-label agent-working --add-label pr-opened
    ```
    The completion comment must include: PR link, short summary, and screenshot markdown (if UI changed).
-10. **Do NOT merge the PR**
-11. If blocked, spec is ambiguous, or acceptance criteria cannot be met:
+   Adding `pr-opened` triggers **Bugbot + Ponytail** on the draft PR; the review workflow marks the PR ready when bots finish.
+9. **Do NOT merge the PR**
+10. If blocked, spec is ambiguous, or acceptance criteria cannot be met:
     - Comment on the issue explaining why
     - `gh issue edit <N> --remove-label agent-working --add-label agent-failed`
     - Do not open a PR
@@ -124,8 +121,7 @@ You are **not done** until all applicable items are checked:
 - [ ] Code implemented and pushed
 - [ ] `npm run build` passes
 - [ ] Relevant e2e tests pass (if UI changed)
-- [ ] PR opened with `Fixes #{N}`
-- [ ] `gh pr ready <pr-number>` run — PR is **not** a draft
+- [ ] PR opened with `Fixes #{N}` (still **draft** — do not run `gh pr ready`)
 - [ ] Screenshots committed (if UI changed) and linked in issue comment
 - [ ] Issue comment posted with PR link + summary (+ screenshots)
 - [ ] Labels updated: removed `agent-working`, added `pr-opened`

@@ -68,7 +68,7 @@ ${commentBodies || "(no comments yet — read the issue body carefully)"}
 Implement this issue now.
 
 **Critical reminders:**
-- Cursor creates **draft** PRs by default — you MUST run \`gh pr ready <pr-number>\` after opening the PR.
+- Leave the PR as a **draft** — do NOT run \`gh pr ready\`. Bugbot + Ponytail run on \`pr-opened\`; the review workflow marks it ready when bots finish.
 - UI changes REQUIRE screenshots committed under \`artifacts/issue-${issueNumber}/\` and linked in the issue completion comment.
 - You MUST post the issue completion comment and swap labels (\`agent-working\` → \`pr-opened\`) before stopping.
 - Follow the Required Workflow and Completion Checklist in the context file exactly. Do not stop after opening the PR.
@@ -111,7 +111,7 @@ try {
 - **Run ID:** \`${run.id}\`
 - **Track progress:** [cursor.com/agents](https://cursor.com/agents)
 
-The agent will implement the fix, mark the PR ready for review, post screenshots (if UI changed), and update labels when done (\`pr-opened\`).`
+The agent will implement the fix (PR stays draft until review bots finish), post screenshots (if UI changed), and update labels when done (\`pr-opened\`).`
   );
 } catch (err) {
   if (err instanceof CursorAgentError) {
