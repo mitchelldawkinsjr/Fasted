@@ -14,21 +14,23 @@ const navItems = [
   { to: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
+const DEFAULT_HEADER_TITLE = 'Fasted';
+
 const pageTitles: Record<string, string> = {
-  '/': 'Fasted Calendar',
-  '/calendar': 'Fasted Calendar',
+  '/': DEFAULT_HEADER_TITLE,
+  '/calendar': DEFAULT_HEADER_TITLE,
   '/journal': 'My Spiritual Journal',
-  '/progress': 'Fasted Calendar',
+  '/progress': DEFAULT_HEADER_TITLE,
   '/progress/mood': 'Your Sacred Journey',
   '/progress/badges': 'Sacred Milestones',
-  '/phases': 'Fasted Calendar',
+  '/phases': DEFAULT_HEADER_TITLE,
   '/groups': 'Your Groups',
-  '/settings': 'Fasted Calendar',
+  '/settings': DEFAULT_HEADER_TITLE,
 };
 
 export function Layout() {
   const { pathname } = useLocation();
-  const title = pageTitles[pathname] ?? 'Fasted Calendar';
+  const title = pageTitles[pathname] ?? DEFAULT_HEADER_TITLE;
 
   return (
     <div className="relative mx-auto min-h-screen max-w-lg pb-[calc(4.75rem+env(safe-area-inset-bottom))]">
