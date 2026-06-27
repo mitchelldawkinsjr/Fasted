@@ -38,6 +38,10 @@ jobs:
             echo "::error::CURSOR_AUTOMATION_WEBHOOK_URL secret is not configured. Save the Cursor Automation and add the webhook URL under Settings → Secrets and variables → Actions."
             exit 1
           fi
+          if [ -z "${{ secrets.CURSOR_AUTOMATION_WEBHOOK_AUTH }}" ]; then
+            echo "::error::CURSOR_AUTOMATION_WEBHOOK_AUTH secret is not configured. In Cursor Automations, click Generate/Copy auth header and save the crsr_ token (without Bearer prefix) as this secret."
+            exit 1
+          fi
 
       - name: Verify guards and mark in progress
         id: guards
@@ -66,7 +70,10 @@ jobs:
           gh label create pr-opened --description "Implementation PR opened" --color "1D76DB" 2>/dev/null || true
           gh label create agent-failed --description "Agent failed to implement" --color "D93F0B" 2>/dev/null || true
 
-          gh issue edit "$ISSUE_NUMBER" --add-label agent-working --remove-label ready-local
+          gh issue edit "$ISSUE_NUMBER" \
+            --add-label agent-working \
+            --add-label review-local \
+            --remove-label ready-local
 
       - name: Post dispatch notice
         if: steps.guards.outputs.skip != 'true'

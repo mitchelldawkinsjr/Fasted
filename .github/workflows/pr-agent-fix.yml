@@ -42,6 +42,10 @@ jobs:
             echo "::error::CURSOR_AUTOMATION_WEBHOOK_URL secret is not configured. Save the Cursor Automation and add the webhook URL under Settings → Secrets and variables → Actions."
             exit 1
           fi
+          if [ -z "${{ secrets.CURSOR_AUTOMATION_WEBHOOK_AUTH }}" ]; then
+            echo "::error::CURSOR_AUTOMATION_WEBHOOK_AUTH secret is not configured. Copy the crsr_ token from Cursor Automations auth header."
+            exit 1
+          fi
 
       - name: Resolve pull request
         id: pr
