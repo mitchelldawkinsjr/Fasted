@@ -27,7 +27,7 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
     'true',
   );
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('VERSE of the Day').fill('Morning prayer focus');
+  await page.getByLabel('Verse of the Day').fill('Morning prayer focus');
   await page.getByLabel('Victory today').fill('Stayed faithful with water only');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
@@ -52,7 +52,7 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
 test('saves a simple prayer entry in one text box', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Prayer');
-  await expect(page.getByLabel('VERSE of the Day')).toHaveCount(0);
+  await expect(page.getByLabel('Verse of the Day')).toHaveCount(0);
   await page.getByLabel('Prayer').fill('Prayed for family healing');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
@@ -116,7 +116,7 @@ test('morning reflection tag links to filtered journal', async ({ page }) => {
 
 test('shows verse of the day chapter link in daily reflection form', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
-  await expect(page.getByText('VERSE of the Day')).toBeVisible();
+  await expect(page.getByText('Verse of the Day')).toBeVisible();
 
   const chapterLink = page.getByRole('link', { name: /read full chapter on Bible.com/i });
   await expect(chapterLink).toBeVisible();
@@ -126,7 +126,7 @@ test('shows verse of the day chapter link in daily reflection form', async ({ pa
 test('opens a read-only view of a saved entry', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Great' }).click();
-  await page.getByLabel('VERSE of the Day').fill('Evening prayer focus');
+  await page.getByLabel('Verse of the Day').fill('Evening prayer focus');
   await page.getByLabel('What I prayed about').fill('Family healing and peace');
   await page.getByLabel('Victory today').fill('Completed the fast without complaint');
   await page.getByRole('button', { name: 'Save Entry' }).click();
@@ -138,7 +138,7 @@ test('opens a read-only view of a saved entry', async ({ page }) => {
   await expect(page.getByText('Great')).toBeVisible();
   await expect(page.getByText('Family healing and peace')).toBeVisible();
   await expect(page.getByText('Completed the fast without complaint')).toBeVisible();
-  await expect(page.getByLabel('VERSE of the Day')).toHaveCount(0);
+  await expect(page.getByLabel('Verse of the Day')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Back to Journal' }).click();
   await expect(page.getByText('1 reflections')).toBeVisible();
