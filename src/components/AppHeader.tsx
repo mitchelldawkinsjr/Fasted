@@ -20,7 +20,7 @@ function BrandLogo() {
   );
 }
 
-export function AppHeader({ title = 'Fasted Calendar', showPhasesLink = true }: Props) {
+export function AppHeader({ title = 'Fasted', showPhasesLink = true }: Props) {
   return (
     <header className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between bg-surface px-container-margin py-unit shadow-grace">
       <div className="flex min-w-0 items-center gap-stack-sm">
