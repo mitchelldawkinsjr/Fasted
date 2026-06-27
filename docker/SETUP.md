@@ -32,6 +32,9 @@ docker exec -i supabase-db psql -U postgres -d postgres \
 
 docker exec -i supabase-db psql -U postgres -d postgres \
   < /opt/360ws/clients/docker-app/fasted-calendar/supabase/migrations/20260628000000_groups.sql
+
+docker exec -i supabase-db psql -U postgres -d postgres \
+  < /opt/360ws/clients/docker-app/fasted-calendar/supabase/migrations/20260628000001_fix_membership_rls.sql
 ```
 
 Copy `ANON_KEY` from `/opt/360ws/clients/docker-app/supabase/.env` into the app `.env`:
