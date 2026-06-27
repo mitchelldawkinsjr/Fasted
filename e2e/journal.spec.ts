@@ -201,7 +201,7 @@ test('saves a fitness entry', async ({ page }) => {
   }, STORAGE_KEY);
 
   expect(stored.journalEntries[0].type).toBe('fitness');
-  expect(stored.journalEntries[0].movement).toBe('30-minute walk after dinner');
+  expect(stored.journalEntries[0].content).toBe('30-minute walk after dinner');
 });
 
 test('migrates legacy tagged entries on load', async ({ page }) => {

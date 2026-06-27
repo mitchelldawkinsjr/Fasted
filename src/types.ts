@@ -132,7 +132,7 @@ export type FoodJournalEntry = JournalEntryBase & {
 
 export type FitnessJournalEntry = JournalEntryBase & {
   type: 'fitness';
-  movement: string;
+  content: string;
 };
 
 export type SimpleJournalEntry =

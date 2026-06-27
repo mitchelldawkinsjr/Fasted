@@ -2,7 +2,6 @@ import type {
   ContentSimpleJournalType,
   DailyReflectionEntry,
   DayMood,
-  FitnessJournalEntry,
   FoodJournalEntry,
   JournalEntry,
   JournalEntryType,
@@ -62,12 +61,7 @@ export const FOOD_JOURNAL_FIELDS = [
   label: string;
 }>;
 
-export const FITNESS_JOURNAL_FIELDS = [
-  { key: 'movement', label: 'How did you move your body today?' },
-] as const satisfies ReadonlyArray<{
-  key: keyof Omit<FitnessJournalEntry, 'id' | 'date' | 'updatedAt' | 'type'>;
-  label: string;
-}>;
+export const FITNESS_JOURNAL_LABEL = 'How did you move your body today?';
 
 export const JOURNAL_TYPE_PILL_BASE_CLASS =
   'flex min-h-[2.75rem] items-center justify-center rounded-full px-2 py-1.5 text-center label-caps leading-tight transition-colors';
@@ -102,17 +96,8 @@ export function isContentSimpleJournalEntry(
   return isContentSimpleJournalType(entry.type);
 }
 
-export function isFoodJournalEntry(entry: JournalEntry): entry is FoodJournalEntry {
-  return entry.type === 'food';
-}
-
-export function isFitnessJournalEntry(entry: JournalEntry): entry is FitnessJournalEntry {
-  return entry.type === 'fitness';
-}
-
 const DAILY_REFLECTION_FIELD_KEYS = DAILY_REFLECTION_FIELDS.map((field) => field.key);
 const FOOD_JOURNAL_FIELD_KEYS = FOOD_JOURNAL_FIELDS.map((field) => field.key);
-const FITNESS_JOURNAL_FIELD_KEYS = FITNESS_JOURNAL_FIELDS.map((field) => field.key);
 
 type LegacyJournalRecord = Record<string, unknown>;
 
@@ -150,26 +135,9 @@ function emptyFoodJournalFields(): Omit<FoodJournalEntry, 'id' | 'date' | 'updat
   };
 }
 
-function emptyFitnessJournalFields(): Omit<
-  FitnessJournalEntry,
-  'id' | 'date' | 'updatedAt' | 'type'
-> {
-  return {
-    movement: '',
-  };
-}
-
 function readFoodJournalFields(raw: LegacyJournalRecord) {
   const fields = emptyFoodJournalFields();
   for (const key of FOOD_JOURNAL_FIELD_KEYS) {
-    fields[key] = typeof raw[key] === 'string' ? raw[key] : '';
-  }
-  return fields;
-}
-
-function readFitnessJournalFields(raw: LegacyJournalRecord) {
-  const fields = emptyFitnessJournalFields();
-  for (const key of FITNESS_JOURNAL_FIELD_KEYS) {
     fields[key] = typeof raw[key] === 'string' ? raw[key] : '';
   }
   return fields;
@@ -234,10 +202,16 @@ export function normalizeJournalEntry(raw: unknown): JournalEntry {
     };
   }
   if (recordType === 'fitness') {
+    const content =
+      typeof record.content === 'string'
+        ? record.content
+        : typeof record.movement === 'string'
+          ? record.movement
+          : '';
     return {
       ...base,
       type: 'fitness',
-      ...readFitnessJournalFields(record),
+      content,
     };
   }
   if (isContentSimpleJournalType(recordType)) {
@@ -259,12 +233,35 @@ export function normalizeJournalEntry(raw: unknown): JournalEntry {
     };
   }
 
-  if (legacyTags.length === 1 && isContentSimpleJournalType(legacyTags[0])) {
-    return {
-      ...base,
-      type: legacyTags[0],
-      content: joinFilledReflectionFields(reflectionFields),
-    };
+  if (legacyTags.length === 1) {
+    const legacyType = legacyTags[0];
+    if (isContentSimpleJournalType(legacyType)) {
+      return {
+        ...base,
+        type: legacyType,
+        content: joinFilledReflectionFields(reflectionFields),
+      };
+    }
+    if (legacyType === 'food') {
+      return {
+        ...base,
+        type: 'food',
+        ...readFoodJournalFields(record),
+      };
+    }
+    if (legacyType === 'fitness') {
+      const content =
+        typeof record.content === 'string'
+          ? record.content
+          : typeof record.movement === 'string'
+            ? record.movement
+            : joinFilledReflectionFields(reflectionFields);
+      return {
+        ...base,
+        type: 'fitness',
+        content,
+      };
+    }
   }
 
   return {
@@ -298,11 +295,11 @@ export function getJournalEntryPreview(entry: JournalEntry): string {
     return entry.content || 'Reflection saved';
   }
 
-  if (isFoodJournalEntry(entry)) {
+  if (entry.type === 'food') {
     return joinFilledFoodFields(entry) || 'Reflection saved';
   }
 
-  return entry.movement || 'Reflection saved';
+  return entry.content || 'Reflection saved';
 }
 
 export function getJournalEntryTitle(entry: JournalEntry): string {
@@ -315,12 +312,13 @@ export function getJournalEntryTitle(entry: JournalEntry): string {
     return firstLine || JOURNAL_ENTRY_TYPE_LABELS[entry.type];
   }
 
-  if (isFoodJournalEntry(entry)) {
+  if (entry.type === 'food') {
     const preview = joinFilledFoodFields(entry).split('\n\n')[0]?.trim();
     return preview || JOURNAL_ENTRY_TYPE_LABELS.food;
   }
 
-  return entry.movement.trim() || JOURNAL_ENTRY_TYPE_LABELS.fitness;
+  const firstLine = entry.content.trim().split('\n')[0]?.trim();
+  return firstLine || JOURNAL_ENTRY_TYPE_LABELS.fitness;
 }
 
 export function journalEntryMatchesSearch(entry: JournalEntry, query: string): boolean {
@@ -338,9 +336,9 @@ export function journalEntryMatchesSearch(entry: JournalEntry, query: string): b
     return entry.content.toLowerCase().includes(q);
   }
 
-  if (isFoodJournalEntry(entry)) {
+  if (entry.type === 'food') {
     return FOOD_JOURNAL_FIELD_KEYS.some((key) => entry[key].toLowerCase().includes(q));
   }
 
-  return entry.movement.toLowerCase().includes(q);
+  return entry.content.toLowerCase().includes(q);
 }

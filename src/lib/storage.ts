@@ -8,7 +8,7 @@ import type {
 } from '../types';
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import { getDayMoodLabel } from './dayMood';
-import { journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
+import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
 import { computeCheckInStreak } from './streaks';
@@ -295,12 +295,9 @@ ${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
       }
 
       if (e.type === 'food') {
-        const sections = [
-          e.breakfast.trim() && `**What did you eat for breakfast?** ${e.breakfast}`,
-          e.lunch.trim() && `**What did you eat for lunch?** ${e.lunch}`,
-          e.dinner.trim() && `**What did you eat for dinner?** ${e.dinner}`,
-          e.snack.trim() && `**What did you eat as a snack?** ${e.snack}`,
-        ].filter(Boolean);
+        const sections = FOOD_JOURNAL_FIELDS.map(
+          ({ key, label }) => e[key].trim() && `**${label}** ${e[key]}`,
+        ).filter(Boolean);
 
         return `## ${e.date}
 
@@ -315,7 +312,7 @@ ${sections.join('\n\n')}
 
 **Type:** Fitness
 
-**How did you move your body today?** ${e.movement}
+**${FITNESS_JOURNAL_LABEL}** ${e.content}
 `;
       }
 
