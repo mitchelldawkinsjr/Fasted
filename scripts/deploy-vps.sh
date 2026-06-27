@@ -5,6 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REMOTE="${VPS_REMOTE:-vps}"
 DEPLOY_DIR="${DEPLOY_DIR:-/opt/apps/fasted-calendar}"
+SUPABASE_DIR="${SUPABASE_DIR:-/opt/apps/supabase}"
+APP_PORT="${APP_PUBLISH_PORT:-8022}"
 
 echo "Deploying to ${REMOTE}:${DEPLOY_DIR}"
 
@@ -22,6 +24,27 @@ rsync -avz --delete \
 ssh "$REMOTE" <<EOF
 set -e
 cd ${DEPLOY_DIR}
+
+# Auto-create .env from the Supabase stack if it is missing or empty.
+# The ANON_KEY and API_EXTERNAL_URL already live in the Supabase .env on this server.
+if [ ! -s .env ]; then
+  echo "No .env found — generating from Supabase stack..."
+  ANON_KEY=\$(grep '^ANON_KEY=' ${SUPABASE_DIR}/.env | cut -d= -f2-)
+  API_URL=\$(grep '^API_EXTERNAL_URL=' ${SUPABASE_DIR}/.env | cut -d= -f2-)
+  if [ -z "\$ANON_KEY" ] || [ -z "\$API_URL" ]; then
+    echo "ERROR: Could not read ANON_KEY / API_EXTERNAL_URL from ${SUPABASE_DIR}/.env"
+    exit 1
+  fi
+  cat > .env <<ENVEOF
+VITE_SUPABASE_URL=\${API_URL}
+VITE_SUPABASE_ANON_KEY=\${ANON_KEY}
+APP_PUBLISH_PORT=${APP_PORT}
+ENVEOF
+  echo ".env created (VITE_SUPABASE_URL=\${API_URL})"
+else
+  echo ".env already present — skipping generation"
+fi
+
 docker compose -f docker-compose.prod.yml build --no-cache
 docker compose -f docker-compose.prod.yml up -d
 
