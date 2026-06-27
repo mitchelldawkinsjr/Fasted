@@ -82,7 +82,7 @@ nginx -s reload"
 }
 
 add_proxy_host "app.example.com" "fasted-calendar-app" 80
-add_proxy_host "api.app.example.com" "fasted-calendar-pocketbase" 8090
+add_proxy_host "api.app.example.com" "supabase-kong" 8000
 
 docker restart nginx-proxy
 sleep 8

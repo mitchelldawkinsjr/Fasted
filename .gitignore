@@ -10,3 +10,7 @@ tsconfig.tsbuildinfo
 test-results
 playwright-report
 e2e/overflow-screenshots/
+
+# Internal tooling — not for public consumption
+.stitch/
+AGENTIC_PWA_BUILD_PROMPT.md

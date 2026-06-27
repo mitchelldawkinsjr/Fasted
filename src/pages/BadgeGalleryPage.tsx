@@ -4,7 +4,7 @@ import { BadgeSprite } from '../components/BadgeSprite';
 import { Icon } from '../components/Icon';
 import { GLOBAL_BADGES, getPhaseMilestonesForPhase } from '../data/phaseAchievements';
 import type { PhaseMilestoneDef } from '../data/phaseAchievements';
-import { FAST_PHASES } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 
 // ─── Tier metadata ────────────────────────────────────────────────────────────
 type Tier = 1 | 2 | 3 | 'complete';
@@ -289,10 +289,11 @@ function TierLegend() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export function BadgeGalleryPage() {
   const [showLocked, setShowLocked] = useState(false);
+  const { phases } = useActiveJourney();
 
   const totalCount =
     GLOBAL_BADGES.length +
-    FAST_PHASES.reduce((sum, p) => sum + getPhaseMilestonesForPhase(p.id).length, 0);
+    phases.reduce((sum, p) => sum + getPhaseMilestonesForPhase(p.id).length, 0);
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up pb-stack-lg">
@@ -353,7 +354,7 @@ export function BadgeGalleryPage() {
       </section>
 
       {/* Phase progression tracks */}
-      {FAST_PHASES.map((phase) => (
+      {phases.map((phase) => (
         <PhaseProgressionTrack
           key={phase.id}
           phaseId={phase.id}
