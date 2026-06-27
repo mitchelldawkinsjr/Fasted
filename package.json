@@ -21,6 +21,7 @@
     "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
+    "@cursor/sdk": "^1.0.18",
     "@playwright/test": "^1.60.0",
     "@types/canvas-confetti": "^1.6.4",
     "@types/react": "^18.3.12",
