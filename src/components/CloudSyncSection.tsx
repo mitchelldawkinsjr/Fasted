@@ -66,7 +66,8 @@ export function CloudSyncSection() {
         </div>
         <p className="p-gutter text-body-md text-on-surface-variant">
           Cloud sync is not configured. Set{' '}
-          <code className="text-primary">VITE_POCKETBASE_URL</code> in{' '}
+          <code className="text-primary">VITE_SUPABASE_URL</code> and{' '}
+          <code className="text-primary">VITE_SUPABASE_ANON_KEY</code> in{' '}
           <code className="text-primary">.env.local</code> and rebuild. See{' '}
           <code className="text-primary">docker/SETUP.md</code>.
         </p>
@@ -121,7 +122,7 @@ export function CloudSyncSection() {
   };
 
   const handleSignOut = () => {
-    signOut();
+    void signOut();
     toast.info(messages.sync.signedOut);
   };
 
@@ -204,7 +205,7 @@ export function CloudSyncSection() {
       ) : (
         <form onSubmit={(e) => void handleAuth(e)} className="space-y-4 p-gutter">
           <p className="text-body-md text-on-surface-variant">
-            Optional. Sign in to back up check-ins, journal, and badges to your PocketBase server.
+            Optional. Sign in to back up check-ins, journal, and badges to your server.
           </p>
 
           <div className="flex gap-2">
