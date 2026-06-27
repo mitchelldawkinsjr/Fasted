@@ -14,6 +14,7 @@ rsync -avz --delete \
   --exclude '.git' \
   --exclude 'node_modules' \
   --exclude 'docker/pb_data' \
+  --exclude '.env' \
   --exclude '.env.local' \
   --exclude 'dist' \
   "$ROOT/" "${REMOTE}:${DEPLOY_DIR}/"
