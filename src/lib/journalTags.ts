@@ -29,7 +29,7 @@ export const DAILY_REFLECTION_FIELDS = [
   { key: 'prayerFocus', label: VERSE_OF_THE_DAY_LABEL },
   { key: 'prayedAbout', label: 'What I prayed about' },
   { key: 'godTeaching', label: 'What God is teaching me' },
-  { key: 'hungerNotes', label: 'Hunger / discipline notes' },
+  { key: 'hungerNotes', label: "What do you think contributed most to how you're feeling today?" },
   { key: 'victory', label: 'Victory today' },
   { key: 'tomorrowIntention', label: "Tomorrow's intention" },
 ] as const satisfies ReadonlyArray<{
