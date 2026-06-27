@@ -1,0 +1,105 @@
+# Issue Implement (Local) — backup when cloud agent quota is exhausted.
+#
+# Flow mirrors issue-implement.yml but dispatches to Cursor Automation on your laptop.
+#
+# Usage:
+#   1. needs-spec → spec comment (unchanged)
+#   2. ready-local → local automation implements (instead of ready → cloud agent)
+#
+# Requires:
+#   - Cursor Automation webhook (same as pr-agent-fix)
+#   - Cursor open on your machine when the webhook fires
+#
+# Disable: set repo variable ISSUE_IMPLEMENT_LOCAL_ENABLED=false
+
+name: Issue Implement (Local)
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  dispatch-local-automation:
+    if: |
+      vars.ISSUE_IMPLEMENT_LOCAL_ENABLED != 'false' &&
+      github.event.label.name == 'ready-local'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check webhook secret
+        run: |
+          if [ -z "${{ secrets.CURSOR_AUTOMATION_WEBHOOK_URL }}" ]; then
+            echo "::error::CURSOR_AUTOMATION_WEBHOOK_URL secret is not configured. Save the Cursor Automation and add the webhook URL under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Verify guards and mark in progress
+        id: guards
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+
+          LABELS=$(gh issue view "$ISSUE_NUMBER" --json labels -q '[.labels[].name] | join(",")')
+
+          if ! echo "$LABELS" | grep -q 'spec-added'; then
+            echo "::error::Issue must have the spec-added label before ready-local. Apply needs-spec first and wait for the spec comment."
+            exit 1
+          fi
+
+          if echo "$LABELS" | grep -qE 'agent-working|pr-opened'; then
+            echo "::notice::Issue already dispatched or completed. Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          gh label create ready-local --description "Trigger local Cursor Automation implementation (quota backup)" --color "FBCA04" 2>/dev/null || true
+          gh label create agent-working --description "Agent implementing (cloud or local)" --color "FBBA04" 2>/dev/null || true
+          gh label create pr-opened --description "Implementation PR opened" --color "1D76DB" 2>/dev/null || true
+          gh label create agent-failed --description "Agent failed to implement" --color "D93F0B" 2>/dev/null || true
+
+          gh issue edit "$ISSUE_NUMBER" --add-label agent-working --remove-label ready-local
+
+      - name: Post dispatch notice
+        if: steps.guards.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "$(cat <<'EOF'
+          🤖 **Cursor Automation (local) dispatched** for issue implementation.
+
+          Ensure Cursor is open with the **Fasted Agent** automation enabled. The agent will implement on a branch, open a draft PR, and post a completion comment — same end state as the cloud agent path.
+
+          After the PR opens, Bugbot + Ponytail review runs automatically via `pr-review.yml`.
+          EOF
+          )"
+
+      - name: Dispatch Cursor Automation
+        if: steps.guards.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          CURSOR_AUTOMATION_WEBHOOK_URL: ${{ secrets.CURSOR_AUTOMATION_WEBHOOK_URL }}
+          CURSOR_AUTOMATION_WEBHOOK_AUTH: ${{ secrets.CURSOR_AUTOMATION_WEBHOOK_AUTH }}
+        run: node scripts/dispatch-cursor-automation-issue.mjs
+
+      - name: Recover issue labels on dispatch failure
+        if: failure() && steps.guards.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue edit "$ISSUE_NUMBER" \
+            --remove-label agent-working \
+            --add-label agent-failed \
+            --add-label ready-local 2>/dev/null || true
+          gh issue comment "$ISSUE_NUMBER" --body "Cursor Automation dispatch failed. Check the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) and re-add \`ready-local\` after fixing."

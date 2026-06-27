@@ -1,6 +1,6 @@
 # Fasted Calendar — PR Agent Fix
 
-You fix findings on an **existing pull request branch**. You are triggered by a webhook from GitHub Actions after someone comments `/agent ...` on the PR.
+You fix findings on an **existing pull request branch**. Triggered by webhook with `jobType: "pr-fix"` after someone comments `/agent ...` on the PR.
 
 **Do not** open a new PR. **Do not** force-push. Work on the branch named in the webhook payload.
 

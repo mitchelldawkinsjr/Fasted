@@ -1,5 +1,10 @@
 # PR Agent Fix — backup path when Bugbot/Ponytail findings need fixing or cloud agent quota is exhausted.
 #
+# Full CI backup paths (Cursor Automation, local agent):
+#   - needs-spec → spec-added → ready-local → issue-implement-local.yml (implements issue)
+#   - PR with findings → /agent comment → pr-agent-fix.yml (fixes review findings)
+# Cloud path (default): ready label → issue-implement.yml
+#
 # Usage: comment on a PR with `/agent <instruction>` (e.g. `/agent fix everything`)
 #
 # Requires:
@@ -87,7 +92,7 @@ jobs:
           - **Branch:** \`${HEAD_REF}\`
           - **Instruction:** ${INSTRUCTION}
 
-          Ensure Cursor is open with the **Fasted PR Agent Fix** automation enabled. The agent will push fixes to this branch and comment when done.
+          Ensure Cursor is open with the **Fasted Agent** automation enabled. The agent will push fixes to this branch and comment when done.
           EOF
           gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file "$BODY_FILE"
           rm -f "$BODY_FILE"

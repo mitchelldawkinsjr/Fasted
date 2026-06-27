@@ -15,3 +15,6 @@ prompt:
     You MUST post the issue completion comment before stopping. Do not stop right after opening the PR.
   agentStartedComment: |
     The agent will implement the fix (PR stays draft until review bots finish), clear `agent-working` when the PR opens, post screenshots (if UI changed), and post a completion comment.
+labels:
+  ready: ready
+  readyLocal: ready-local

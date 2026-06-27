@@ -7,6 +7,7 @@ const DEFAULTS = {
     needsSpec: "needs-spec",
     specAdded: "spec-added",
     ready: "ready",
+    readyLocal: "ready-local",
     agentWorking: "agent-working",
     prOpened: "pr-opened",
     agentFailed: "agent-failed",
