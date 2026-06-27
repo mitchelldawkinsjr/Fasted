@@ -24,58 +24,47 @@ rsync -avz --delete \
   --exclude 'test-results' \
   "$ROOT/" "${REMOTE}:${DEPLOY_DIR}/"
 
-# Single SSH session (bash -s) so creds, .env, and docker compose all run
-# in the same shell — no cross-session file visibility issues.
-# Vars passed as positional args to avoid heredoc escaping problems.
-ssh "$REMOTE" bash -s -- "$DEPLOY_DIR" "$SUPABASE_DIR" "$APP_PORT" <<'ENDSSH'
-set -e
-DEPLOY_DIR="$1"
-SUPABASE_DIR="$2"
-APP_PORT="$3"
+# Use a double-quoted ssh command (not bash -s heredoc) so that docker
+# compose never competes with bash for stdin — the approach confirmed to
+# work in manual testing.  Local variables like DEPLOY_DIR are expanded
+# here; remote variables are escaped with \$.
+ssh "$REMOTE" "
+  set -e
+  cd '${DEPLOY_DIR}'
 
-cd "$DEPLOY_DIR"
+  ANON_KEY=\$(grep '^ANON_KEY=' '${SUPABASE_DIR}/.env' | cut -d= -f2-)
+  API_URL=\$(grep '^API_EXTERNAL_URL=' '${SUPABASE_DIR}/.env' | cut -d= -f2-)
 
-# Read creds from the Supabase stack (refreshed on every deploy).
-ANON_KEY=$(grep '^ANON_KEY=' "$SUPABASE_DIR/.env" | cut -d= -f2-)
-API_URL=$(grep '^API_EXTERNAL_URL=' "$SUPABASE_DIR/.env" | cut -d= -f2-)
+  if [ -z \"\$ANON_KEY\" ] || [ -z \"\$API_URL\" ]; then
+    echo 'ERROR: Could not read ANON_KEY / API_EXTERNAL_URL from ${SUPABASE_DIR}/.env'
+    exit 1
+  fi
 
-if [ -z "$ANON_KEY" ] || [ -z "$API_URL" ]; then
-  echo "ERROR: Could not read ANON_KEY / API_EXTERNAL_URL from $SUPABASE_DIR/.env"
-  exit 1
-fi
+  printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nAPP_PUBLISH_PORT=%s\n' \
+    \"\$API_URL\" \"\$ANON_KEY\" '${APP_PORT}' > .env
+  echo \".env written (VITE_SUPABASE_URL=\$API_URL)\"
 
-# Write app .env (docker compose also reads this as fallback).
-printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nAPP_PUBLISH_PORT=%s\n' \
-  "$API_URL" "$ANON_KEY" "$APP_PORT" > .env
-echo ".env written (VITE_SUPABASE_URL=$API_URL)"
+  export VITE_SUPABASE_URL=\"\$API_URL\"
+  export VITE_SUPABASE_ANON_KEY=\"\$ANON_KEY\"
 
-# Pass vars directly to docker compose — belt-and-suspenders.
-# Redirect stdin to /dev/null so Docker BuildKit doesn't consume
-# the bash -s script stream when reading bake definitions.
-VITE_SUPABASE_URL="$API_URL" \
-VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
-docker compose -f docker-compose.prod.yml build --no-cache \
-  --build-arg VITE_SUPABASE_URL="$API_URL" \
-  --build-arg VITE_SUPABASE_ANON_KEY="$ANON_KEY" < /dev/null
+  docker compose -f docker-compose.prod.yml build --no-cache \
+    --build-arg VITE_SUPABASE_URL=\"\$API_URL\" \
+    --build-arg VITE_SUPABASE_ANON_KEY=\"\$ANON_KEY\"
 
-VITE_SUPABASE_URL="$API_URL" \
-VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
-docker compose -f docker-compose.prod.yml up -d < /dev/null
+  docker compose -f docker-compose.prod.yml up -d
 
-echo "Waiting for containers..."
-sleep 10
-docker compose -f docker-compose.prod.yml ps
+  echo 'Waiting for containers...'
+  sleep 10
+  docker compose -f docker-compose.prod.yml ps
 
-if curl -fsS http://127.0.0.1:8022/ >/dev/null; then
-  echo "App health check passed (port 8022)"
-else
-  echo "App health check failed"
-  docker compose -f docker-compose.prod.yml logs app
-  exit 1
-fi
+  curl -fsS http://127.0.0.1:8022/ >/dev/null && echo 'App health check passed (port 8022)' || {
+    echo 'App health check failed'
+    docker compose -f docker-compose.prod.yml logs app
+    exit 1
+  }
 
-echo "Deployment successful!"
-ENDSSH
+  echo 'Deployment successful!'
+"
 
 echo ""
 echo "Ensure Supabase is running: bash ${DEPLOY_DIR}/scripts/setup-supabase-vps.sh (on VPS, first time only)"
