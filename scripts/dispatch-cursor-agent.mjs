@@ -68,10 +68,10 @@ ${commentBodies || "(no comments yet — read the issue body carefully)"}
 Implement this issue now.
 
 **Critical reminders:**
-- Leave the PR as a **draft** — do NOT run \`gh pr ready\`. Bugbot + Ponytail run on \`pr-opened\`; the review workflow marks it ready when bots finish.
+- Leave the PR as a **draft** — do NOT run \`gh pr ready\`. Bugbot + Ponytail run when \`pr-opened\` is applied (automatic on PR open).
 - UI changes REQUIRE screenshots committed under \`artifacts/issue-${issueNumber}/\` and linked in the issue completion comment.
-- You MUST post the issue completion comment and swap labels (\`agent-working\` → \`pr-opened\`) before stopping.
-- Follow the Required Workflow and Completion Checklist in the context file exactly. Do not stop after opening the PR.
+- When the PR is opened with \`Fixes #${issueNumber}\`, GitHub Actions clears \`agent-working\` and starts review — do NOT swap labels yourself.
+- You MUST post the issue completion comment before stopping. Do not stop right after opening the PR.
 `;
 
 let agent;
@@ -111,7 +111,7 @@ try {
 - **Run ID:** \`${run.id}\`
 - **Track progress:** [cursor.com/agents](https://cursor.com/agents)
 
-The agent will implement the fix (PR stays draft until review bots finish), post screenshots (if UI changed), and update labels when done (\`pr-opened\`).`
+The agent will implement the fix (PR stays draft until review bots finish), clear \`agent-working\` when the PR opens, post screenshots (if UI changed), and post a completion comment.`
   );
 } catch (err) {
   if (err instanceof CursorAgentError) {

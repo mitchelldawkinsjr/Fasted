@@ -66,14 +66,14 @@ Match existing naming (camelCase types, `saveX`/`getX` storage functions, Tailwi
 4. Run `npm ci && npm run build` before finishing
 5. Run relevant Playwright tests if UI changed: `npm run test:e2e`
 6. Open a PR with title referencing the issue, body with `Fixes #{N}`, summary, and test plan — **leave it as a draft** (Cursor opens draft PRs by default; do **not** run `gh pr ready`)
+   - GitHub Actions removes `agent-working` and starts review automatically when the PR is opened (`.github/workflows/pr-review.yml`). Do **not** manage those labels yourself on success.
 7. **Mandatory screenshots** if the fix touches any React component, page, CSS, or user-visible copy (see Screenshots section)
-8. **Mandatory issue update** (use `gh` CLI — do this last):
+8. **Mandatory issue update** (use `gh` CLI — after PR is open; labels are already updated by Actions):
    ```bash
    gh issue comment <N> --repo mitchelldawkinsjr/Fasted --body-file /tmp/completion.md
-   gh issue edit <N> --repo mitchelldawkinsjr/Fasted --remove-label agent-working --add-label pr-opened
    ```
    The completion comment must include: PR link, short summary, and screenshot markdown (if UI changed).
-   Adding `pr-opened` triggers **Bugbot + Ponytail** on the draft PR; the review workflow marks the PR ready when bots finish.
+   Opening the PR with `Fixes #N` triggers **Bugbot + Ponytail** via `.github/workflows/pr-review.yml`; the workflow marks the PR ready when bots finish.
 9. **Do NOT merge the PR**
 10. If blocked, spec is ambiguous, or acceptance criteria cannot be met:
     - Comment on the issue explaining why
@@ -121,10 +121,9 @@ You are **not done** until all applicable items are checked:
 - [ ] Code implemented and pushed
 - [ ] `npm run build` passes
 - [ ] Relevant e2e tests pass (if UI changed)
-- [ ] PR opened with `Fixes #{N}` (still **draft** — do not run `gh pr ready`)
+- [ ] PR opened with `Fixes #{N}` (still **draft** — do not run `gh pr ready`; Actions clears `agent-working` on PR open)
 - [ ] Screenshots committed (if UI changed) and linked in issue comment
 - [ ] Issue comment posted with PR link + summary (+ screenshots)
-- [ ] Labels updated: removed `agent-working`, added `pr-opened`
 
 ---
 
