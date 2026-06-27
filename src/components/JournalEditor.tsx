@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
 import { MoodPicker } from './MoodPicker';
+import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
 import {
@@ -149,6 +150,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   };
 
   const dailyFields = DAILY_REFLECTION_FIELDS.map(({ key, label }) => ({
+    key,
     label,
     value: dailyFieldState[key][0],
     set: dailyFieldState[key][1],
@@ -186,15 +188,20 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             <MoodPicker value={dayMood} onChange={setDayMood} />
           </section>
           {dailyFields.map((field) => (
-            <label key={field.label} className="block">
-              <span className="mb-1 block text-body-md font-medium text-on-surface">
-                {field.label}
-              </span>
+            <label key={field.key} className="block">
+              {field.key === 'prayerFocus' ? (
+                <VerseOfTheDayLabel date={date} />
+              ) : (
+                <span className="mb-1 block text-body-md font-medium text-on-surface">
+                  {field.label}
+                </span>
+              )}
               <textarea
                 value={field.value}
                 onChange={(e) => field.set(e.target.value)}
                 rows={2}
                 className={inputClass}
+                aria-label={field.label}
               />
             </label>
           ))}
