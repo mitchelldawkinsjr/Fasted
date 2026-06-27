@@ -8,8 +8,12 @@ type Props = {
 };
 
 export function RequireAuth({ children }: Props) {
-  const { isLoggedIn, isConfigured } = useAuth();
+  const { isLoggedIn, isConfigured, initialized } = useAuth();
   const location = useLocation();
+
+  if (!initialized) {
+    return <p className="text-body-md text-on-surface-variant">Loading…</p>;
+  }
 
   if (!isConfigured || !isSyncConfigured()) {
     return (

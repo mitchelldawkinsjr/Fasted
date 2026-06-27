@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './components/AuthProvider';
 import { Layout } from './components/Layout';
 import { ScrollToTop } from './components/ScrollToTop';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -18,9 +19,10 @@ import { TodayPage } from './pages/TodayPage';
 export default function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider>
-        <ScrollToTop />
-        <Routes>
+      <AuthProvider>
+        <ThemeProvider>
+          <ScrollToTop />
+          <Routes>
           <Route element={<Layout />}>
             <Route index element={<TodayPage />} />
             <Route path="calendar" element={<CalendarPage />} />
@@ -35,8 +37,9 @@ export default function App() {
             <Route path="join/:code" element={<JoinGroupPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
-        </Routes>
-      </ThemeProvider>
+          </Routes>
+        </ThemeProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
