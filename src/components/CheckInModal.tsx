@@ -1,6 +1,6 @@
 import confetti from 'canvas-confetti';
 import { useEffect, useState } from 'react';
-import { getPhaseForDate } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
 import { formatError, messages } from '../lib/messages';
@@ -30,6 +30,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const [message, setMessage] = useState('');
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
 
+  const { getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
 
   useEffect(() => {

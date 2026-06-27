@@ -1,4 +1,13 @@
-import { PLAN_END, PLAN_START } from '../data/fastingPlan';
+import { FASTED_JOURNEY } from '../data/phaseTemplates';
+import type { Journey } from '../types';
+import { getProgress } from './storage';
+import {
+  clampToJourneyDate,
+  getActiveJourney,
+  getAllJourneyDates,
+  getJourneyPlanEnd,
+  isDateInJourney,
+} from './journey';
 
 export function getLocalDateString(date: Date = new Date()): string {
   const year = date.getFullYear();
@@ -25,33 +34,42 @@ export function getDayOfWeek(dateStr: string): number {
   return parseLocalDate(dateStr).getDay();
 }
 
-export function isWithinPlan(dateStr: string): boolean {
-  return dateStr >= PLAN_START && dateStr <= PLAN_END;
-}
-
-/** Keep journal/check-in dates inside the fasting plan window. */
-export function clampDateToPlan(dateStr: string): string {
-  if (!dateStr) return PLAN_START;
-  if (dateStr < PLAN_START) return PLAN_START;
-  if (dateStr > PLAN_END) return PLAN_END;
-  return dateStr;
-}
-
-export function getDefaultJournalDate(today: string = getLocalDateString()): string {
-  return clampDateToPlan(today);
-}
-
-export function getAllPlanDates(): string[] {
-  const dates: string[] = [];
-  const current = parseLocalDate(PLAN_START);
-  const end = parseLocalDate(PLAN_END);
-
-  while (current <= end) {
-    dates.push(getLocalDateString(current));
-    current.setDate(current.getDate() + 1);
+function resolveJourney(journey?: Journey): Journey {
+  if (journey) return journey;
+  try {
+    return getActiveJourney(getProgress());
+  } catch {
+    return FASTED_JOURNEY;
   }
+}
 
-  return dates;
+export function isWithinPlan(dateStr: string, journey?: Journey): boolean {
+  const active = resolveJourney(journey);
+  return isDateInJourney(dateStr, active);
+}
+
+/** Keep journal/check-in dates inside the active journey window. */
+export function clampDateToPlan(dateStr: string, journey?: Journey): string {
+  return clampToJourneyDate(dateStr, resolveJourney(journey));
+}
+
+export function getDefaultJournalDate(
+  today: string = getLocalDateString(),
+  journey?: Journey,
+): string {
+  return clampDateToPlan(today, journey);
+}
+
+export function getAllPlanDates(journey?: Journey): string[] {
+  return getAllJourneyDates(resolveJourney(journey));
+}
+
+export function getPlanEnd(journey?: Journey): string {
+  return getJourneyPlanEnd(resolveJourney(journey));
+}
+
+export function getPlanStart(journey?: Journey): string {
+  return resolveJourney(journey).startDate;
 }
 
 export function daysBetween(start: string, end: string): number {
