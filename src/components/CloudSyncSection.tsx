@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
 import { useAuth } from '../hooks/useAuth';
 import { useSyncStatus } from '../hooks/useSyncStatus';
 import { formatError, messages } from '../lib/messages';
+import { consumeAuthReturnPath, peekAuthReturnPath, setAuthReturnPath } from '../lib/authReturnPath';
 import { signIn, signInWithOAuth, signOut, signUp, syncNow, updateUserProfile } from '../lib/sync';
 import type { SyncState } from '../lib/sync';
 import { toast } from '../lib/toast';
@@ -42,6 +44,9 @@ function SyncStatusPill({ state }: { state: SyncState }) {
 export function CloudSyncSection() {
   const { isConfigured, isLoggedIn, email, name } = useAuth();
   const syncStatus = useSyncStatus();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const sectionRef = useRef<HTMLElement>(null);
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
   const [formEmail, setFormEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,6 +60,18 @@ export function CloudSyncSection() {
     }
   }, [isLoggedIn, name]);
 
+  useEffect(() => {
+    if (location.hash !== '#account-sign-in') return;
+    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [location.hash, location.key]);
+
+  const redirectAfterAuth = () => {
+    const returnPath = consumeAuthReturnPath();
+    if (returnPath) {
+      navigate(returnPath, { replace: true });
+    }
+  };
+
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
 
@@ -62,7 +79,7 @@ export function CloudSyncSection() {
     return (
       <section className="stitch-card overflow-hidden">
         <div className="border-b border-surface-variant px-gutter py-4">
-          <h3 className="label-caps text-secondary">CLOUD SYNC</h3>
+          <h3 className="label-caps text-secondary">ACCOUNT</h3>
         </div>
         <p className="p-gutter text-body-md text-on-surface-variant">
           Cloud sync is not configured. Set{' '}
@@ -89,6 +106,7 @@ export function CloudSyncSection() {
       setPassword('');
       setPasswordConfirm('');
       setProfileName('');
+      redirectAfterAuth();
     } catch (err) {
       toast.error(formatError(err, messages.sync.authFailed));
     } finally {
@@ -129,8 +147,12 @@ export function CloudSyncSection() {
   const handleOAuth = async (provider: 'google' | 'facebook') => {
     setBusy(true);
     try {
+      const returnPath = peekAuthReturnPath();
+      if (returnPath) {
+        setAuthReturnPath(returnPath);
+      }
       await signInWithOAuth(provider);
-      // Page will redirect; no toast needed here
+      // Page will redirect; AuthReturnRedirect handles return path after OAuth
     } catch (err) {
       toast.error(formatError(err, messages.sync.oauthFailed));
       setBusy(false);
@@ -146,12 +168,16 @@ export function CloudSyncSection() {
           ? 'Check your connection and try again'
           : syncStatus.state === 'syncing'
             ? 'Uploading your latest progress'
-            : 'Sign in to back up your journey';
+            : 'Sign in to back up your journey and join groups';
 
   return (
-    <section className="stitch-card overflow-hidden">
+    <section
+      id="account-sign-in"
+      ref={sectionRef}
+      className="stitch-card scroll-mt-24 overflow-hidden"
+    >
       <div className="border-b border-surface-variant px-gutter py-4">
-        <h3 className="label-caps text-secondary">CLOUD SYNC</h3>
+        <h3 className="label-caps text-secondary">ACCOUNT</h3>
       </div>
 
       {isLoggedIn ? (
@@ -216,7 +242,8 @@ export function CloudSyncSection() {
       ) : (
         <form onSubmit={(e) => void handleAuth(e)} className="space-y-4 p-gutter">
           <p className="text-body-md text-on-surface-variant">
-            Optional. Sign in to back up check-ins, journal, and badges to your server.
+            One account for cloud backup and group journeys. Sign in to sync check-ins, journal, and
+            badges, and to create or join fasting groups.
           </p>
 
           <div className="flex gap-2">

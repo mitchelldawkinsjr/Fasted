@@ -1,5 +1,6 @@
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { setAuthReturnPath } from '../lib/authReturnPath';
 import { isSyncConfigured } from '../lib/supabase';
 
 type Props = {
@@ -26,11 +27,14 @@ export function RequireAuth({ children }: Props) {
   }
 
   if (!isLoggedIn) {
+    const returnPath = `${location.pathname}${location.search}`;
+    setAuthReturnPath(returnPath);
+
     return (
       <Navigate
-        to="/settings"
+        to="/settings#account-sign-in"
         replace
-        state={{ from: location.pathname, message: 'Sign in to use group features.' }}
+        state={{ from: returnPath, message: 'Sign in to continue.' }}
       />
     );
   }

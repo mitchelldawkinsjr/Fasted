@@ -13,7 +13,7 @@ export function GroupsSettingsSection() {
           <h3 className="label-caps text-secondary">GROUPS</h3>
         </div>
         <p className="p-gutter text-body-md text-on-surface-variant">
-          Configure cloud sync above to create or join fasting groups.
+          Configure your account above to create or join fasting groups.
         </p>
       </section>
     );
@@ -28,18 +28,31 @@ export function GroupsSettingsSection() {
         <p className="text-body-md text-on-surface-variant">
           {isLoggedIn
             ? 'Journey together with friends, your church, or your community.'
-            : 'Sign in to create or join a group journey.'}
+            : 'Create or join a group journey after signing in to your account above.'}
         </p>
-        <Link
-          to="/groups"
-          className="group flex w-full items-center justify-between rounded-xl bg-secondary-container px-4 py-3 text-on-secondary-container"
-        >
-          <span className="flex items-center gap-3 text-body-md">
-            <Icon name="groups" />
-            {isLoggedIn ? 'Your groups' : 'Sign in for groups'}
-          </span>
-          <Icon name="chevron_right" />
-        </Link>
+        {isLoggedIn ? (
+          <Link
+            to="/groups"
+            className="group flex w-full items-center justify-between rounded-xl bg-secondary-container px-4 py-3 text-on-secondary-container"
+          >
+            <span className="flex items-center gap-3 text-body-md">
+              <Icon name="groups" />
+              Your groups
+            </span>
+            <Icon name="chevron_right" />
+          </Link>
+        ) : (
+          <a
+            href="#account-sign-in"
+            className="group flex w-full items-center justify-between rounded-xl bg-secondary-container px-4 py-3 text-on-secondary-container"
+          >
+            <span className="flex items-center gap-3 text-body-md">
+              <Icon name="groups" />
+              Create or join a group
+            </span>
+            <Icon name="chevron_right" />
+          </a>
+        )}
       </div>
     </section>
   );
