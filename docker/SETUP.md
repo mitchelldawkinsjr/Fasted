@@ -74,6 +74,23 @@ VITE_SUPABASE_ANON_KEY=your-local-anon-key
 
 Run local Supabase via the official docker stack, or leave vars unset to disable cloud sync UI entirely.
 
+## Social login (OAuth)
+
+The app supports Google and Apple sign-in via Supabase OAuth. To enable:
+
+1. **Supabase Dashboard → Authentication → Providers** — enable Google and/or Apple and supply the required credentials (client ID + secret for Google; Service ID, Team ID, Key ID + private key for Apple).
+
+2. **Add redirect URLs** in Supabase Dashboard → Authentication → URL Configuration:
+   - `http://localhost:5173` (Vite dev server)
+   - `https://fasted.360web.cloud` (production)
+
+3. **Self-hosted Supabase**: set `ADDITIONAL_REDIRECT_URLS` in the Supabase `.env`:
+   ```
+   ADDITIONAL_REDIRECT_URLS=http://localhost:5173,https://fasted.360web.cloud
+   ```
+
+After clicking a social button the browser is redirected to the provider. On return, Supabase exchanges the code for a session and the `onAuthStateChange` listener in `useAuth.ts` fires, setting `isLoggedIn = true`. `reconcileWithCloud` then runs automatically via `initAuthSync` (called in `main.tsx`).
+
 ## Sync behavior
 
 - All saves go to `localStorage` first (works offline).

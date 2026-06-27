@@ -25,6 +25,7 @@ export const messages = {
     offline: 'Offline — your progress is saved on this device.',
     failed: 'Sync failed. Your data is still saved on this device.',
     authFailed: 'Sign in failed. Check your email and password.',
+    oauthFailed: 'Social sign-in failed. Please try again or use email.',
     profileFailed: 'Profile update failed. Please try again.',
   },
   progress: {
