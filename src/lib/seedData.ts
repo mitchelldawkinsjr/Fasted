@@ -1,5 +1,5 @@
-import { PLAN_START } from '../data/fastingPlan';
-import { getLocalDateString, parseLocalDate } from './dateUtils';
+import { FASTED_JOURNEY } from '../data/phaseTemplates';
+import { getPlanStart, getLocalDateString, parseLocalDate } from './dateUtils';
 import { GUEST_STORAGE_KEY } from './storage';
 import type { CheckIn, DailyReflectionEntry, DayMood, UserProgress } from '../types';
 
@@ -43,7 +43,7 @@ function buildCheckIn(date: string): CheckIn {
 function buildSeedProgress(endDate: string = getLocalDateString()): UserProgress {
   const journalEntries: DailyReflectionEntry[] = [];
   const checkIns: CheckIn[] = [];
-  let cursor = PLAN_START;
+  let cursor = getPlanStart();
   let index = 0;
 
   while (cursor <= endDate) {
@@ -64,6 +64,8 @@ function buildSeedProgress(endDate: string = getLocalDateString()): UserProgress
       scriptureNote:
         'Scripture text uses NLT (New Living Translation) wording where available. Some phases use a brief summary when multiple readings are assigned.',
     },
+    activeJourneyId: FASTED_JOURNEY.id,
+    journeys: [FASTED_JOURNEY],
     updatedAt: new Date().toISOString(),
   };
 }

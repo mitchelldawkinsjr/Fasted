@@ -82,7 +82,7 @@ nginx -s reload"
 }
 
 add_proxy_host "fasted.360web.cloud" "fasted-calendar-app" 80
-add_proxy_host "api.fasted.360web.cloud" "fasted-calendar-pocketbase" 8090
+add_proxy_host "api.fasted.360web.cloud" "supabase-kong" 8000
 
 docker restart nginx-proxy
 sleep 8

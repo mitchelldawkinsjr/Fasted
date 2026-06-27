@@ -1,6 +1,5 @@
-import { PLAN_END, PLAN_START } from '../data/fastingPlan';
+import { getPlanEnd, getPlanStart, parseLocalDate } from './dateUtils';
 import { DAY_MOOD_OPTIONS, getDayMoodOption } from './dayMood';
-import { parseLocalDate } from './dateUtils';
 import { getJournalEntriesWithMood } from './moodStats';
 import type { DayMood } from '../types';
 
@@ -64,8 +63,8 @@ export function formatMonthLabel(key: string): string {
 
 export function getPlanMonths(): string[] {
   const months: string[] = [];
-  const start = parseLocalDate(PLAN_START);
-  const end = parseLocalDate(PLAN_END);
+  const start = parseLocalDate(getPlanStart());
+  const end = parseLocalDate(getPlanEnd());
   const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
 
   while (cursor <= end) {

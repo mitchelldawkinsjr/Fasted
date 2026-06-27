@@ -1,25 +1,26 @@
 import { Link } from 'react-router-dom';
 import { CalendarGrid } from '../components/CalendarGrid';
 import { InfoBanner } from '../components/InfoBanner';
-import { FAST_PHASES, PLAN_END, PLAN_START } from '../data/fastingPlan';
 import { Icon } from '../components/Icon';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 
 export function CalendarPage() {
   const today = getLocalDateString();
-  const beforePlan = today < PLAN_START;
-  const afterPlan = today > PLAN_END;
+  const { phases, planStart, planEnd } = useActiveJourney();
+  const beforePlan = today < planStart;
+  const afterPlan = today > planEnd;
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
       {beforePlan && (
         <InfoBanner variant="preview" icon="event_upcoming">
-          Your journey begins {formatDisplayDate(PLAN_START)}. Browse the full timeline below.
+          Your journey begins {formatDisplayDate(planStart)}. Browse the full timeline below.
         </InfoBanner>
       )}
       {afterPlan && (
         <InfoBanner variant="preview" icon="history">
-          The fasting plan ended {formatDisplayDate(PLAN_END)}. Your timeline remains here.
+          The fasting plan ended {formatDisplayDate(planEnd)}. Your timeline remains here.
         </InfoBanner>
       )}
 
@@ -31,7 +32,7 @@ export function CalendarPage() {
       </section>
 
       <div className="flex flex-wrap gap-2">
-        {FAST_PHASES.map((phase) => (
+        {phases.map((phase) => (
           <span
             key={phase.id}
             className={`rounded-full px-3 py-1 label-caps text-phase-${phase.id} bg-phase-${phase.id}/10`}

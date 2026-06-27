@@ -3,8 +3,10 @@ import type {
   Badge,
   CheckIn,
   JournalEntry,
+  Journey,
   UserProgress,
 } from '../types';
+import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import { getDayMoodLabel } from './dayMood';
 import { journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
@@ -31,6 +33,8 @@ const DEFAULT_PROGRESS: UserProgress = {
   journalEntries: [],
   badges: [],
   settings: DEFAULT_SETTINGS,
+  activeJourneyId: FASTED_JOURNEY.id,
+  journeys: [FASTED_JOURNEY],
 };
 
 /** `null` = guest (unsigned) scope. */
@@ -74,6 +78,11 @@ function loadRaw(): UserProgress {
       ...parsed,
       journalEntries,
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
+      journeys:
+        Array.isArray(parsed.journeys) && parsed.journeys.length > 0
+          ? parsed.journeys
+          : [FASTED_JOURNEY],
+      activeJourneyId: parsed.activeJourneyId ?? FASTED_JOURNEY.id,
     };
 
     const needsJournalMigration = (parsed.journalEntries ?? []).some(journalEntryNeedsMigration);
@@ -130,6 +139,9 @@ export function persistFromCloud(data: UserProgress): void {
     ...data,
     journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
     settings: { ...DEFAULT_SETTINGS, ...data.settings },
+    journeys:
+      Array.isArray(data.journeys) && data.journeys.length > 0 ? data.journeys : [FASTED_JOURNEY],
+    activeJourneyId: data.activeJourneyId ?? FASTED_JOURNEY.id,
   };
   cache = normalized;
   localStorage.setItem(getActiveStorageKey(), JSON.stringify(normalized));
@@ -203,6 +215,32 @@ export function saveSettings(settings: Partial<AppSettings>): void {
     ...progress,
     settings: { ...progress.settings, ...settings },
   });
+}
+
+export function saveJourney(journey: Journey): void {
+  const progress = getProgress();
+  const existing = progress.journeys.findIndex((j) => j.id === journey.id);
+  const journeys =
+    existing >= 0
+      ? progress.journeys.map((j, i) => (i === existing ? journey : j))
+      : [...progress.journeys, journey];
+  persist({ ...progress, journeys });
+}
+
+export function setActiveJourney(id: string): void {
+  const progress = getProgress();
+  if (!progress.journeys.some((j) => j.id === id)) {
+    throw new Error('Journey not found');
+  }
+  persist({ ...progress, activeJourneyId: id });
+}
+
+export function updateFastedJourneyStartDate(startDate: string): void {
+  const progress = getProgress();
+  const journeys = progress.journeys.map((j) =>
+    j.id === FASTED_JOURNEY.id ? { ...j, startDate } : j,
+  );
+  persist({ ...progress, journeys });
 }
 
 export function resetProgress(): void {
