@@ -10,6 +10,12 @@ tsconfig.tsbuildinfo
 test-results
 playwright-report
 e2e/overflow-screenshots/
+pocketbase-backup/
+a11y-audit/node_modules/
+a11y-audit/report-*.json
+a11y-audit/report-*.md
+a11y-audit/summary-*.json
+a11y-audit/test-results/
 
 # Internal tooling — not for public consumption
 .stitch/

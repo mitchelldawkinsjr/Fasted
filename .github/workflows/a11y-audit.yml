@@ -1,0 +1,71 @@
+name: Accessibility Audit
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "src/styles/**"
+      - "a11y-audit/**"
+      - ".github/workflows/a11y-audit.yml"
+  workflow_dispatch:
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: a11y-audit
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install app dependencies
+        working-directory: ..
+        run: npm ci
+
+      - name: Build app
+        working-directory: ..
+        run: npm run build
+
+      - name: Install audit dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start preview server
+        working-directory: ..
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:4173/ && break
+            sleep 2
+          done
+
+      - name: Run axe accessibility audit
+        env:
+          A11Y_BASE_URL: http://127.0.0.1:4173
+        run: node audit.mjs --after
+
+      - name: Run Playwright accessibility tests
+        env:
+          A11Y_BASE_URL: http://127.0.0.1:4173
+        run: npx playwright test
+
+      - name: Upload audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-reports
+          path: |
+            a11y-audit/summary-*.json
+            a11y-audit/report-*.json
+            a11y-audit/report-*.md

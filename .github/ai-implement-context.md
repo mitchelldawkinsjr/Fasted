@@ -14,6 +14,7 @@ Read the GitHub issue, all comments (especially the spec with Acceptance Criteri
 - **Backend:** Supabase client (`src/lib/supabase.ts`) — no Next.js, no server routes
 - **Deployment:** Docker + Caddy on VPS (`docker-compose.prod.yml`, `.github/workflows/deploy-vps.yml`)
 - **Testing:** Playwright e2e (`e2e/`), `npm run build`, `npm run test:e2e`
+- **CI:** GitHub Actions runs `build` + `test:e2e` on every PR (`.github/workflows/ci.yml`) — fix failures before opening a PR
 
 This is a **client-side SPA**. Persistence is local-first with optional Supabase cloud sync.
 
@@ -64,7 +65,7 @@ Match existing naming (camelCase types, `saveX`/`getX` storage functions, Tailwi
 2. Create branch: `issue-{N}-{short-slug}` (e.g. `issue-28-menu-bar-title`)
 3. Make a **minimal, focused diff** — do not refactor unrelated code
 4. Run `npm ci && npm run build` before finishing
-5. Run relevant Playwright tests if UI changed: `npm run test:e2e`
+5. Run relevant Playwright tests if UI changed: `npm run test:e2e` (CI runs the full e2e suite on every PR)
 6. Open a PR with title referencing the issue, body with `Fixes #{N}`, summary, and test plan — **leave it as a draft** (Cursor opens draft PRs by default; do **not** run `gh pr ready`)
    - GitHub Actions removes `agent-working` and starts review automatically when the PR is opened (`.github/workflows/pr-review.yml`). Do **not** manage those labels yourself on success.
 7. **Mandatory screenshots** if the fix touches any React component, page, CSS, or user-visible copy (see Screenshots section)

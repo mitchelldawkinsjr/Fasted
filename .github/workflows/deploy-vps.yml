@@ -23,6 +23,34 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    name: Pre-deploy tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright e2e tests
+        env:
+          CI: true
+        run: npx playwright test e2e/journal.spec.ts e2e/check-in-streak.spec.ts
+
   secrets-check:
     runs-on: ubuntu-latest
     outputs:
@@ -54,7 +82,7 @@ jobs:
 
   deploy:
     name: Deploy Fasted Calendar
-    needs: secrets-check
+    needs: [test, secrets-check]
     if: needs.secrets-check.outputs.configured == 'true'
     runs-on: ubuntu-latest
     env:

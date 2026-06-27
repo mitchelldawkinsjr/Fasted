@@ -1,0 +1,73 @@
+name: VPS Health Check
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  secrets-check:
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - name: Check VPS secrets
+        id: check
+        run: |
+          if [ -n "${{ secrets.VPS_SSH_KEY }}" ] && [ -n "${{ secrets.VPS_HOST }}" ] && [ -n "${{ secrets.VPS_USER }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Warn when secrets are missing
+        if: steps.check.outputs.configured != 'true'
+        run: |
+          echo "::warning::VPS health check skipped. Configure VPS_SSH_KEY, VPS_HOST, and VPS_USER."
+
+  check-vps:
+    name: Check Fasted Calendar on VPS
+    needs: secrets-check
+    if: needs.secrets-check.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+    steps:
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add server to known hosts
+        run: ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Health check via SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+          APP_PORT: ${{ vars.APP_PUBLISH_PORT }}
+        run: |
+          set -e
+          DEPLOY_PATH="${DEPLOY_DIR:-/opt/apps/fasted-calendar}"
+          PORT="${APP_PORT:-8022}"
+
+          ssh "${VPS_USER}@${VPS_HOST}" << EOF
+            set -e
+            cd "${DEPLOY_PATH}"
+
+            echo "Container status:"
+            docker compose -f docker-compose.prod.yml ps
+
+            echo "Health endpoint:"
+            curl -fsS "http://127.0.0.1:${PORT}/"
+            echo ""
+          EOF
+
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"Fasted Calendar VPS health check failed"}' \
+            "$SLACK_WEBHOOK"

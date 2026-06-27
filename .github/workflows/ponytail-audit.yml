@@ -1,0 +1,60 @@
+name: Ponytail Repo Audit
+
+on:
+  schedule:
+    - cron: "0 9 1 * *"
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: Branch or ref to audit
+        required: false
+        default: main
+        type: string
+
+jobs:
+  ponytail-audit:
+    name: Full-repo Ponytail audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      issues: write
+      contents: read
+    env:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check CURSOR_API_KEY secret
+        run: |
+          if [ -z "${{ secrets.CURSOR_API_KEY }}" ]; then
+            echo "::error::CURSOR_API_KEY secret is not configured."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Ponytail repo audit
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.base_ref || 'main' }}
+          MANUAL: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/dispatch-ponytail-audit.mjs
+
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"Fasted Calendar Ponytail repo audit failed"}' \
+            "$SLACK_WEBHOOK"
