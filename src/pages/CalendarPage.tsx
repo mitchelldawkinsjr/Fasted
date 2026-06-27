@@ -27,7 +27,8 @@ export function CalendarPage() {
       <section>
         <h2 className="font-display text-headline-lg-mobile text-primary">Sacred Timeline</h2>
         <p className="mt-2 max-w-md text-body-md text-on-surface-variant">
-          Your path of discipline and renewal from June 13 to December 19, 2026.
+          Your path of discipline and renewal from {formatDisplayDate(planStart)} to{' '}
+          {formatDisplayDate(planEnd)}.
         </p>
       </section>
 

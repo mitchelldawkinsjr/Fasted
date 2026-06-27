@@ -20,10 +20,11 @@ const FAST_TYPE_LABELS: Record<DailyFastPlan['fastType'], string> = {
 
 export function TodayFastCard({ plan }: Props) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const { phases, planStart, planEnd } = useActiveJourney();
+  const { phases, planStart, planEnd, journey } = useActiveJourney();
   const phase = phases.find((p) => p.id === plan.phaseId);
-  const totalDays = getAllPlanDates().length;
-  const dayNumber = getAllPlanDates().findIndex((d) => d === plan.date) + 1;
+  const planDates = getAllPlanDates(journey);
+  const totalDays = planDates.length;
+  const dayNumber = planDates.findIndex((d) => d === plan.date) + 1;
 
   return (
     <section className="space-y-stack-lg animate-fade-in-up">

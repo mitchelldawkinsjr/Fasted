@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { formatDisplayDate } from '../lib/dateUtils';
@@ -15,6 +15,12 @@ export function JourneySettingsSection() {
   const [startDate, setStartDate] = useState(
     progress.journeys.find((j) => j.id === FASTED_JOURNEY.id)?.startDate ?? FASTED_JOURNEY.startDate,
   );
+
+  useEffect(() => {
+    const stored =
+      progress.journeys.find((j) => j.id === FASTED_JOURNEY.id)?.startDate ?? FASTED_JOURNEY.startDate;
+    setStartDate(stored);
+  }, [progress.journeys]);
 
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';

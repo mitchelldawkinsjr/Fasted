@@ -65,13 +65,22 @@ function buildSeedProgress(endDate: string = getLocalDateString()): UserProgress
         'Scripture text uses NLT (New Living Translation) wording where available. Some phases use a brief summary when multiple readings are assigned.',
     },
     activeJourneyId: FASTED_JOURNEY.id,
-    journeys: [FASTED_JOURNEY],
+    journeys: [
+      {
+        ...FASTED_JOURNEY,
+        phases: FASTED_JOURNEY.phases.map((phase) => ({ ...phase })),
+      },
+    ],
     updatedAt: new Date().toISOString(),
   };
 }
 
-/** Dev-only: replace guest localStorage with seeded progress for UI testing. */
+/** Dev-only: seed guest localStorage for UI testing (skips if data already exists). */
 export function applyDevSeedIfRequested(): void {
   if (!import.meta.env.DEV || import.meta.env.VITE_SEED_DATA !== 'true') return;
+
+  const force = import.meta.env.VITE_SEED_FORCE === 'true';
+  if (!force && localStorage.getItem(GUEST_STORAGE_KEY)) return;
+
   localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(buildSeedProgress()));
 }
