@@ -66,6 +66,15 @@
     filter: grayscale(100%);
     opacity: 0.35;
   }
+
+  .date-input {
+    @apply box-border min-w-0 max-w-full w-full;
+  }
+
+  .date-input::-webkit-date-and-time-value {
+    min-width: 0;
+    text-align: left;
+  }
 }
 
 @keyframes fade-in-up {
