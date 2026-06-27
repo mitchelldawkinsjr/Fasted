@@ -50,13 +50,13 @@ public/assets/  # Phase images and overview graphic
 
 All progress (check-ins, journal entries, badges, settings) is stored locally in `localStorage`. No backend required for offline use.
 
-### Optional cloud sync (PocketBase)
+### Optional cloud sync (Supabase)
 
-Sign in under **Settings → Cloud Sync** to back up your progress JSON to a self-hosted PocketBase instance.
+Sign in under **Settings → Cloud Sync** to back up your progress JSON to a self-hosted Supabase instance.
 
 ```bash
 cp .env.example .env.local
-# Set VITE_POCKETBASE_URL=http://127.0.0.1:8090
+# Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 npm run dev
 ```
 
