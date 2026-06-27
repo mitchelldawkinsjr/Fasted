@@ -117,7 +117,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       setHungerNotes('');
       setVictory('');
       setTomorrowIntention('');
-      clearSimpleFields();
     } else {
       clearSimpleFields();
       if (nextType === 'food' && preservedText) {
