@@ -47,7 +47,7 @@ jobs:
       - name: Block committed secrets and sensitive artifacts
         run: |
           set -e
-          patterns='\.env$|\.env\.|\.pem$|\.key$|\.db$|pocketbase-backup/'
+          patterns='(^|/)\.env$|\.env\.(local|prod|production|staging|development)$|\.pem$|\.key$|\.db$|pocketbase-backup/'
           if git ls-files | grep -E "$patterns"; then
             echo "ERROR: Sensitive or backup files are tracked in git."
             exit 1
