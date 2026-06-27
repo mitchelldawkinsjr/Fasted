@@ -1,0 +1,24 @@
+{
+  "name": "Fasted PR Agent Fix",
+  "description": "Fix Bugbot/Ponytail findings on PR branches when GitHub Actions fires the webhook after an /agent comment.",
+  "workflow": {
+    "triggers": [
+      {
+        "webhook": {}
+      }
+    ],
+    "actions": [
+      {
+        "prComment": {}
+      }
+    ],
+    "gitConfig": {
+      "repo": "mitchelldawkinsjr/Fasted",
+      "branch": "main"
+    },
+    "prompts": [
+      "You are fixing findings on an existing Fasted Calendar pull request. The webhook body is JSON with: prNumber, branch, prUrl, instruction, issueNumber, bugbotFindings, ponytailFindings, repo.\n\nRead .github/ai-agent-fix-context.md in the repo for full rules.\n\nWorkflow:\n1. Parse the webhook payload from the trigger.\n2. git fetch origin && git checkout <branch> && git pull origin <branch>\n3. Follow instruction first, then Bugbot findings (bugs), then Ponytail findings if in scope.\n4. Run npm run build when logic/types changed.\n5. Commit and push to <branch> — never open a new PR, never force-push.\n6. Post a PR comment on prNumber summarizing fixes, skips, and build status.\n\nIf blocked, post a PR comment explaining why and stop."
+    ],
+    "memoryEnabled": true
+  }
+}

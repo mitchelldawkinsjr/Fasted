@@ -1,0 +1,103 @@
+# PR Agent Fix — backup path when Bugbot/Ponytail findings need fixing or cloud agent quota is exhausted.
+#
+# Usage: comment on a PR with `/agent <instruction>` (e.g. `/agent fix everything`)
+#
+# Requires:
+#   - Cursor Automation "Fasted PR Agent Fix" saved with webhook trigger
+#   - Secret CURSOR_AUTOMATION_WEBHOOK_URL (and optional CURSOR_AUTOMATION_WEBHOOK_AUTH)
+#   - Cursor open on your machine (local compute) when the webhook fires
+#
+# Disable without deleting: set repo variable PR_AGENT_FIX_ENABLED=false
+
+name: PR Agent Fix
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  dispatch-automation:
+    if: |
+      vars.PR_AGENT_FIX_ENABLED != 'false' &&
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/agent')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: read
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check webhook secret
+        run: |
+          if [ -z "${{ secrets.CURSOR_AUTOMATION_WEBHOOK_URL }}" ]; then
+            echo "::error::CURSOR_AUTOMATION_WEBHOOK_URL secret is not configured. Save the Cursor Automation and add the webhook URL under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Resolve pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          PR_JSON=$(gh api "/repos/${REPO}/pulls/${{ github.event.issue.number }}" \
+            --jq '{number, headRef: .head.ref, url: .html_url}')
+
+          echo "number=$(echo "$PR_JSON" | jq -r '.number')" >> "$GITHUB_OUTPUT"
+          echo "head_ref=$(echo "$PR_JSON" | jq -r '.headRef')" >> "$GITHUB_OUTPUT"
+          echo "url=$(echo "$PR_JSON" | jq -r '.url')" >> "$GITHUB_OUTPUT"
+
+      - name: Extract instruction
+        id: instruction
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          set -euo pipefail
+          INSTRUCTION=$(echo "$COMMENT_BODY" | sed 's/^\/agent[[:space:]]*//')
+          if [ -z "$INSTRUCTION" ]; then
+            echo "::error::Comment must include an instruction after /agent (e.g. /agent fix the bugbot findings)"
+            exit 1
+          fi
+          echo "text<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$INSTRUCTION" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Post dispatch notice
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+          ACTOR: ${{ github.event.comment.user.login }}
+          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+          INSTRUCTION: ${{ steps.instruction.outputs.text }}
+        run: |
+          set -euo pipefail
+          BODY_FILE=$(mktemp)
+          cat > "$BODY_FILE" <<EOF
+          🤖 **Cursor Automation dispatched** by @${ACTOR}
+
+          - **PR:** [#${PR_NUMBER}](${PR_URL})
+          - **Branch:** \`${HEAD_REF}\`
+          - **Instruction:** ${INSTRUCTION}
+
+          Ensure Cursor is open with the **Fasted PR Agent Fix** automation enabled. The agent will push fixes to this branch and comment when done.
+          EOF
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file "$BODY_FILE"
+          rm -f "$BODY_FILE"
+
+      - name: Dispatch Cursor Automation webhook
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          INSTRUCTION: ${{ steps.instruction.outputs.text }}
+          CURSOR_AUTOMATION_WEBHOOK_URL: ${{ secrets.CURSOR_AUTOMATION_WEBHOOK_URL }}
+          CURSOR_AUTOMATION_WEBHOOK_AUTH: ${{ secrets.CURSOR_AUTOMATION_WEBHOOK_AUTH }}
+        run: node scripts/dispatch-cursor-automation.mjs
