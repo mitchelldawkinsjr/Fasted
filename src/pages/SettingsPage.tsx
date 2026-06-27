@@ -29,7 +29,6 @@ export function SettingsPage() {
   const location = useLocation();
   const authPromptHandled = useRef(false);
   const progress = useProgress();
-  const [reminderTime, setReminderTime] = useState(progress.settings.reminderTime);
   const [theme, setTheme] = useState(progress.settings.theme);
   const [savingPrefs, setSavingPrefs] = useState(false);
 
@@ -56,7 +55,7 @@ export function SettingsPage() {
   const handleSaveSettings = async () => {
     setSavingPrefs(true);
     try {
-      saveSettings({ reminderTime, theme });
+      saveSettings({ theme });
       toast.success(messages.save.preferences);
     } catch (err) {
       toast.error(formatError(err, messages.errors.savePreferences));
@@ -123,12 +122,6 @@ export function SettingsPage() {
           <h3 className="label-caps text-secondary">PREFERENCES</h3>
         </div>
         <div className="divide-y divide-surface-variant p-gutter space-y-4">
-          <label className="block">
-            <span className="mb-1 block text-body-md text-on-surface">Reminder time</span>
-            <input type="time" value={reminderTime} onChange={(e) => setReminderTime(e.target.value)} className={inputClass} />
-            <p className="mt-1 text-label-caps text-on-surface-variant">Saved for future notification support.</p>
-          </label>
-
           <label className="block">
             <span className="mb-1 block text-body-md text-on-surface">Theme</span>
             <select value={theme} onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'system')} className={inputClass}>
