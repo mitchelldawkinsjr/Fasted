@@ -50,15 +50,17 @@ printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nAPP_PUBLISH_PORT=%s\n' 
 echo ".env written (VITE_SUPABASE_URL=$API_URL)"
 
 # Pass vars directly to docker compose — belt-and-suspenders.
+# Redirect stdin to /dev/null so Docker BuildKit doesn't consume
+# the bash -s script stream when reading bake definitions.
 VITE_SUPABASE_URL="$API_URL" \
 VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
 docker compose -f docker-compose.prod.yml build --no-cache \
   --build-arg VITE_SUPABASE_URL="$API_URL" \
-  --build-arg VITE_SUPABASE_ANON_KEY="$ANON_KEY"
+  --build-arg VITE_SUPABASE_ANON_KEY="$ANON_KEY" < /dev/null
 
 VITE_SUPABASE_URL="$API_URL" \
 VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d < /dev/null
 
 echo "Waiting for containers..."
 sleep 10
