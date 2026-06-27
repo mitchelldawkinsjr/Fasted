@@ -164,6 +164,46 @@ test('filter chips show only entries with matching types', async ({ page }) => {
   await expect(page.getByRole('listitem').filter({ hasText: 'Prayer only entry' })).toHaveCount(0);
 });
 
+test('saves a food entry with meal fields', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Food');
+  await page.getByLabel('What did you eat for breakfast?').fill('Oatmeal with berries');
+  await page.getByLabel('What did you eat for lunch?').fill('Grilled chicken salad');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await expect(page.getByRole('listitem').filter({ hasText: 'Oatmeal with berries' })).toBeVisible();
+  await expect(page.getByText('#FOOD')).toBeVisible();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  expect(stored.journalEntries[0].type).toBe('food');
+  expect(stored.journalEntries[0].breakfast).toBe('Oatmeal with berries');
+  expect(stored.journalEntries[0].lunch).toBe('Grilled chicken salad');
+});
+
+test('saves a fitness entry', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Fitness');
+  await page.getByLabel('How did you move your body today?').fill('30-minute walk after dinner');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await expect(
+    page.getByRole('listitem').filter({ hasText: '30-minute walk after dinner' }),
+  ).toBeVisible();
+  await expect(page.getByText('#FITNESS')).toBeVisible();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  expect(stored.journalEntries[0].type).toBe('fitness');
+  expect(stored.journalEntries[0].content).toBe('30-minute walk after dinner');
+});
+
 test('migrates legacy tagged entries on load', async ({ page }) => {
   await page.evaluate((key) => {
     localStorage.setItem(
@@ -205,4 +245,108 @@ test('migrates legacy tagged entries on load', async ({ page }) => {
 
   expect(stored.journalEntries[0].type).toBe('prayer');
   expect(stored.journalEntries[0].content).toBe('Legacy prayer note');
+});
+
+test('preserves text when switching prayer -> daily reflection -> prayer', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Prayer');
+  await page.getByLabel('Prayer').fill('Prayer text preserved across switches');
+  await selectType(page, 'Daily Reflection');
+  await selectType(page, 'Prayer');
+  await expect(page.getByLabel('Prayer')).toHaveValue('Prayer text preserved across switches');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  expect(stored.journalEntries[0].type).toBe('prayer');
+  expect(stored.journalEntries[0].content).toBe('Prayer text preserved across switches');
+});
+
+test('migrates legacy food tagged entries', async ({ page }) => {
+  await page.evaluate((key) => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        checkIns: [],
+        journalEntries: [
+          {
+            id: 'legacy-food-1',
+            date: '2026-06-13',
+            tags: ['food'],
+            prayerFocus: 'Legacy breakfast note',
+            prayedAbout: '',
+            godTeaching: '',
+            hungerNotes: '',
+            victory: '',
+            tomorrowIntention: '',
+            updatedAt: '2026-06-13T12:00:00.000Z',
+          },
+        ],
+        badges: [],
+        settings: {
+          reminderTime: '07:00',
+          theme: 'light',
+          scriptureNote: '',
+        },
+      }),
+    );
+  }, STORAGE_KEY);
+  await page.reload();
+
+  await expect(page.getByRole('listitem').filter({ hasText: 'Legacy breakfast note' })).toBeVisible();
+  await expect(page.getByText('#FOOD')).toBeVisible();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  expect(stored.journalEntries[0].type).toBe('food');
+  expect(stored.journalEntries[0].breakfast).toBe('Legacy breakfast note');
+});
+
+test('migrates legacy fitness tagged entries', async ({ page }) => {
+  await page.evaluate((key) => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        checkIns: [],
+        journalEntries: [
+          {
+            id: 'legacy-fitness-1',
+            date: '2026-06-13',
+            tags: ['fitness'],
+            prayerFocus: 'Legacy movement note',
+            prayedAbout: '',
+            godTeaching: '',
+            hungerNotes: '',
+            victory: '',
+            tomorrowIntention: '',
+            updatedAt: '2026-06-13T12:00:00.000Z',
+          },
+        ],
+        badges: [],
+        settings: {
+          reminderTime: '07:00',
+          theme: 'light',
+          scriptureNote: '',
+        },
+      }),
+    );
+  }, STORAGE_KEY);
+  await page.reload();
+
+  await expect(page.getByRole('listitem').filter({ hasText: 'Legacy movement note' })).toBeVisible();
+  await expect(page.getByText('#FITNESS')).toBeVisible();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  expect(stored.journalEntries[0].type).toBe('fitness');
+  expect(stored.journalEntries[0].content).toBe('Legacy movement note');
 });

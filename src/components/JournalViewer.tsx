@@ -1,11 +1,15 @@
+import type { ReactNode } from 'react';
 import { JournalTypeBadge } from './JournalTypePicker';
 import { MoodBadge } from './MoodPicker';
 import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
   DAILY_REFLECTION_FIELDS,
+  FITNESS_JOURNAL_LABEL,
+  FOOD_JOURNAL_FIELDS,
   JOURNAL_ENTRY_TYPE_LABELS,
   isDailyReflectionEntry,
+  isSingleContentJournalEntry,
 } from '../lib/journalTags';
 import type { JournalEntry } from '../types';
 
@@ -16,8 +20,18 @@ type Props = {
   onDelete: () => void;
 };
 
-function DailyReflectionBody({ entry }: { entry: Extract<JournalEntry, { type: 'daily-reflection' }> }) {
-  const filledFields = DAILY_REFLECTION_FIELDS.filter((field) => entry[field.key].trim());
+type FieldDef<T extends string> = { key: T; label: string };
+
+function FieldListBody<T extends string>({
+  fields,
+  getValue,
+  renderHeading,
+}: {
+  fields: ReadonlyArray<FieldDef<T>>;
+  getValue: (key: T) => string;
+  renderHeading?: (field: FieldDef<T>) => ReactNode;
+}) {
+  const filledFields = fields.filter((field) => getValue(field.key).trim());
   if (filledFields.length === 0) {
     return <p className="text-body-md text-on-surface-variant">No reflection notes recorded.</p>;
   }
@@ -26,13 +40,13 @@ function DailyReflectionBody({ entry }: { entry: Extract<JournalEntry, { type: '
     <div className="space-y-stack-md">
       {filledFields.map((field) => (
         <section key={field.key}>
-          {field.key === 'prayerFocus' ? (
-            <VerseOfTheDayLabel date={entry.date} as="heading" />
+          {renderHeading ? (
+            renderHeading(field)
           ) : (
             <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
           )}
           <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
-            {entry[field.key]}
+            {getValue(field.key)}
           </p>
         </section>
       ))}
@@ -41,6 +55,9 @@ function DailyReflectionBody({ entry }: { entry: Extract<JournalEntry, { type: '
 }
 
 export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
+  const simpleContentLabel =
+    entry.type === 'fitness' ? FITNESS_JOURNAL_LABEL : JOURNAL_ENTRY_TYPE_LABELS[entry.type];
+
   return (
     <div className="space-y-stack-md">
       <header className="flex items-start justify-between gap-3">
@@ -72,12 +89,22 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
       </header>
 
       {isDailyReflectionEntry(entry) ? (
-        <DailyReflectionBody entry={entry} />
-      ) : entry.content.trim() ? (
+        <FieldListBody
+          fields={DAILY_REFLECTION_FIELDS}
+          getValue={(key) => entry[key]}
+          renderHeading={(field) =>
+            field.key === 'prayerFocus' ? (
+              <VerseOfTheDayLabel date={entry.date} as="heading" />
+            ) : (
+              <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
+            )
+          }
+        />
+      ) : entry.type === 'food' ? (
+        <FieldListBody fields={FOOD_JOURNAL_FIELDS} getValue={(key) => entry[key]} />
+      ) : isSingleContentJournalEntry(entry) && entry.content.trim() ? (
         <section>
-          <h3 className="mb-1 text-body-md font-medium text-on-surface">
-            {JOURNAL_ENTRY_TYPE_LABELS[entry.type]}
-          </h3>
+          <h3 className="mb-1 text-body-md font-medium text-on-surface">{simpleContentLabel}</h3>
           <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
             {entry.content}
           </p>

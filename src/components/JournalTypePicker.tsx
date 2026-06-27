@@ -21,7 +21,7 @@ export function JournalTypePicker({ value, onChange, prefilled = false, classNam
       <p className="mb-3 text-label-caps text-on-surface-variant">
         {prefilled
           ? 'Pre-selected below — tap to change the reflection type.'
-          : 'Daily Reflection uses the full form. Other types use a single entry box.'}
+          : 'Daily Reflection uses the full form. Prayer, Gratitude, and Victory use a single entry box. Food and Fitness use their own prompts.'}
       </p>
       <div className="grid grid-cols-2 gap-2">
         {JOURNAL_ENTRY_TYPES.map((type) => {

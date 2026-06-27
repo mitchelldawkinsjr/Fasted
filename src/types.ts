@@ -93,7 +93,9 @@ export type CheckIn = {
 /** Five-point daily mood scale for Daily Reflection entries. */
 export type DayMood = 'amazing' | 'good' | 'okay' | 'bad' | 'horrible';
 
-export type SimpleJournalType = 'prayer' | 'gratitude' | 'victory';
+export type ContentSimpleJournalType = 'prayer' | 'gratitude' | 'victory';
+
+export type SimpleJournalType = ContentSimpleJournalType | 'food' | 'fitness';
 
 export type JournalEntryType = 'daily-reflection' | SimpleJournalType;
 
@@ -115,10 +117,28 @@ export type DailyReflectionEntry = JournalEntryBase & {
   tomorrowIntention: string;
 };
 
-export type SimpleJournalEntry = JournalEntryBase & {
-  type: SimpleJournalType;
+export type ContentSimpleJournalEntry = JournalEntryBase & {
+  type: ContentSimpleJournalType;
   content: string;
 };
+
+export type FoodJournalEntry = JournalEntryBase & {
+  type: 'food';
+  breakfast: string;
+  lunch: string;
+  dinner: string;
+  snack: string;
+};
+
+export type FitnessJournalEntry = JournalEntryBase & {
+  type: 'fitness';
+  content: string;
+};
+
+export type SimpleJournalEntry =
+  | ContentSimpleJournalEntry
+  | FoodJournalEntry
+  | FitnessJournalEntry;
 
 export type JournalEntry = DailyReflectionEntry | SimpleJournalEntry;
 
