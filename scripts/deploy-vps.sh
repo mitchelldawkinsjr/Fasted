@@ -21,29 +21,28 @@ rsync -avz --delete \
   --exclude 'dist' \
   "$ROOT/" "${REMOTE}:${DEPLOY_DIR}/"
 
-ssh "$REMOTE" <<EOF
-set -e
-cd ${DEPLOY_DIR}
-
-# Auto-create .env from the Supabase stack if it is missing or empty.
-# The ANON_KEY and API_EXTERNAL_URL already live in the Supabase .env on this server.
-if [ ! -s .env ]; then
-  echo "No .env found — generating from Supabase stack..."
-  ANON_KEY=\$(grep '^ANON_KEY=' ${SUPABASE_DIR}/.env | cut -d= -f2-)
-  API_URL=\$(grep '^API_EXTERNAL_URL=' ${SUPABASE_DIR}/.env | cut -d= -f2-)
-  if [ -z "\$ANON_KEY" ] || [ -z "\$API_URL" ]; then
-    echo "ERROR: Could not read ANON_KEY / API_EXTERNAL_URL from ${SUPABASE_DIR}/.env"
-    exit 1
+# Auto-create .env on the VPS from the Supabase stack if missing/empty.
+# Uses a single ssh command (no heredoc) to avoid nested-heredoc escaping issues.
+ssh "$REMOTE" "
+  set -e
+  if [ ! -s ${DEPLOY_DIR}/.env ]; then
+    echo 'No .env found — generating from Supabase stack...'
+    ANON_KEY=\$(grep '^ANON_KEY=' ${SUPABASE_DIR}/.env | cut -d= -f2-)
+    API_URL=\$(grep '^API_EXTERNAL_URL=' ${SUPABASE_DIR}/.env | cut -d= -f2-)
+    if [ -z \"\$ANON_KEY\" ] || [ -z \"\$API_URL\" ]; then
+      echo 'ERROR: Could not read ANON_KEY / API_EXTERNAL_URL from ${SUPABASE_DIR}/.env'
+      exit 1
+    fi
+    printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nAPP_PUBLISH_PORT=${APP_PORT}\n' \"\$API_URL\" \"\$ANON_KEY\" > ${DEPLOY_DIR}/.env
+    echo \".env created (VITE_SUPABASE_URL=\$API_URL)\"
+  else
+    echo '.env already present — skipping generation'
   fi
-  cat > .env <<ENVEOF
-VITE_SUPABASE_URL=\${API_URL}
-VITE_SUPABASE_ANON_KEY=\${ANON_KEY}
-APP_PUBLISH_PORT=${APP_PORT}
-ENVEOF
-  echo ".env created (VITE_SUPABASE_URL=\${API_URL})"
-else
-  echo ".env already present — skipping generation"
-fi
+"
+
+ssh "$REMOTE" <<'ENDSSH'
+set -e
+cd /opt/360ws/clients/docker-app/fasted-calendar
 
 docker compose -f docker-compose.prod.yml build --no-cache
 docker compose -f docker-compose.prod.yml up -d
@@ -61,8 +60,8 @@ else
 fi
 
 echo "Deployment successful!"
-EOF
+ENDSSH
 
 echo ""
-echo "Ensure Supabase is running: bash ${DEPLOY_DIR}/scripts/setup-supabase-vps.sh (on VPS, first time only)"
-echo "Ensure NPM proxy: sudo bash ${DEPLOY_DIR}/scripts/npm-add-supabase.sh (on VPS)"
+echo "Ensure Supabase is running: bash /opt/360ws/clients/docker-app/fasted-calendar/scripts/setup-supabase-vps.sh (on VPS, first time only)"
+echo "Ensure NPM proxy: sudo bash /opt/360ws/clients/docker-app/fasted-calendar/scripts/npm-add-supabase.sh (on VPS)"
