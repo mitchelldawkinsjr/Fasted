@@ -10,6 +10,10 @@ import { Icon } from './Icon';
 type Props = {
   open: boolean;
   onClose: () => void;
+  /** When set, saves locally is skipped and this callback receives the draft journey. */
+  onComplete?: (journey: Journey) => void | Promise<void>;
+  confirmLabel?: string;
+  title?: string;
 };
 
 function createJourneyId(): string {
@@ -19,7 +23,7 @@ function createJourneyId(): string {
   return `journey-${Date.now().toString(36)}`;
 }
 
-export function JourneyBuilder({ open, onClose }: Props) {
+export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title }: Props) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState(getLocalDateString());
@@ -58,8 +62,12 @@ export function JourneyBuilder({ open, onClose }: Props) {
     if (!draftJourney) return;
     setBusy(true);
     try {
-      saveJourney(draftJourney);
-      setActiveJourney(draftJourney.id);
+      if (onComplete) {
+        await onComplete(draftJourney);
+      } else {
+        saveJourney(draftJourney);
+        setActiveJourney(draftJourney.id);
+      }
       onClose();
       setStep(0);
       setName('');
@@ -82,7 +90,7 @@ export function JourneyBuilder({ open, onClose }: Props) {
       >
         <div className="flex items-center justify-between border-b border-surface-variant px-gutter py-4">
           <h2 id="journey-builder-title" className="font-display text-headline-md text-primary">
-            Create Journey
+            {title ?? 'Create Journey'}
           </h2>
           <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-surface-container">
             <Icon name="close" />
@@ -226,7 +234,7 @@ export function JourneyBuilder({ open, onClose }: Props) {
                   Back
                 </button>
                 <LoadingButton type="button" loading={busy} onClick={() => void handleConfirm()} className="flex-1">
-                  Start Journey
+                  {confirmLabel ?? 'Start Journey'}
                 </LoadingButton>
               </div>
             </>

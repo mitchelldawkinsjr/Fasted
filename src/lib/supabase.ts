@@ -26,3 +26,11 @@ export type UserRecord = {
 };
 
 export const PROGRESS_TABLE = 'user_progress';
+
+export const ORGANIZATIONS_TABLE = 'organizations';
+export const JOURNEYS_TABLE = 'journeys';
+export const GROUPS_TABLE = 'groups';
+export const GROUP_MEMBERSHIPS_TABLE = 'group_memberships';
+export const SHARED_JOURNAL_TABLE = 'shared_journal_entries';
+export const PRAYER_REQUESTS_TABLE = 'prayer_requests';
+export const GROUP_CHECKIN_STATS_VIEW = 'group_checkin_stats';
