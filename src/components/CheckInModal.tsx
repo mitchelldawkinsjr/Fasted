@@ -5,6 +5,7 @@ import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
 import { formatError, messages } from '../lib/messages';
 import { getJournalEntryByDate, saveCheckIn } from '../lib/storage';
+import { getCurrentStreak } from '../lib/streaks';
 import { toast } from '../lib/toast';
 import type { Badge, CheckIn } from '../types';
 import { BadgeSprite } from './BadgeSprite';
@@ -29,9 +30,11 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
+  const [savedStreak, setSavedStreak] = useState<number | null>(null);
 
   const { getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
+  const currentStreak = getCurrentStreak(date);
 
   useEffect(() => {
     if (getJournalEntryByDate(date)) {
@@ -60,6 +63,9 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
       setSaving(false);
       return;
     }
+
+    const nextStreak = getCurrentStreak(date);
+    setSavedStreak(nextStreak);
 
     const earned = evaluateBadges(date);
     setEarnedBadges(earned);
@@ -103,6 +109,17 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
           <div className="animate-gentle-pulse py-6 text-center">
             <Icon name="celebration" className="mb-2 text-4xl text-secondary" />
             <p className="font-display text-headline-md text-primary">{message}</p>
+            {savedStreak !== null && (
+              <p className="mt-stack-sm text-body-md text-on-surface-variant">
+                {savedStreak === 1 ? (
+                  <>Day 1 of your check-in streak.</>
+                ) : (
+                  <>
+                    <strong className="text-primary">{savedStreak}</strong> consecutive check-in days.
+                  </>
+                )}
+              </p>
+            )}
             {earnedBadges.length > 0 && (
               <div className="mt-stack-md space-y-stack-sm">
                 <div className="flex flex-wrap items-center justify-center gap-3">
@@ -141,6 +158,16 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
                 Phase {phase.id}: {phase.title}
               </InfoBanner>
             )}
+
+            <div className="mb-stack-md rounded-xl border border-outline-variant/30 bg-surface-container-low px-4 py-3 text-center">
+              <span className="label-caps text-on-surface-variant">Check-in streak</span>
+              <p className="mt-1 font-display text-headline-md text-primary">
+                {currentStreak}{' '}
+                <span className="text-body-md font-normal text-on-surface-variant">
+                  consecutive {currentStreak === 1 ? 'day' : 'days'}
+                </span>
+              </p>
+            </div>
 
             <div className="space-y-3">
               <CheckRow label="Did you follow today's fasting plan?" checked={followedPlan} onChange={setFollowedPlan} />

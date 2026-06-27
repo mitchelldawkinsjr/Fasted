@@ -140,6 +140,8 @@ export type Badge = {
 
 export type UserProgress = {
   checkIns: CheckIn[];
+  /** Consecutive check-in days after the most recent successful check-in. */
+  checkInStreak: number;
   journalEntries: JournalEntry[];
   badges: Badge[];
   settings: AppSettings;

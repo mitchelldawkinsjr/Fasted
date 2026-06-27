@@ -1,6 +1,7 @@
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import { getPlanStart, getLocalDateString, parseLocalDate } from './dateUtils';
 import { GUEST_STORAGE_KEY } from './storage';
+import { computeCheckInStreak } from './streaks';
 import type { CheckIn, DailyReflectionEntry, DayMood, UserProgress } from '../types';
 
 const MOOD_CYCLE: DayMood[] = ['good', 'amazing', 'okay', 'good', 'bad', 'okay', 'amazing', 'good', 'horrible', 'okay'];
@@ -56,6 +57,7 @@ function buildSeedProgress(endDate: string = getLocalDateString()): UserProgress
 
   return {
     checkIns,
+    checkInStreak: computeCheckInStreak(checkIns, endDate),
     journalEntries,
     badges: [],
     settings: {
