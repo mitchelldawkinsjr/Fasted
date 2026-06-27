@@ -1,6 +1,6 @@
 {
   "name": "Fasted Agent",
-  "description": "Local Cursor Automation backup for Fasted CI: implement, review, and PR fixes when cloud agent quota is exhausted.",
+  "description": "SETUP: Do not paste this JSON into the prompt box. In Tools, enable Comment on pull request and connect GitHub. Copy prompt from cursor-automation-fasted-agent.prompt.txt.",
   "workflow": {
     "triggers": [
       {
@@ -9,7 +9,9 @@
     ],
     "actions": [
       {
-        "prComment": {}
+        "prComment": {
+          "repos": ["mitchelldawkinsjr/Fasted"]
+        }
       }
     ],
     "gitConfig": {
@@ -17,7 +19,7 @@
       "branch": "main"
     },
     "prompts": [
-      "You handle Fasted Calendar agent jobs from GitHub Actions webhooks. Parse `jobType` from the JSON payload.\n\n## jobType: issue-implement\n\nFull issue implementation backup.\n\n1. Read `.github/ai-implement-context.md` and payload (issueNumber, issueBody, comments).\n2. Branch `issue-{N}-{slug}` from defaultBranch; implement; `npm ci && npm run build`.\n3. Open **draft** PR with `Fixes #{N}` — do NOT `gh pr ready`.\n4. Post issue completion comment.\n5. Add label `pr-opened-local` to the issue to trigger local review.\n\n## jobType: pr-review\n\nBugbot + Ponytail review backup. Read `.github/ai-agent-review-context.md`.\n\n1. Checkout PR branch from payload.\n2. Post Bugbot PR comment (REVIEW_COMMENT_START/END, ## Bugbot review).\n3. Post Ponytail PR comment (same format, ## Ponytail review).\n4. `gh pr ready`; update issue labels (review-running → review-findings or review-clean); post issue summary.\n\n## jobType: pr-fix\n\nFix review findings after `/agent` comment. Read `.github/ai-agent-fix-context.md`.\n\n1. Checkout branch; fix per instruction + findings; build; commit; push.\n2. Post PR comment with summary."
+      "You handle Fasted Calendar agent jobs from GitHub Actions webhooks. Parse `jobType` from the JSON payload appended to this prompt.\n\nUse the Comment on pull request tool for all PR comments. Use `gh` for issue comments and label updates.\n\n## jobType: issue-implement\n\nFull issue implementation backup.\n\n1. Read `.github/ai-implement-context.md` and payload (issueNumber, issueBody, comments).\n2. Branch `issue-{N}-{slug}` from defaultBranch; implement; `npm ci && npm run build`.\n3. Open **draft** PR with `Fixes #{N}` — do NOT `gh pr ready`.\n4. Post issue completion comment via `gh issue comment`.\n5. Add label `pr-opened-local` to the issue to trigger local review.\n\n## jobType: pr-review\n\nBugbot + Ponytail review backup. Read `.github/ai-agent-review-context.md`.\n\n1. Checkout PR branch from payload.\n2. Post Bugbot PR comment via Comment on pull request (REVIEW_COMMENT_START/END, ## Bugbot review).\n3. Post Ponytail PR comment via Comment on pull request (same format, ## Ponytail review).\n4. `gh pr ready`; update issue labels (review-running → review-findings or review-clean); post issue summary.\n\n## jobType: pr-fix\n\nFix review findings after `/agent` comment. Read `.github/ai-agent-fix-context.md`.\n\n1. Checkout branch; fix per instruction + findings; build; commit; push.\n2. Post PR comment via Comment on pull request with summary."
     ],
     "memoryEnabled": true
   }
