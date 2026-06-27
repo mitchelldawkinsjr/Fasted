@@ -161,8 +161,8 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
   return (
     <form onSubmit={handleSubmit} className="space-y-stack-md" noValidate>
-      <section className="stitch-card space-y-stack-md p-stack-md">
-        <label className="block">
+      <section className="stitch-card space-y-stack-md overflow-hidden p-stack-md">
+        <label className="block min-w-0">
           <span className="mb-1 block text-body-md font-medium text-on-surface">Date</span>
           <input
             type="date"
@@ -171,7 +171,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             min={planStart}
             max={planEnd}
             required
-            className={inputClass}
+            className={`date-input ${inputClass}`}
           />
         </label>
 
