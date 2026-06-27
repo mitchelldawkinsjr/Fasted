@@ -21,30 +21,38 @@ rsync -avz --delete \
   --exclude 'dist' \
   "$ROOT/" "${REMOTE}:${DEPLOY_DIR}/"
 
-# Auto-create .env on the VPS from the Supabase stack if missing/empty.
-# Uses a single ssh command (no heredoc) to avoid nested-heredoc escaping issues.
-ssh "$REMOTE" "
-  set -e
-  if [ ! -s ${DEPLOY_DIR}/.env ]; then
-    echo 'No .env found — generating from Supabase stack...'
-    ANON_KEY=\$(grep '^ANON_KEY=' ${SUPABASE_DIR}/.env | cut -d= -f2-)
-    API_URL=\$(grep '^API_EXTERNAL_URL=' ${SUPABASE_DIR}/.env | cut -d= -f2-)
-    if [ -z \"\$ANON_KEY\" ] || [ -z \"\$API_URL\" ]; then
-      echo 'ERROR: Could not read ANON_KEY / API_EXTERNAL_URL from ${SUPABASE_DIR}/.env'
-      exit 1
-    fi
-    printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nAPP_PUBLISH_PORT=${APP_PORT}\n' \"\$API_URL\" \"\$ANON_KEY\" > ${DEPLOY_DIR}/.env
-    echo \".env created (VITE_SUPABASE_URL=\$API_URL)\"
-  else
-    echo '.env already present — skipping generation'
-  fi
-"
-
-ssh "$REMOTE" <<'ENDSSH'
+# Single SSH session (bash -s) so creds, .env, and docker compose all run
+# in the same shell — no cross-session file visibility issues.
+# Vars passed as positional args to avoid heredoc escaping problems.
+ssh "$REMOTE" bash -s -- "$DEPLOY_DIR" "$SUPABASE_DIR" "$APP_PORT" <<'ENDSSH'
 set -e
-cd /opt/360ws/clients/docker-app/fasted-calendar
+DEPLOY_DIR="$1"
+SUPABASE_DIR="$2"
+APP_PORT="$3"
 
+cd "$DEPLOY_DIR"
+
+# Read creds from the Supabase stack (refreshed on every deploy).
+ANON_KEY=$(grep '^ANON_KEY=' "$SUPABASE_DIR/.env" | cut -d= -f2-)
+API_URL=$(grep '^API_EXTERNAL_URL=' "$SUPABASE_DIR/.env" | cut -d= -f2-)
+
+if [ -z "$ANON_KEY" ] || [ -z "$API_URL" ]; then
+  echo "ERROR: Could not read ANON_KEY / API_EXTERNAL_URL from $SUPABASE_DIR/.env"
+  exit 1
+fi
+
+# Write app .env (docker compose also reads this as fallback).
+printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nAPP_PUBLISH_PORT=%s\n' \
+  "$API_URL" "$ANON_KEY" "$APP_PORT" > .env
+echo ".env written (VITE_SUPABASE_URL=$API_URL)"
+
+# Pass vars directly to docker compose — belt-and-suspenders.
+VITE_SUPABASE_URL="$API_URL" \
+VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
 docker compose -f docker-compose.prod.yml build --no-cache
+
+VITE_SUPABASE_URL="$API_URL" \
+VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
 docker compose -f docker-compose.prod.yml up -d
 
 echo "Waiting for containers..."
@@ -63,5 +71,5 @@ echo "Deployment successful!"
 ENDSSH
 
 echo ""
-echo "Ensure Supabase is running: bash /opt/360ws/clients/docker-app/fasted-calendar/scripts/setup-supabase-vps.sh (on VPS, first time only)"
-echo "Ensure NPM proxy: sudo bash /opt/360ws/clients/docker-app/fasted-calendar/scripts/npm-add-supabase.sh (on VPS)"
+echo "Ensure Supabase is running: bash ${DEPLOY_DIR}/scripts/setup-supabase-vps.sh (on VPS, first time only)"
+echo "Ensure NPM proxy: sudo bash ${DEPLOY_DIR}/scripts/npm-add-supabase.sh (on VPS)"
