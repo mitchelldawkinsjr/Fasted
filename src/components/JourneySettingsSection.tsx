@@ -22,8 +22,10 @@ export function JourneySettingsSection() {
     setStartDate(stored);
   }, [progress.journeys]);
 
-  const inputClass =
+  const fieldClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
+
+  const dateInputClass = `date-input ${fieldClass}`;
 
   return (
     <>
@@ -31,7 +33,7 @@ export function JourneySettingsSection() {
         <div className="border-b border-surface-variant px-gutter py-4">
           <h3 className="label-caps text-secondary">YOUR JOURNEY</h3>
         </div>
-        <div className="divide-y divide-surface-variant p-gutter space-y-4">
+        <div className="min-w-0 divide-y divide-surface-variant p-gutter space-y-4">
           <div>
             <p className="text-label-caps text-on-surface-variant">Active journey</p>
             <p className="text-body-md text-on-surface">{journey.name}</p>
@@ -50,7 +52,7 @@ export function JourneySettingsSection() {
                   setActiveJourney(e.target.value);
                   toast.info('Active journey updated');
                 }}
-                className={inputClass}
+                className={fieldClass}
               >
                 {progress.journeys.map((j) => (
                   <option key={j.id} value={j.id}>
@@ -62,14 +64,16 @@ export function JourneySettingsSection() {
           )}
 
           {journey.locked ? (
-            <label className="block">
+            <label className="block min-w-0">
               <span className="mb-1 block text-body-md text-on-surface">Fasted Journey start date</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className={inputClass}
-              />
+              <div className="min-w-0 overflow-hidden rounded-xl">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className={dateInputClass}
+                />
+              </div>
               <LoadingButton
                 type="button"
                 className="mt-2 w-full"
