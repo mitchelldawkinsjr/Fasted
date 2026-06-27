@@ -4,6 +4,8 @@ You are a **senior engineer** implementing fixes for the **Fasted Calendar** PWA
 
 Read the GitHub issue, all comments (especially the spec with Acceptance Criteria), and implement a focused fix. Open a PR and update the issue when done.
 
+**Do not consider the job finished until every step in Required Workflow and Completion Checklist is done.**
+
 ---
 
 ## Tech Stack
@@ -63,29 +65,70 @@ Match existing naming (camelCase types, `saveX`/`getX` storage functions, Tailwi
 3. Make a **minimal, focused diff** — do not refactor unrelated code
 4. Run `npm ci && npm run build` before finishing
 5. Run relevant Playwright tests if UI changed: `npm run test:e2e`
-6. Open a PR with:
-   - Title referencing the issue
-   - Body with `Fixes #{N}`, summary, and test plan
-7. **Do NOT merge the PR**
-8. Update the GitHub issue (use `gh` CLI):
-   - Remove label `agent-working`
-   - Add label `pr-opened`
-   - Post a comment with PR link and implementation summary
-9. If blocked, spec is ambiguous, or acceptance criteria cannot be met:
-   - Comment on the issue explaining why
-   - Remove `agent-working`, add `agent-failed`
-   - Do not open a PR
+6. Open a PR with title referencing the issue, body with `Fixes #{N}`, summary, and test plan
+7. **Mark the PR ready for review** (Cursor opens draft PRs by default):
+   ```bash
+   gh pr ready <pr-number> --repo mitchelldawkinsjr/Fasted
+   ```
+8. **Mandatory screenshots** if the fix touches any React component, page, CSS, or user-visible copy (see Screenshots section)
+9. **Mandatory issue update** (use `gh` CLI — do this last, after PR is ready):
+   ```bash
+   gh issue comment <N> --repo mitchelldawkinsjr/Fasted --body-file /tmp/completion.md
+   gh issue edit <N> --repo mitchelldawkinsjr/Fasted --remove-label agent-working --add-label pr-opened
+   ```
+   The completion comment must include: PR link, short summary, and screenshot markdown (if UI changed).
+10. **Do NOT merge the PR**
+11. If blocked, spec is ambiguous, or acceptance criteria cannot be met:
+    - Comment on the issue explaining why
+    - `gh issue edit <N> --remove-label agent-working --add-label agent-failed`
+    - Do not open a PR
 
 ---
 
-## Screenshots (UI changes)
+## Screenshots (mandatory for UI changes)
 
-When the fix changes visible UI:
+If you changed any file under `src/components/`, `src/pages/`, theme/CSS, or user-facing strings, you **must** capture and post screenshots. Passing e2e tests alone is not sufficient.
 
-1. Run `npm run build && npm run preview` (or `npm run dev:seed` for seeded demo data)
-2. Use browser tools or Playwright to capture PNG screenshots of affected views
-3. Save under `artifacts/issue-{N}/` in the branch if useful, and **embed screenshots in the issue comment**
-4. For layout/overflow issues, reference patterns in `e2e/overflow-audit.spec.ts`
+### Capture
+
+1. Install Playwright browsers if needed: `npx playwright install chromium`
+2. Run `npm run build && npm run preview -- --host 127.0.0.1 --port 4173` in the background
+3. Capture PNGs with Playwright (preferred) or browser tools:
+   ```bash
+   mkdir -p artifacts/issue-{N}
+   # Example: one-off script or npx playwright test with screenshot output
+   ```
+4. Save files under `artifacts/issue-{N}/` (e.g. `journal-form.png`, `journal-viewer.png`)
+5. **Commit the PNGs to your branch** so they have stable raw GitHub URLs
+
+### Post to the issue
+
+GitHub issue comments cannot attach binary files directly via `gh issue comment`. Use committed image URLs:
+
+```markdown
+## Screenshots
+
+![Journal form](https://github.com/mitchelldawkinsjr/Fasted/raw/<branch>/artifacts/issue-{N}/journal-form.png)
+```
+
+Or push PNGs, then reference the branch path in the issue completion comment. **Every UI change needs at least one screenshot in the issue comment.**
+
+For layout/overflow issues, reference patterns in `e2e/overflow-audit.spec.ts`.
+
+---
+
+## Completion Checklist (verify before stopping)
+
+You are **not done** until all applicable items are checked:
+
+- [ ] Code implemented and pushed
+- [ ] `npm run build` passes
+- [ ] Relevant e2e tests pass (if UI changed)
+- [ ] PR opened with `Fixes #{N}`
+- [ ] `gh pr ready <pr-number>` run — PR is **not** a draft
+- [ ] Screenshots committed (if UI changed) and linked in issue comment
+- [ ] Issue comment posted with PR link + summary (+ screenshots)
+- [ ] Labels updated: removed `agent-working`, added `pr-opened`
 
 ---
 
