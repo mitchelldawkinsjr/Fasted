@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { CloudSyncSection } from '../components/CloudSyncSection';
 import { GroupsSettingsSection } from '../components/GroupsSettingsSection';
 import { JourneySettingsSection } from '../components/JourneySettingsSection';
@@ -17,12 +18,40 @@ import {
   saveSettings,
 } from '../lib/storage';
 import { toast } from '../lib/toast';
+import { setAuthReturnPath } from '../lib/authReturnPath';
+
+type SettingsLocationState = {
+  from?: string;
+  message?: string;
+};
 
 export function SettingsPage() {
+  const location = useLocation();
+  const authPromptHandled = useRef(false);
   const progress = useProgress();
   const [reminderTime, setReminderTime] = useState(progress.settings.reminderTime);
   const [theme, setTheme] = useState(progress.settings.theme);
   const [savingPrefs, setSavingPrefs] = useState(false);
+
+  useEffect(() => {
+    if (authPromptHandled.current) return;
+
+    const state = location.state as SettingsLocationState | null;
+    if (!state?.from && !state?.message && location.hash !== '#account-sign-in') return;
+
+    authPromptHandled.current = true;
+
+    if (state?.from) {
+      setAuthReturnPath(state.from);
+    }
+    if (state?.message) {
+      toast.info(state.message);
+    }
+
+    requestAnimationFrame(() => {
+      document.getElementById('account-sign-in')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [location.hash, location.key, location.state]);
 
   const handleSaveSettings = async () => {
     setSavingPrefs(true);
@@ -167,9 +196,9 @@ export function SettingsPage() {
 
       <JourneySettingsSection />
 
-      <GroupsSettingsSection />
-
       <CloudSyncSection />
+
+      <GroupsSettingsSection />
 
       <section className="stitch-card overflow-hidden border-l-4 border-error">
         <div className="border-b border-surface-variant px-gutter py-4">

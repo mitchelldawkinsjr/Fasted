@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { AuthReturnRedirect } from './AuthReturnRedirect';
 import { AppHeader } from './AppHeader';
 import { Icon } from './Icon';
 import { ConfirmModal } from './ConfirmModal';
@@ -43,6 +44,7 @@ export function Layout() {
 
       <ToastHost />
       <SyncToastWatcher />
+      <AuthReturnRedirect />
       <ConfirmModal />
       <InstallPromptToast />
 
