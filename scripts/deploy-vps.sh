@@ -19,6 +19,9 @@ rsync -avz --delete \
   --exclude '.env' \
   --exclude '.env.local' \
   --exclude 'dist' \
+  --exclude 'e2e/overflow-screenshots' \
+  --exclude 'e2e/tour-screenshots' \
+  --exclude 'test-results' \
   "$ROOT/" "${REMOTE}:${DEPLOY_DIR}/"
 
 # Single SSH session (bash -s) so creds, .env, and docker compose all run
