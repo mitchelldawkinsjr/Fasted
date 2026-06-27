@@ -294,6 +294,31 @@ ${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
 `;
       }
 
+      if (e.type === 'food') {
+        const sections = [
+          e.breakfast.trim() && `**What did you eat for breakfast?** ${e.breakfast}`,
+          e.lunch.trim() && `**What did you eat for lunch?** ${e.lunch}`,
+          e.dinner.trim() && `**What did you eat for dinner?** ${e.dinner}`,
+          e.snack.trim() && `**What did you eat as a snack?** ${e.snack}`,
+        ].filter(Boolean);
+
+        return `## ${e.date}
+
+**Type:** Food
+
+${sections.join('\n\n')}
+`;
+      }
+
+      if (e.type === 'fitness') {
+        return `## ${e.date}
+
+**Type:** Fitness
+
+**How did you move your body today?** ${e.movement}
+`;
+      }
+
       const label = e.type.charAt(0).toUpperCase() + e.type.slice(1);
       return `## ${e.date}
 

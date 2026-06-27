@@ -164,6 +164,46 @@ test('filter chips show only entries with matching types', async ({ page }) => {
   await expect(page.getByRole('listitem').filter({ hasText: 'Prayer only entry' })).toHaveCount(0);
 });
 
+test('saves a food entry with meal fields', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Food');
+  await page.getByLabel('What did you eat for breakfast?').fill('Oatmeal with berries');
+  await page.getByLabel('What did you eat for lunch?').fill('Grilled chicken salad');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await expect(page.getByRole('listitem').filter({ hasText: 'Oatmeal with berries' })).toBeVisible();
+  await expect(page.getByText('#FOOD')).toBeVisible();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  expect(stored.journalEntries[0].type).toBe('food');
+  expect(stored.journalEntries[0].breakfast).toBe('Oatmeal with berries');
+  expect(stored.journalEntries[0].lunch).toBe('Grilled chicken salad');
+});
+
+test('saves a fitness entry', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Fitness');
+  await page.getByLabel('How did you move your body today?').fill('30-minute walk after dinner');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await expect(
+    page.getByRole('listitem').filter({ hasText: '30-minute walk after dinner' }),
+  ).toBeVisible();
+  await expect(page.getByText('#FITNESS')).toBeVisible();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  expect(stored.journalEntries[0].type).toBe('fitness');
+  expect(stored.journalEntries[0].movement).toBe('30-minute walk after dinner');
+});
+
 test('migrates legacy tagged entries on load', async ({ page }) => {
   await page.evaluate((key) => {
     localStorage.setItem(

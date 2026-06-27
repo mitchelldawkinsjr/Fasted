@@ -4,8 +4,13 @@ import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
   DAILY_REFLECTION_FIELDS,
+  FITNESS_JOURNAL_FIELDS,
+  FOOD_JOURNAL_FIELDS,
   JOURNAL_ENTRY_TYPE_LABELS,
+  isContentSimpleJournalEntry,
   isDailyReflectionEntry,
+  isFitnessJournalEntry,
+  isFoodJournalEntry,
 } from '../lib/journalTags';
 import type { JournalEntry } from '../types';
 
@@ -31,6 +36,46 @@ function DailyReflectionBody({ entry }: { entry: Extract<JournalEntry, { type: '
           ) : (
             <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
           )}
+          <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
+            {entry[field.key]}
+          </p>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function FoodJournalBody({ entry }: { entry: Extract<JournalEntry, { type: 'food' }> }) {
+  const filledFields = FOOD_JOURNAL_FIELDS.filter((field) => entry[field.key].trim());
+  if (filledFields.length === 0) {
+    return <p className="text-body-md text-on-surface-variant">No reflection notes recorded.</p>;
+  }
+
+  return (
+    <div className="space-y-stack-md">
+      {filledFields.map((field) => (
+        <section key={field.key}>
+          <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
+          <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
+            {entry[field.key]}
+          </p>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function FitnessJournalBody({ entry }: { entry: Extract<JournalEntry, { type: 'fitness' }> }) {
+  const filledFields = FITNESS_JOURNAL_FIELDS.filter((field) => entry[field.key].trim());
+  if (filledFields.length === 0) {
+    return <p className="text-body-md text-on-surface-variant">No reflection notes recorded.</p>;
+  }
+
+  return (
+    <div className="space-y-stack-md">
+      {filledFields.map((field) => (
+        <section key={field.key}>
+          <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
           <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
             {entry[field.key]}
           </p>
@@ -73,7 +118,11 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
 
       {isDailyReflectionEntry(entry) ? (
         <DailyReflectionBody entry={entry} />
-      ) : entry.content.trim() ? (
+      ) : isFoodJournalEntry(entry) ? (
+        <FoodJournalBody entry={entry} />
+      ) : isFitnessJournalEntry(entry) ? (
+        <FitnessJournalBody entry={entry} />
+      ) : isContentSimpleJournalEntry(entry) && entry.content.trim() ? (
         <section>
           <h3 className="mb-1 text-body-md font-medium text-on-surface">
             {JOURNAL_ENTRY_TYPE_LABELS[entry.type]}

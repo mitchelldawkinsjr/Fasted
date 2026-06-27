@@ -8,13 +8,26 @@ import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
 import {
   DEFAULT_JOURNAL_ENTRY_TYPE,
   DAILY_REFLECTION_FIELDS,
+  FITNESS_JOURNAL_FIELDS,
+  FOOD_JOURNAL_FIELDS,
   JOURNAL_ENTRY_TYPE_LABELS,
+  isContentSimpleJournalEntry,
+  isContentSimpleJournalType,
   isDailyReflectionEntry,
+  isFitnessJournalEntry,
+  isFoodJournalEntry,
 } from '../lib/journalTags';
 import { formatError, messages } from '../lib/messages';
 import { createJournalEntryId, saveJournalEntry } from '../lib/storage';
 import { toast } from '../lib/toast';
-import type { DailyReflectionEntry, DayMood, JournalEntry, JournalEntryType } from '../types';
+import type {
+  DailyReflectionEntry,
+  DayMood,
+  FitnessJournalEntry,
+  FoodJournalEntry,
+  JournalEntry,
+  JournalEntryType,
+} from '../types';
 
 type Props = {
   entry?: JournalEntry;
@@ -35,7 +48,16 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     entry && isDailyReflectionEntry(entry) ? entry.dayMood ?? null : null,
   );
   const [content, setContent] = useState(
-    entry && !isDailyReflectionEntry(entry) ? entry.content : '',
+    entry && isContentSimpleJournalEntry(entry) ? entry.content : '',
+  );
+  const [breakfast, setBreakfast] = useState(
+    entry && isFoodJournalEntry(entry) ? entry.breakfast : '',
+  );
+  const [lunch, setLunch] = useState(entry && isFoodJournalEntry(entry) ? entry.lunch : '');
+  const [dinner, setDinner] = useState(entry && isFoodJournalEntry(entry) ? entry.dinner : '');
+  const [snack, setSnack] = useState(entry && isFoodJournalEntry(entry) ? entry.snack : '');
+  const [movement, setMovement] = useState(
+    entry && isFitnessJournalEntry(entry) ? entry.movement : '',
   );
   const [prayerFocus, setPrayerFocus] = useState(
     entry && isDailyReflectionEntry(entry) ? entry.prayerFocus : '',
@@ -57,6 +79,15 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   );
   const [saving, setSaving] = useState(false);
 
+  const clearSimpleFields = () => {
+    setContent('');
+    setBreakfast('');
+    setLunch('');
+    setDinner('');
+    setSnack('');
+    setMovement('');
+  };
+
   const handleTypeChange = (nextType: JournalEntryType) => {
     if (nextType === entryType) return;
 
@@ -72,7 +103,10 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         .map((value) => value.trim())
         .filter(Boolean)
         .join('\n\n');
-      setContent(joined);
+      clearSimpleFields();
+      if (isContentSimpleJournalType(nextType)) {
+        setContent(joined);
+      }
     } else if (entryType !== 'daily-reflection' && nextType === 'daily-reflection') {
       setDayMood(null);
       setPrayerFocus('');
@@ -81,11 +115,25 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       setHungerNotes('');
       setVictory('');
       setTomorrowIntention('');
+      clearSimpleFields();
     } else {
-      setContent('');
+      clearSimpleFields();
     }
 
     setEntryType(nextType);
+  };
+
+  const simpleEntryHasContent = (): boolean => {
+    if (isContentSimpleJournalType(entryType)) {
+      return content.trim().length > 0;
+    }
+    if (entryType === 'food') {
+      return [breakfast, lunch, dinner, snack].some((value) => value.trim().length > 0);
+    }
+    if (entryType === 'fitness') {
+      return movement.trim().length > 0;
+    }
+    return false;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -96,7 +144,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       return;
     }
 
-    if (entryType !== 'daily-reflection' && !content.trim()) {
+    if (entryType !== 'daily-reflection' && !simpleEntryHasContent()) {
       toast.error(messages.errors.journalContentRequired);
       return;
     }
@@ -110,24 +158,41 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       updatedAt: new Date().toISOString(),
     };
 
-    const saved: JournalEntry =
-      entryType === 'daily-reflection'
-        ? ({
-            ...base,
-            type: 'daily-reflection',
-            dayMood,
-            prayerFocus: prayerFocus.trim(),
-            prayedAbout: prayedAbout.trim(),
-            godTeaching: godTeaching.trim(),
-            hungerNotes: hungerNotes.trim(),
-            victory: victory.trim(),
-            tomorrowIntention: tomorrowIntention.trim(),
-          } satisfies DailyReflectionEntry)
-        : {
-            ...base,
-            type: entryType,
-            content: content.trim(),
-          };
+    let saved: JournalEntry;
+    if (entryType === 'daily-reflection') {
+      saved = {
+        ...base,
+        type: 'daily-reflection',
+        dayMood,
+        prayerFocus: prayerFocus.trim(),
+        prayedAbout: prayedAbout.trim(),
+        godTeaching: godTeaching.trim(),
+        hungerNotes: hungerNotes.trim(),
+        victory: victory.trim(),
+        tomorrowIntention: tomorrowIntention.trim(),
+      } satisfies DailyReflectionEntry;
+    } else if (entryType === 'food') {
+      saved = {
+        ...base,
+        type: 'food',
+        breakfast: breakfast.trim(),
+        lunch: lunch.trim(),
+        dinner: dinner.trim(),
+        snack: snack.trim(),
+      } satisfies FoodJournalEntry;
+    } else if (entryType === 'fitness') {
+      saved = {
+        ...base,
+        type: 'fitness',
+        movement: movement.trim(),
+      } satisfies FitnessJournalEntry;
+    } else {
+      saved = {
+        ...base,
+        type: entryType,
+        content: content.trim(),
+      };
+    }
 
     try {
       saveJournalEntry(saved);
@@ -154,6 +219,31 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     label,
     value: dailyFieldState[key][0],
     set: dailyFieldState[key][1],
+  }));
+
+  const foodFieldState = {
+    breakfast: [breakfast, setBreakfast] as const,
+    lunch: [lunch, setLunch] as const,
+    dinner: [dinner, setDinner] as const,
+    snack: [snack, setSnack] as const,
+  };
+
+  const foodFields = FOOD_JOURNAL_FIELDS.map(({ key, label }) => ({
+    key,
+    label,
+    value: foodFieldState[key][0],
+    set: foodFieldState[key][1],
+  }));
+
+  const fitnessFieldState = {
+    movement: [movement, setMovement] as const,
+  };
+
+  const fitnessFields = FITNESS_JOURNAL_FIELDS.map(({ key, label }) => ({
+    key,
+    label,
+    value: fitnessFieldState[key][0],
+    set: fitnessFieldState[key][1],
   }));
 
   const inputClass =
@@ -206,6 +296,36 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             </label>
           ))}
         </>
+      ) : entryType === 'food' ? (
+        foodFields.map((field) => (
+          <label key={field.key} className="block">
+            <span className="mb-1 block text-body-md font-medium text-on-surface">
+              {field.label}
+            </span>
+            <textarea
+              value={field.value}
+              onChange={(e) => field.set(e.target.value)}
+              rows={2}
+              className={inputClass}
+              aria-label={field.label}
+            />
+          </label>
+        ))
+      ) : entryType === 'fitness' ? (
+        fitnessFields.map((field) => (
+          <label key={field.key} className="block">
+            <span className="mb-1 block text-body-md font-medium text-on-surface">
+              {field.label}
+            </span>
+            <textarea
+              value={field.value}
+              onChange={(e) => field.set(e.target.value)}
+              rows={4}
+              className={inputClass}
+              aria-label={field.label}
+            />
+          </label>
+        ))
       ) : (
         <label className="block">
           <span className="mb-1 block text-body-md font-medium text-on-surface">
