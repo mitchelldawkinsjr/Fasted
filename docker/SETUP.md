@@ -24,11 +24,14 @@ sudo bash scripts/npm-repoint-api-to-supabase.sh
 
 `setup-supabase-vps.sh` sets `ENABLE_EMAIL_AUTOCONFIRM=true` so sign-up works without SMTP.
 
-Run the SQL migration:
+Run the SQL migrations:
 
 ```bash
 docker exec -i supabase-db psql -U postgres -d postgres \
   < /opt/apps/fasted-calendar/supabase/migrations/20260627000000_initial.sql
+
+docker exec -i supabase-db psql -U postgres -d postgres \
+  < /opt/apps/fasted-calendar/supabase/migrations/20260628000000_groups.sql
 ```
 
 Copy `ANON_KEY` from `/opt/apps/supabase/.env` into the app `.env`:

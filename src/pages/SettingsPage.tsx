@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CloudSyncSection } from '../components/CloudSyncSection';
+import { GroupsSettingsSection } from '../components/GroupsSettingsSection';
 import { JourneySettingsSection } from '../components/JourneySettingsSection';
 import { LoadingButton } from '../components/LoadingButton';
 import { ProfileHeader } from '../components/ProfileHeader';
@@ -165,6 +166,8 @@ export function SettingsPage() {
       </section>
 
       <JourneySettingsSection />
+
+      <GroupsSettingsSection />
 
       <CloudSyncSection />
 
