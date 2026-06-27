@@ -331,6 +331,17 @@ export async function updateUserProfile(name: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function signInWithOAuth(provider: 'google' | 'apple' | 'github'): Promise<void> {
+  const { error } = await getSupabase().auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: window.location.origin,
+    },
+  });
+  if (error) throw error;
+  // Session is picked up automatically by onAuthStateChange in useAuth after redirect
+}
+
 export async function signOut(): Promise<void> {
   if (syncTimer) {
     clearTimeout(syncTimer);
