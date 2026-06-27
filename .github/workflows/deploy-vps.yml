@@ -79,52 +79,7 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          set -e
-
-          ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
-            set -e
-            mkdir -p /opt/360ws/clients/docker-app/fasted-calendar
-            docker network ls --format '{{.Name}}' | grep -q '^360ws-network$' || docker network create 360ws-network
-          EOF
-
-          rsync -avz --delete \
-            --exclude '.git' \
-            --exclude 'node_modules' \
-            --exclude 'dist' \
-            --exclude 'docker/pb_data' \
-            --exclude '.env.local' \
-            ./ ${VPS_USER}@${VPS_HOST}:/opt/360ws/clients/docker-app/fasted-calendar/
-
-          ssh ${VPS_USER}@${VPS_HOST} << 'EOF'
-            set -e
-            cd /opt/360ws/clients/docker-app/fasted-calendar
-
-            docker compose -f docker-compose.prod.yml build --no-cache
-            docker compose -f docker-compose.prod.yml up -d
-
-            echo "Waiting for containers..."
-            sleep 10
-
-            max_attempts=30
-            attempt=0
-            while [ $attempt -lt $max_attempts ]; do
-              if curl -fsS http://127.0.0.1:8022/ >/dev/null; then
-                echo "Health checks passed!"
-                break
-              fi
-              attempt=$((attempt + 1))
-              echo "Health check attempt $attempt/$max_attempts failed, retrying..."
-              sleep 2
-            done
-
-            if [ $attempt -eq $max_attempts ]; then
-              echo "Health check failed after $max_attempts attempts."
-              docker compose -f docker-compose.prod.yml logs
-              exit 1
-            fi
-
-            echo "Deployment successful!"
-          EOF
+          VPS_REMOTE="${VPS_USER}@${VPS_HOST}" bash scripts/deploy-vps.sh
 
       - name: Notify Slack on success
         if: success() && env.SLACK_WEBHOOK != ''
