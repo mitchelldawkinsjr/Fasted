@@ -27,7 +27,7 @@ export function TodayFastCard({ plan }: Props) {
   const dayNumber = planDates.findIndex((d) => d === plan.date) + 1;
 
   return (
-    <section className="space-y-stack-lg animate-fade-in-up">
+    <section className="space-y-stack-lg animate-fade-in-up" data-tour="today-card">
       <header>
         <span className="label-caps text-secondary">
           Phase {plan.phaseId}: {phase?.title}

@@ -2,6 +2,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { ScrollToTop } from './components/ScrollToTop';
 import { ThemeProvider } from './components/ThemeProvider';
+import { TourProvider } from './components/Tour/TourContext';
+import { TourOverlay } from './components/Tour/TourOverlay';
 import { CalendarPage } from './pages/CalendarPage';
 import { GroupDetailPage } from './pages/GroupDetailPage';
 import { GroupsHubPage } from './pages/GroupsHubPage';
@@ -19,8 +21,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <ScrollToTop />
-        <Routes>
+        <TourProvider>
+          <TourOverlay />
+          <ScrollToTop />
+          <Routes>
           <Route element={<Layout />}>
             <Route index element={<TodayPage />} />
             <Route path="calendar" element={<CalendarPage />} />
@@ -36,6 +40,7 @@ export default function App() {
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>
+        </TourProvider>
       </ThemeProvider>
     </BrowserRouter>
   );

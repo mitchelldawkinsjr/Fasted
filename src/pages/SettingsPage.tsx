@@ -6,6 +6,7 @@ import { LoadingButton } from '../components/LoadingButton';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { SafetyNote } from '../components/SafetyNote';
 import { Icon } from '../components/Icon';
+import { useTour } from '../components/Tour/TourContext';
 import { useProgress } from '../hooks/useProgress';
 import { confirmAction } from '../lib/confirm';
 import { formatError, messages } from '../lib/messages';
@@ -20,6 +21,7 @@ import { toast } from '../lib/toast';
 
 export function SettingsPage() {
   const progress = useProgress();
+  const { startTour } = useTour();
   const [reminderTime, setReminderTime] = useState(progress.settings.reminderTime);
   const [theme, setTheme] = useState(progress.settings.theme);
   const [savingPrefs, setSavingPrefs] = useState(false);
@@ -170,6 +172,20 @@ export function SettingsPage() {
       <GroupsSettingsSection />
 
       <CloudSyncSection />
+
+      <section className="stitch-card overflow-hidden">
+        <div className="border-b border-surface-variant px-gutter py-4">
+          <h3 className="label-caps text-secondary">APP TOUR</h3>
+        </div>
+        <button
+          type="button"
+          onClick={startTour}
+          className="flex w-full items-center gap-4 p-gutter text-body-md transition-colors hover:bg-surface-variant"
+        >
+          <Icon name="tour" />
+          Replay App Tour
+        </button>
+      </section>
 
       <section className="stitch-card overflow-hidden border-l-4 border-error">
         <div className="border-b border-surface-variant px-gutter py-4">

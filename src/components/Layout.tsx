@@ -7,11 +7,11 @@ import { SyncToastWatcher } from './SyncToastWatcher';
 import { ToastHost } from './ToastHost';
 
 const navItems = [
-  { to: '/', label: 'Today', icon: 'today' },
-  { to: '/calendar', label: 'Calendar', icon: 'calendar_month' },
-  { to: '/journal', label: 'Journal', icon: 'menu_book' },
-  { to: '/progress', label: 'Progress', icon: 'query_stats' },
-  { to: '/settings', label: 'Settings', icon: 'settings' },
+  { to: '/', label: 'Today', icon: 'today', tourId: 'nav-today' },
+  { to: '/calendar', label: 'Calendar', icon: 'calendar_month', tourId: 'nav-calendar' },
+  { to: '/journal', label: 'Journal', icon: 'menu_book', tourId: 'nav-journal' },
+  { to: '/progress', label: 'Progress', icon: 'query_stats', tourId: 'nav-progress' },
+  { to: '/settings', label: 'Settings', icon: 'settings', tourId: 'nav-settings' },
 ];
 
 const pageTitles: Record<string, string> = {
@@ -55,6 +55,7 @@ export function Layout() {
               to={item.to}
               end={item.to === '/'}
               title={item.label}
+              data-tour={item.tourId}
               className={({ isActive }) =>
                 `flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg px-0.5 py-1 transition-all active:scale-95 ${
                   isActive

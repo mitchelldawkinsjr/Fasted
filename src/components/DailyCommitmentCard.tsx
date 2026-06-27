@@ -20,7 +20,7 @@ export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
     : null;
 
   return (
-    <section className="rounded-xl bg-primary-container p-stack-lg text-on-primary grace-shadow">
+    <section className="rounded-xl bg-primary-container p-stack-lg text-on-primary grace-shadow" data-tour="checkin-btn">
       <div className="flex flex-col justify-between gap-stack-md md:flex-row md:items-center">
         <div>
           <h3 className="font-display text-headline-md">Daily Commitment</h3>
