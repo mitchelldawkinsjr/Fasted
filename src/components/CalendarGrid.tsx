@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { FAST_PHASES } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getDailyPlan } from '../lib/dailyPlan';
 import { getAllPlanDates, parseLocalDate } from '../lib/dateUtils';
 import { getCheckIn } from '../lib/storage';
@@ -9,6 +9,7 @@ const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export function CalendarGrid() {
   const navigate = useNavigate();
+  const { phases } = useActiveJourney();
   const dates = getAllPlanDates();
 
   const months: { label: string; cells: (string | null)[] }[] = [];
@@ -61,7 +62,7 @@ export function CalendarGrid() {
 
               const plan = getDailyPlan(date);
               const phaseId = plan?.phaseId ?? 1;
-              const phase = FAST_PHASES.find((p) => p.id === phaseId);
+              const phase = phases.find((p) => p.id === phaseId);
               const checkIn = getCheckIn(date);
               const dayNum = parseLocalDate(date).getDate();
               const isFast = plan?.isFastDay;

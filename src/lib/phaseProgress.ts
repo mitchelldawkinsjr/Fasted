@@ -1,8 +1,8 @@
-import { PLAN_END } from '../data/fastingPlan';
 import type { PhaseMilestoneDef } from '../data/phaseAchievements';
 import { getPhaseMilestonesForPhase } from '../data/phaseAchievements';
 import { getDailyPlan } from './dailyPlan';
-import { getAllPlanDates } from './dateUtils';
+import { getAllPlanDates, getPlanEnd } from './dateUtils';
+import { getActiveJourney, getJourneyPhaseWindows } from './journey';
 import { getProgress } from './storage';
 
 export function getPhaseDates(startDate: string, endDate: string): string[] {
@@ -87,11 +87,15 @@ export function getNextPhaseMilestone(
 
 export function hasFinishedPlan(today: string): boolean {
   const progress = getProgress();
-  const checkedFinalDay = progress.checkIns.some((c) => c.date === PLAN_END);
-  if (today < PLAN_END || !checkedFinalDay) return false;
+  const journey = getActiveJourney(progress);
+  const planEnd = getPlanEnd(journey);
+  const checkedFinalDay = progress.checkIns.some((c) => c.date === planEnd);
+  if (today < planEnd || !checkedFinalDay) return false;
 
-  const phase8Start = '2026-11-29';
-  const phase8End = PLAN_END;
-  const phase8CheckIns = getPhaseCheckInCount(phase8Start, phase8End);
-  return phase8CheckIns >= 21;
+  const windows = getJourneyPhaseWindows(journey);
+  const last = windows[windows.length - 1];
+  if (!last) return false;
+
+  const lastPhaseCheckIns = getPhaseCheckInCount(last.startDate, last.endDate);
+  return lastPhaseCheckIns >= getPhaseDates(last.startDate, last.endDate).length;
 }

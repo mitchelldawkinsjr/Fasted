@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
-import { FAST_PHASES } from '../../data/fastingPlan';
+import { useActiveJourney } from '../../hooks/useActiveJourney';
 import { DAY_MOOD_OPTIONS } from '../../lib/dayMood';
 import { formatDisplayDate } from '../../lib/dateUtils';
 import { getPhaseDates } from '../../lib/phaseProgress';
 import { getMoodByDate } from '../../lib/moodVisualizer';
 
 export function MoodPhaseGrid() {
+  const { phases } = useActiveJourney();
   const moodsByDate = getMoodByDate();
-  const phaseRows = FAST_PHASES.map((phase) => ({
+  const phaseRows = phases.map((phase) => ({
     phase,
     dates: getPhaseDates(phase.startDate, phase.endDate),
   }));

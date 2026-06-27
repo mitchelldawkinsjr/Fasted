@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FAST_PHASES } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import { formatDisplayDate } from '../lib/dateUtils';
 import { Icon } from '../components/Icon';
 
@@ -10,6 +10,8 @@ function formatPhaseDates(startDate: string, endDate: string): string {
 }
 
 export function PhasesPage() {
+  const { phases } = useActiveJourney();
+
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
       <section>
@@ -29,7 +31,7 @@ export function PhasesPage() {
       />
 
       <div className="space-y-stack-md">
-        {FAST_PHASES.map((phase) => (
+        {phases.map((phase) => (
           <Link
             key={phase.id}
             to={`/?date=${phase.startDate}`}

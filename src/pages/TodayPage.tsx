@@ -9,6 +9,7 @@ import { SafetyNote } from '../components/SafetyNote';
 import { ScriptureCard } from '../components/ScriptureCard';
 import { TodayFastCard } from '../components/TodayFastCard';
 import { Icon } from '../components/Icon';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import { useProgress } from '../hooks/useProgress';
 import { getDailyPlan } from '../lib/dailyPlan';
 import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/dateUtils';
@@ -29,18 +30,34 @@ export function TodayPage() {
   const viewDate = previewDate ?? today;
   const inPlan = isWithinPlan(viewDate);
   const plan = inPlan ? getDailyPlan(viewDate) : null;
+  const { planStart, planEnd, journey } = useActiveJourney();
   const progress = useProgress();
   const existingCheckIn = getCheckIn(viewDate);
   const [showCheckIn, setShowCheckIn] = useState(false);
 
   if (!inPlan || !plan) {
+    const beforePlan = viewDate < planStart;
+    const afterPlan = viewDate > planEnd;
+
     return (
       <div className="space-y-stack-lg animate-fade-in-up">
         <section>
           <h2 className="font-display text-headline-lg-mobile text-primary">Welcome</h2>
           <p className="mt-2 text-body-md text-on-surface-variant">
-            This fasting plan runs June 13 through December 19, 2026.
+            {journey.name} runs {formatDisplayDate(planStart)} through {formatDisplayDate(planEnd)}.
           </p>
+          {beforePlan && (
+            <p className="mt-2 text-body-md text-on-surface-variant">
+              Your journey begins {formatDisplayDate(planStart)}. Adjust the start date in Settings
+              if you want today to fall inside the plan.
+            </p>
+          )}
+          {afterPlan && (
+            <p className="mt-2 text-body-md text-on-surface-variant">
+              This journey ended {formatDisplayDate(planEnd)}. Create a new journey in Settings to
+              start again.
+            </p>
+          )}
         </section>
 
         <img
