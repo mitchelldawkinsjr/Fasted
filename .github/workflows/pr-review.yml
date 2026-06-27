@@ -109,8 +109,8 @@ jobs:
 
           PR_JSON=$(gh api "/repos/${REPO}/pulls?state=open&per_page=100" \
             --jq "[.[] | select(
-              (.body // \"\") | test(\"#[[:space:]]*${ISSUE_NUMBER}([^0-9]|$)\") or
-              (.title // \"\") | test(\"#[[:space:]]*${ISSUE_NUMBER}([^0-9]|$)\")
+              ((.body // \"\") | test(\"#[[:space:]]*${ISSUE_NUMBER}([^0-9]|$)\")) or
+              ((.title // \"\") | test(\"#[[:space:]]*${ISSUE_NUMBER}([^0-9]|$)\"))
             )] | first")
 
           if [ "$PR_JSON" = "null" ] || [ -z "$PR_JSON" ]; then
