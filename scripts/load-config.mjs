@@ -8,6 +8,8 @@ const DEFAULTS = {
     specAdded: "spec-added",
     ready: "ready",
     readyLocal: "ready-local",
+    reviewLocal: "review-local",
+    prOpenedLocal: "pr-opened-local",
     agentWorking: "agent-working",
     prOpened: "pr-opened",
     agentFailed: "agent-failed",

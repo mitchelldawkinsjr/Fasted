@@ -61,6 +61,7 @@ jobs:
           fi
 
           gh label create ready-local --description "Trigger local Cursor Automation implementation (quota backup)" --color "FBCA04" 2>/dev/null || true
+          gh label create review-local --description "Use local automation for PR review (quota backup)" --color "C5DEF5" 2>/dev/null || true
           gh label create agent-working --description "Agent implementing (cloud or local)" --color "FBBA04" 2>/dev/null || true
           gh label create pr-opened --description "Implementation PR opened" --color "1D76DB" 2>/dev/null || true
           gh label create agent-failed --description "Agent failed to implement" --color "D93F0B" 2>/dev/null || true
@@ -76,9 +77,9 @@ jobs:
           gh issue comment "$ISSUE_NUMBER" --body "$(cat <<'EOF'
           🤖 **Cursor Automation (local) dispatched** for issue implementation.
 
-          Ensure Cursor is open with the **Fasted Agent** automation enabled. The agent will implement on a branch, open a draft PR, and post a completion comment — same end state as the cloud agent path.
+          Ensure Cursor is open with the **Fasted Agent** automation enabled. The agent will implement on a branch, open a draft PR, and post a completion comment.
 
-          After the PR opens, Bugbot + Ponytail review runs automatically via `pr-review.yml`.
+          **After opening the PR:** add the `pr-opened-local` label to this issue to trigger local Bugbot + Ponytail review (cloud review is skipped while `review-local` is set).
           EOF
           )"
 

@@ -1,6 +1,6 @@
 {
   "name": "Fasted Agent",
-  "description": "Local Cursor Automation backup for Fasted CI: full issue implementation (ready-local) and PR finding fixes (/agent).",
+  "description": "Local Cursor Automation backup for Fasted CI: implement, review, and PR fixes when cloud agent quota is exhausted.",
   "workflow": {
     "triggers": [
       {
@@ -17,7 +17,7 @@
       "branch": "main"
     },
     "prompts": [
-      "You handle Fasted Calendar agent jobs from GitHub Actions webhooks. Parse the JSON payload field `jobType`.\n\n## jobType: issue-implement\n\nFull issue implementation — backup when cloud agent quota is exhausted.\n\nPayload: issueNumber, issueUrl, issueTitle, issueBody, comments, repo, defaultBranch, implementContext.\n\n1. Read `.github/ai-implement-context.md` (and implementContext in payload if present).\n2. Read issue body + comments (spec / acceptance criteria).\n3. Create branch `issue-{N}-{short-slug}` from defaultBranch.\n4. Implement minimally; run `npm ci && npm run build`; run e2e if UI changed.\n5. Open a **draft** PR with `Fixes #{N}` — do NOT run `gh pr ready`.\n6. Commit screenshots under `artifacts/issue-{N}/` if UI changed.\n7. Post issue completion comment with PR link + summary (+ screenshots).\n8. Do NOT merge. GitHub Actions clears `agent-working` and runs Bugbot + Ponytail when the PR opens.\n\nIf blocked: comment on the issue, remove `agent-working`, add `agent-failed`.\n\n## jobType: pr-fix\n\nFix findings on an existing PR after `/agent` comment.\n\nPayload: prNumber, branch, prUrl, instruction, issueNumber, bugbotFindings, ponytailFindings, repo.\n\n1. Read `.github/ai-agent-fix-context.md`.\n2. `git fetch origin && git checkout <branch> && git pull origin <branch>`.\n3. Follow instruction, then Bugbot bugs, then Ponytail cuts if in scope.\n4. Run `npm run build` when logic/types changed.\n5. Commit, push to branch — never open a new PR, never force-push.\n6. Post PR comment summarizing fixes, skips, and build status.\n\nIf blocked, post a PR comment explaining why and stop."
+      "You handle Fasted Calendar agent jobs from GitHub Actions webhooks. Parse `jobType` from the JSON payload.\n\n## jobType: issue-implement\n\nFull issue implementation backup.\n\n1. Read `.github/ai-implement-context.md` and payload (issueNumber, issueBody, comments).\n2. Branch `issue-{N}-{slug}` from defaultBranch; implement; `npm ci && npm run build`.\n3. Open **draft** PR with `Fixes #{N}` — do NOT `gh pr ready`.\n4. Post issue completion comment.\n5. Add label `pr-opened-local` to the issue to trigger local review.\n\n## jobType: pr-review\n\nBugbot + Ponytail review backup. Read `.github/ai-agent-review-context.md`.\n\n1. Checkout PR branch from payload.\n2. Post Bugbot PR comment (REVIEW_COMMENT_START/END, ## Bugbot review).\n3. Post Ponytail PR comment (same format, ## Ponytail review).\n4. `gh pr ready`; update issue labels (review-running → review-findings or review-clean); post issue summary.\n\n## jobType: pr-fix\n\nFix review findings after `/agent` comment. Read `.github/ai-agent-fix-context.md`.\n\n1. Checkout branch; fix per instruction + findings; build; commit; push.\n2. Post PR comment with summary."
     ],
     "memoryEnabled": true
   }

@@ -1,0 +1,134 @@
+# PR Review (Local) — backup when cloud review quota is exhausted.
+#
+# Flow mirrors pr-review.yml but dispatches Bugbot + Ponytail to Cursor Automation.
+#
+# Triggers:
+#   - Issue labeled pr-opened-local (local implement agent adds after opening PR)
+#
+# Requires issue to have review-local (set by issue-implement-local.yml on ready-local).
+# Cloud pr-review.yml skips when review-local is present.
+#
+# Disable: set repo variable PR_REVIEW_LOCAL_ENABLED=false
+
+name: PR Review (Local)
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  resolve:
+    if: |
+      vars.PR_REVIEW_LOCAL_ENABLED != 'false' &&
+      github.event.label.name == 'pr-opened-local'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+      contents: read
+    outputs:
+      skip: ${{ steps.guards.outputs.skip }}
+      issue_number: ${{ steps.guards.outputs.issue_number }}
+      pr_number: ${{ steps.find_pr.outputs.pr_number }}
+      pr_head_ref: ${{ steps.find_pr.outputs.pr_head_ref }}
+      pr_url: ${{ steps.find_pr.outputs.pr_url }}
+
+    steps:
+      - name: Check webhook secret
+        run: |
+          if [ -z "${{ secrets.CURSOR_AUTOMATION_WEBHOOK_URL }}" ]; then
+            echo "::error::CURSOR_AUTOMATION_WEBHOOK_URL secret is not configured."
+            exit 1
+          fi
+
+      - name: Verify guards
+        id: guards
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+
+          LABELS=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json labels -q '[.labels[].name] | join(",")')
+
+          if ! echo "$LABELS" | grep -q 'review-local'; then
+            echo "::error::Issue must have review-local label (apply ready-local for local implement path)."
+            exit 1
+          fi
+
+          if echo "$LABELS" | grep -q 'review-dispatched'; then
+            echo "::notice::Reviews already dispatched for issue #${ISSUE_NUMBER}. Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "issue_number=$ISSUE_NUMBER" >> "$GITHUB_OUTPUT"
+
+          gh label create pr-opened-local --description "Trigger local Cursor Automation PR review" --color "1D76DB" 2>/dev/null || true
+          gh label create review-local --description "Use local automation for PR review (quota backup)" --color "C5DEF5" 2>/dev/null || true
+          gh label create review-dispatched --description "Bugbot + Ponytail reviews dispatched" --color "5319E7" 2>/dev/null || true
+          gh label create review-running --description "Automated PR reviews in progress" --color "F9D0C4" 2>/dev/null || true
+          gh label create review-clean --description "Automated reviews found no issues" --color "0E8A16" 2>/dev/null || true
+          gh label create review-findings --description "Automated reviews reported findings" --color "D93F0B" 2>/dev/null || true
+
+          gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
+            --add-label review-dispatched \
+            --add-label review-running
+
+          if echo "$LABELS" | grep -q 'agent-working'; then
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
+              --remove-label agent-working \
+              --add-label pr-opened-local
+          fi
+
+      - name: Checkout
+        if: steps.guards.outputs.skip != 'true'
+        uses: actions/checkout@v4
+
+      - name: Resolve pull request
+        id: find_pr
+        if: steps.guards.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ steps.guards.outputs.issue_number }}
+        run: |
+          set -euo pipefail
+
+          PR_JSON=$(gh api "/repos/${REPO}/pulls?state=open&per_page=100" \
+            --jq "[.[] | select(
+              ((.body // \"\") | test(\"#[[:space:]]*${ISSUE_NUMBER}([^0-9]|$)\")) or
+              ((.title // \"\") | test(\"#[[:space:]]*${ISSUE_NUMBER}([^0-9]|$)\"))
+            )] | first")
+
+          if [ "$PR_JSON" = "null" ] || [ -z "$PR_JSON" ]; then
+            echo "::error::No open PR found linking to issue #${ISSUE_NUMBER}."
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "Local PR review could not find an open PR. Ensure the PR body includes \`Fixes #${ISSUE_NUMBER}\`, then remove \`review-dispatched\` and re-add \`pr-opened-local\`."
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
+              --remove-label review-running \
+              --remove-label review-dispatched 2>/dev/null || true
+            exit 1
+          fi
+
+          PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
+          PR_HEAD=$(echo "$PR_JSON" | jq -r '.head.ref')
+          PR_URL=$(echo "$PR_JSON" | jq -r '.html_url')
+
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "pr_head_ref=$PR_HEAD" >> "$GITHUB_OUTPUT"
+          echo "pr_url=$PR_URL" >> "$GITHUB_OUTPUT"
+
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "🔍 **Local automated PR review dispatched** for [#${PR_NUMBER}](${PR_URL}) — Bugbot + Ponytail via Cursor Automation. Ensure Cursor is open."
+
+      - name: Dispatch Cursor Automation review
+        if: steps.guards.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.find_pr.outputs.pr_number }}
+          PR_HEAD_REF: ${{ steps.find_pr.outputs.pr_head_ref }}
+          ISSUE_NUMBER: ${{ steps.guards.outputs.issue_number }}
+          CURSOR_AUTOMATION_WEBHOOK_URL: ${{ secrets.CURSOR_AUTOMATION_WEBHOOK_URL }}
+          CURSOR_AUTOMATION_WEBHOOK_AUTH: ${{ secrets.CURSOR_AUTOMATION_WEBHOOK_AUTH }}
+        run: node scripts/dispatch-cursor-automation-review.mjs

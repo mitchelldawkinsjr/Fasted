@@ -18,3 +18,5 @@ prompt:
 labels:
   ready: ready
   readyLocal: ready-local
+  reviewLocal: review-local
+  prOpenedLocal: pr-opened-local
