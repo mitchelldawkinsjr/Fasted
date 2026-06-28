@@ -10,6 +10,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test:e2e": "playwright test",
+    "compress:artifacts": "node scripts/compress-artifacts.mjs",
+    "compress:artifacts:check": "node scripts/compress-artifacts.mjs --check",
     "deploy:vps": "bash scripts/deploy-vps.sh",
     "deploy:npm": "echo 'Run scripts/npm-add-fasted.sh on the VPS with APP_DOMAIN and API_DOMAIN set'"
   },
@@ -29,6 +31,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
+    "sharp": "^0.33.5",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
