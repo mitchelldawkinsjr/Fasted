@@ -1,23 +1,12 @@
 import { getEncouragementForDay } from '../data/encouragements';
-import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import type {
   DailyFastPlan,
   FastPhaseTemplate,
   FastType,
   Journey,
 } from '../types';
-import { getDayOfWeek, getWeekIndexInPhase } from './dateUtils';
-import { getActiveJourney, getAllJourneyDates, getPhaseContextForDate } from './journey';
-import { getProgress } from './storage';
-
-function resolveJourney(journey?: Journey): Journey {
-  if (journey) return journey;
-  try {
-    return getActiveJourney(getProgress());
-  } catch {
-    return FASTED_JOURNEY;
-  }
-}
+import { getDayOfWeek, getWeekIndexInPhase, resolveJourney } from './dateUtils';
+import { getPhaseContextForDate } from './journey';
 
 function buildDanielFastInstructions(template: FastPhaseTemplate): string[] {
   const instructions = [
@@ -231,14 +220,4 @@ export function getDailyPlan(date: string, journey?: Journey): DailyFastPlan | n
 export function getVerseOfTheDayReference(date: string, journey?: Journey): string | null {
   const plan = getDailyPlan(date, journey);
   return plan?.scriptureReferences[0] ?? null;
-}
-
-export function getFastDayDates(journey?: Journey): Set<string> {
-  const dates = new Set<string>();
-  for (const date of getAllJourneyDates(resolveJourney(journey))) {
-    if (getDailyPlan(date, journey)?.isFastDay) {
-      dates.add(date);
-    }
-  }
-  return dates;
 }

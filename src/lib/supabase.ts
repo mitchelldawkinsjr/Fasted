@@ -7,7 +7,7 @@ export function isSyncConfigured(): boolean {
   return SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0;
 }
 
-export const supabase = isSyncConfigured()
+const supabase = isSyncConfigured()
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
@@ -27,7 +27,6 @@ export type UserRecord = {
 
 export const PROGRESS_TABLE = 'user_progress';
 
-export const ORGANIZATIONS_TABLE = 'organizations';
 export const JOURNEYS_TABLE = 'journeys';
 export const GROUPS_TABLE = 'groups';
 export const GROUP_MEMBERSHIPS_TABLE = 'group_memberships';

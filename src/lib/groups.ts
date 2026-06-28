@@ -18,12 +18,7 @@ import {
   PROGRESS_TABLE,
   SHARED_JOURNAL_TABLE,
   getSupabase,
-  isSyncConfigured,
 } from './supabase';
-
-export function isGroupsConfigured(): boolean {
-  return isSyncConfigured();
-}
 
 function randomInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

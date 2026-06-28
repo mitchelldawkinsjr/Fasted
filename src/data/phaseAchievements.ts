@@ -1,4 +1,3 @@
-import { FAST_PHASES } from './fastingPlan';
 
 export type AchievementMetric = 'phase-check-ins' | 'phase-fast-days';
 
@@ -347,10 +346,6 @@ export const GLOBAL_BADGES: GlobalBadgeDef[] = [
 
 export function getPhaseMilestonesForPhase(phaseId: number): PhaseMilestoneDef[] {
   return PHASE_MILESTONES.filter((m) => m.phaseId === phaseId);
-}
-
-export function getPhaseTitle(phaseId: number): string {
-  return FAST_PHASES.find((p) => p.id === phaseId)?.title ?? `Phase ${phaseId}`;
 }
 
 /** Legacy badge IDs mapped to new equivalents for stored progress. */

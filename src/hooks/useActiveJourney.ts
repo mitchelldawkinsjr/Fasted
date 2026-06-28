@@ -16,13 +16,3 @@ export function useActiveJourney() {
   };
 }
 
-export function useJourneyById(id: string | undefined) {
-  const progress = useProgress();
-  const journey = progress.journeys.find((j) => j.id === id) ?? getActiveJourney(progress);
-  return {
-    journey,
-    phases: getPhases(journey),
-    planStart: getPlanStart(journey),
-    planEnd: getPlanEnd(journey),
-  };
-}
