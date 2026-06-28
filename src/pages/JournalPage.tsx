@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
 import { JournalEditor } from '../components/JournalEditor';
 import { JournalViewer } from '../components/JournalViewer';
@@ -60,7 +60,6 @@ function clearJournalSearchParams(searchParams: URLSearchParams): URLSearchParam
 }
 
 export function JournalPage() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const progress = useProgress();
   const [search, setSearch] = useState('');
@@ -183,7 +182,6 @@ export function JournalPage() {
         </h2>
         <JournalViewer
           entry={displayedEntry}
-          onBack={closeDetailView}
           onEdit={() => {
             setEditing(displayedEntry);
             setViewing(null);
@@ -224,14 +222,13 @@ export function JournalPage() {
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
+      <Link
+        to="/calendar"
         className={BACK_NAV_CLASS}
         aria-label="Go back"
       >
         <Icon name="arrow_back" size={20} />
-      </button>
+      </Link>
 
       <header className="flex items-center justify-between gap-3">
         <p className="text-body-md text-on-surface-variant">

@@ -15,7 +15,6 @@ import type { JournalEntry } from '../types';
 
 type Props = {
   entry: JournalEntry;
-  onBack: () => void;
   onEdit: () => void;
   onDelete: () => void;
 };
@@ -54,7 +53,7 @@ function FieldListBody<T extends string>({
   );
 }
 
-export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
+export function JournalViewer({ entry, onEdit, onDelete }: Props) {
   const simpleContentLabel =
     entry.type === 'fitness' ? FITNESS_JOURNAL_LABEL : JOURNAL_ENTRY_TYPE_LABELS[entry.type];
 
@@ -113,9 +112,6 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
         <p className="text-body-md text-on-surface-variant">No reflection notes recorded.</p>
       )}
 
-      <button type="button" onClick={onBack} className="btn-stitch-secondary w-full">
-        Back to Journal
-      </button>
     </div>
   );
 }
