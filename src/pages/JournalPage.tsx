@@ -144,6 +144,20 @@ export function JournalPage() {
     toast.info(messages.save.journalDeleted);
   };
 
+  const applyTypeFilter = (type: JournalEntryType) => {
+    setSearch('');
+    setFilter(type);
+    setViewing(null);
+    setEditing(null);
+    const next = new URLSearchParams(searchParams);
+    next.delete('date');
+    next.delete('from');
+    next.delete('moodView');
+    next.set('type', type);
+    next.delete('tag');
+    setSearchParams(next);
+  };
+
   const closeDetailView = () => {
     setViewing(null);
     if (
@@ -188,6 +202,7 @@ export function JournalPage() {
             setViewing(null);
           }}
           onDelete={() => void handleDelete(displayedEntry)}
+          onTypeClick={applyTypeFilter}
         />
       </div>
     );
@@ -342,7 +357,7 @@ export function JournalPage() {
                   aria-label={`View reflection from ${formatDisplayDate(entry.date)}`}
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <JournalTypeBadge type={entry.type} />
+                    <JournalTypeBadge type={entry.type} onClick={applyTypeFilter} />
                     {isDailyReflectionEntry(entry) && entry.dayMood && (
                       <MoodBadge mood={entry.dayMood} />
                     )}

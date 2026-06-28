@@ -171,6 +171,52 @@ test('filter chips show only entries with matching types', async ({ page }) => {
   await expect(page.getByRole('listitem').filter({ hasText: 'Prayer only entry' })).toHaveCount(0);
 });
 
+test('listing hashtag filters journal entries by type', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Prayer');
+  await page.getByLabel('Prayer').fill('Prayer hashtag entry');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Victory');
+  await page.getByLabel('Victory').fill('Victory hashtag entry');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.getByRole('button', { name: 'Filter by Prayer' }).first().click();
+
+  await expect(page).toHaveURL('/journal?type=prayer');
+  await expect(page.getByRole('button', { name: 'Prayer', exact: true })).toHaveClass(/bg-primary/);
+  await expect(page.getByRole('listitem').filter({ hasText: 'Prayer hashtag entry' })).toBeVisible();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Victory hashtag entry' })).toHaveCount(0);
+});
+
+test('viewer hashtag returns to filtered journal listing', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Victory');
+  await page.getByLabel('Victory').fill('Victory viewer hashtag entry');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Prayer');
+  await page.getByLabel('Prayer').fill('Prayer viewer hashtag entry');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page
+    .getByRole('listitem')
+    .filter({ hasText: 'Prayer viewer hashtag entry' })
+    .getByRole('button', { name: /View reflection from/i })
+    .click();
+  await expect(page.getByRole('heading', { name: 'Reflection' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Filter by Prayer' }).click();
+
+  await expect(page).toHaveURL('/journal?type=prayer');
+  await expect(page.getByRole('heading', { name: 'Reflection' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Prayer', exact: true })).toHaveClass(/bg-primary/);
+  await expect(page.getByRole('listitem').filter({ hasText: 'Prayer viewer hashtag entry' })).toBeVisible();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Victory viewer hashtag entry' })).toHaveCount(0);
+});
+
 test('saves a food entry with meal fields', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Food');
