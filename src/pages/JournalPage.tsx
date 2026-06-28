@@ -144,18 +144,18 @@ export function JournalPage() {
     toast.info(messages.save.journalDeleted);
   };
 
-  const applyTypeFilter = (type: JournalEntryType) => {
-    setSearch('');
-    setFilter(type);
-    setViewing(null);
-    setEditing(null);
-    const next = new URLSearchParams(searchParams);
-    next.delete('date');
-    next.delete('from');
-    next.delete('moodView');
-    next.set('type', type);
-    next.delete('tag');
+  const applyFilter = (nextFilter: JournalFilter) => {
+    setFilter(nextFilter);
+    const next = clearJournalSearchParams(searchParams);
+    if (nextFilter !== 'all') {
+      next.set('type', nextFilter);
+    }
     setSearchParams(next);
+  };
+
+  const applyTypeFilter = (type: JournalEntryType) => {
+    setViewing(null);
+    applyFilter(type);
   };
 
   const closeDetailView = () => {
@@ -286,7 +286,7 @@ export function JournalPage() {
           <button
             key={chip.id}
             type="button"
-            onClick={() => setFilter(chip.id)}
+            onClick={() => applyFilter(chip.id)}
             className={journalTypePillClass(filter === chip.id)}
           >
             {chip.label}
@@ -350,18 +350,18 @@ export function JournalPage() {
                     </button>
                   </div>
                 </div>
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <JournalTypeBadge type={entry.type} onClick={applyTypeFilter} />
+                  {isDailyReflectionEntry(entry) && entry.dayMood && (
+                    <MoodBadge mood={entry.dayMood} />
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={() => setViewing(entry)}
                   className="w-full min-w-0 text-left"
                   aria-label={`View reflection from ${formatDisplayDate(entry.date)}`}
                 >
-                  <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <JournalTypeBadge type={entry.type} onClick={applyTypeFilter} />
-                    {isDailyReflectionEntry(entry) && entry.dayMood && (
-                      <MoodBadge mood={entry.dayMood} />
-                    )}
-                  </div>
                   <h2 className="text-wrap-anywhere mb-2 font-display text-headline-md text-primary">
                     {getJournalEntryTitle(entry)}
                   </h2>

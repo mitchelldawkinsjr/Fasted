@@ -18,7 +18,7 @@ type Props = {
   onBack: () => void;
   onEdit: () => void;
   onDelete: () => void;
-  onTypeClick?: (type: JournalEntryType) => void;
+  onTypeClick: (type: JournalEntryType) => void;
 };
 
 type FieldDef<T extends string> = { key: T; label: string };
