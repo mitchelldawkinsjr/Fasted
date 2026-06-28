@@ -22,11 +22,9 @@ import {
 
 function randomInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 8; i += 1) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code;
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => chars[byte % chars.length]).join('');
 }
 
 async function getUserId(): Promise<string> {

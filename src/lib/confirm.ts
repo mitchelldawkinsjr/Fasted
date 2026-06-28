@@ -21,7 +21,7 @@ function notify() {
 }
 
 function createId(): string {
-  return `confirm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  return crypto.randomUUID();
 }
 
 export function subscribeConfirm(listener: () => void): () => void {
