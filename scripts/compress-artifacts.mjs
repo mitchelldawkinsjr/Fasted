@@ -34,6 +34,16 @@ async function* walkImages(dir) {
   }
 }
 
+async function collectImagePaths() {
+  const paths = [];
+  for (const root of ROOTS) {
+    for await (const filePath of walkImages(root)) {
+      paths.push(filePath);
+    }
+  }
+  return paths;
+}
+
 async function compressImage(filePath) {
   const beforeStat = await stat(filePath);
   const beforeBytes = beforeStat.size;
@@ -69,56 +79,38 @@ function formatBytes(bytes) {
   return `${bytes} B`;
 }
 
-async function runPass() {
-  const results = [];
-  for (const root of ROOTS) {
-    for await (const filePath of walkImages(root)) {
-      results.push(await compressImage(filePath));
-    }
-  }
-  return results;
-}
-
-async function totalImageBytes() {
+async function totalImageBytes(paths) {
   let total = 0;
-  let count = 0;
-  for (const root of ROOTS) {
-    for await (const filePath of walkImages(root)) {
-      count += 1;
-      total += (await stat(filePath)).size;
-    }
+  for (const filePath of paths) {
+    total += (await stat(filePath)).size;
   }
-  return { total, count };
+  return total;
 }
 
 async function main() {
-  const { total: totalBefore, count: fileCount } = await totalImageBytes();
+  const paths = await collectImagePaths();
 
-  if (fileCount === 0) {
+  if (paths.length === 0) {
     console.log('No screenshot images found under artifacts/ or docs/screenshots/.');
     return;
   }
 
-  if (CHECK_ONLY) {
-    const results = await runPass();
-    const changed = results.filter((result) => result.changed);
-    reportResults(changed, fileCount, totalBefore, totalBefore - changed.reduce((s, r) => s + r.saved, 0));
-    if (changed.length > 0) process.exit(1);
-    return;
+  const totalBefore = await totalImageBytes(paths);
+  const results = [];
+  for (const filePath of paths) {
+    results.push(await compressImage(filePath));
   }
 
-  const changedFiles = new Map();
-  for (let pass = 0; pass < 5; pass += 1) {
-    const results = await runPass();
-    const changed = results.filter((result) => result.changed);
-    for (const result of changed) {
-      changedFiles.set(result.filePath, result);
-    }
-    if (changed.length === 0) break;
-  }
+  const changed = results.filter((result) => result.changed);
+  const totalAfter = CHECK_ONLY
+    ? totalBefore - changed.reduce((sum, result) => sum + result.saved, 0)
+    : await totalImageBytes(paths);
 
-  const { total: totalAfter } = await totalImageBytes();
-  reportResults([...changedFiles.values()], fileCount, totalBefore, totalAfter);
+  reportResults(changed, paths.length, totalBefore, totalAfter);
+
+  if (CHECK_ONLY && changed.length > 0) {
+    process.exit(1);
+  }
 }
 
 function reportResults(changed, fileCount, totalBefore, totalAfter) {
@@ -140,11 +132,7 @@ function reportResults(changed, fileCount, totalBefore, totalAfter) {
   );
 }
 
-async function mainEntry() {
-  await main();
-}
-
-mainEntry().catch((err) => {
+main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
