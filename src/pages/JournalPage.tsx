@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
 import { JournalEditor } from '../components/JournalEditor';
 import { JournalViewer } from '../components/JournalViewer';
@@ -26,6 +26,9 @@ import { toast } from '../lib/toast';
 import type { JournalEntry, JournalEntryType } from '../types';
 
 type JournalFilter = 'all' | JournalEntryType;
+
+const BACK_NAV_CLASS =
+  'inline-flex items-center gap-1 text-body-md font-medium text-primary transition-opacity hover:opacity-80';
 
 const FILTER_CHIPS: { id: JournalFilter; label: string }[] = [
   { id: 'all', label: 'All Reflections' },
@@ -57,6 +60,7 @@ function clearJournalSearchParams(searchParams: URLSearchParams): URLSearchParam
 }
 
 export function JournalPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const progress = useProgress();
   const [search, setSearch] = useState('');
@@ -156,14 +160,23 @@ export function JournalPage() {
   if (displayedEntry) {
     return (
       <div className="animate-fade-in-up">
-        {moodChartReturnTo && (
+        {moodChartReturnTo ? (
           <Link
             to={moodChartReturnTo}
-            className="mb-stack-md flex items-center gap-1 text-body-md font-medium text-primary transition-opacity hover:opacity-80"
+            className={`mb-stack-md ${BACK_NAV_CLASS}`}
+            aria-label="Go back"
           >
             <Icon name="arrow_back" size={20} />
-            Back to mood chart
           </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={closeDetailView}
+            className={`mb-stack-md ${BACK_NAV_CLASS}`}
+            aria-label="Go back"
+          >
+            <Icon name="arrow_back" size={20} />
+          </button>
         )}
         <h2 className="mb-stack-md font-display text-headline-lg-mobile text-primary">
           Reflection
@@ -211,6 +224,15 @@ export function JournalPage() {
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className={BACK_NAV_CLASS}
+        aria-label="Go back"
+      >
+        <Icon name="arrow_back" size={20} />
+      </button>
+
       <header className="flex items-center justify-between gap-3">
         <p className="text-body-md text-on-surface-variant">
           {progress.journalEntries.length} reflections

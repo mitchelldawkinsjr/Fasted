@@ -350,3 +350,29 @@ test('migrates legacy fitness tagged entries', async ({ page }) => {
   expect(stored.journalEntries[0].type).toBe('fitness');
   expect(stored.journalEntries[0].content).toBe('Legacy movement note');
 });
+
+test('journal list back arrow returns to the previous screen', async ({ page }) => {
+  await page.goto('/calendar');
+  await page.goto('/journal');
+
+  await page.getByRole('button', { name: 'Go back' }).click();
+
+  await expect(page).toHaveURL('/calendar');
+});
+
+test('journal entry back arrow returns to the journal list', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Great' }).click();
+  await page.getByLabel('Verse of the Day').fill('Morning focus');
+  await page.getByLabel('What I prayed about').fill('Family peace');
+  await page.getByLabel('Victory today').fill('Stayed faithful');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.getByRole('button', { name: /View reflection from/i }).click();
+  await expect(page.getByRole('heading', { name: 'Reflection' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Go back' }).click();
+
+  await expect(page.getByText('1 reflections')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Reflection' })).toHaveCount(0);
+});
