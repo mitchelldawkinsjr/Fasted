@@ -1,11 +1,7 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PHASE_TEMPLATES } from '../data/phaseTemplates';
 import { getJourneyPhaseWindows } from '../lib/journey';
-import {
-  readJourneyImageFile,
-  resolvePhaseImagePath,
-  validateJourneyImageFile,
-} from '../lib/journeyImages';
+import { resolvePhaseImagePath } from '../lib/journeyImages';
 import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 import { saveJourney, setActiveJourney } from '../lib/storage';
 import { toast } from '../lib/toast';
@@ -34,34 +30,16 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState(getLocalDateString());
   const [selected, setSelected] = useState<string[]>(PHASE_TEMPLATES.map((t) => t.id));
-  const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadTargetTemplateId, setUploadTargetTemplateId] = useState<string | null>(null);
-
-  const previewJourney = useMemo((): Journey => {
-    const phases: JourneyPhase[] = selected.map((templateId, order) => ({
-      templateId,
-      order,
-      ...(imageOverrides[templateId] ? { imagePath: imageOverrides[templateId] } : {}),
-    }));
-    return {
-      id: 'preview',
-      name: name.trim() || 'Custom Journey',
-      startDate,
-      phases,
-    };
-  }, [name, selected, startDate, imageOverrides]);
 
   const draftJourney = useMemo((): Journey | null => {
     if (!name.trim() || selected.length === 0) return null;
     const phases: JourneyPhase[] = selected.map((templateId, order) => ({
       templateId,
       order,
-      ...(imageOverrides[templateId] ? { imagePath: imageOverrides[templateId] } : {}),
     }));
     return { id: createJourneyId(), name: name.trim(), startDate, phases };
-  }, [name, selected, startDate, imageOverrides]);
+  }, [name, selected, startDate]);
 
   const windows = draftJourney ? getJourneyPhaseWindows(draftJourney) : [];
 
@@ -90,7 +68,11 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
     setName('');
     setStartDate(getLocalDateString());
     setSelected(PHASE_TEMPLATES.map((t) => t.id));
-    setImageOverrides({});
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
 
   const handleConfirm = async () => {
@@ -105,44 +87,11 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
       }
       onClose();
       resetForm();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save journey.');
     } finally {
       setBusy(false);
     }
-  };
-
-  const openImageUpload = (templateId: string) => {
-    setUploadTargetTemplateId(templateId);
-    fileInputRef.current?.click();
-  };
-
-  const handleImageSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    const templateId = uploadTargetTemplateId;
-    setUploadTargetTemplateId(null);
-    if (!file || !templateId) return;
-
-    const validation = validateJourneyImageFile(file);
-    if (!validation.ok) {
-      toast.error(validation.message);
-      return;
-    }
-
-    try {
-      const dataUrl = await readJourneyImageFile(file);
-      setImageOverrides((prev) => ({ ...prev, [templateId]: dataUrl }));
-      toast.success('Custom image attached');
-    } catch {
-      toast.error('Could not read the selected image.');
-    }
-  };
-
-  const clearImageOverride = (templateId: string) => {
-    setImageOverrides((prev) => {
-      const next = { ...prev };
-      delete next[templateId];
-      return next;
-    });
   };
 
   const inputClass =
@@ -153,13 +102,6 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-4">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
-        className="hidden"
-        onChange={(event) => void handleImageSelected(event)}
-      />
       <div
         className="flex max-h-[min(90vh,calc(100dvh-6rem))] w-full max-w-lg flex-col rounded-2xl bg-surface-container-lowest shadow-grace-up sm:max-h-[90vh]"
         role="dialog"
@@ -170,7 +112,7 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
           <h2 id="journey-builder-title" className="font-display text-headline-md text-primary">
             {title ?? 'Create Journey'}
           </h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-surface-container">
+          <button type="button" onClick={handleClose} className="rounded-lg p-2 hover:bg-surface-container">
             <Icon name="close" />
           </button>
         </div>
@@ -192,20 +134,17 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
           {step === 1 && (
             <>
               <p className="text-body-md text-on-surface-variant">
-                Choose phases and reorder. Custom journey images are included for each fast. You
-                can optionally upload your own image to replace one.
+                Choose phases and reorder. Custom journey images are included for each fast.
               </p>
               <ul className="mt-4 space-y-2">
                 {selected.map((templateId) => {
                   const template = PHASE_TEMPLATES.find((t) => t.id === templateId);
-                  if (!template) return null;
+                  if (!template || !draftJourney) return null;
                   const imagePath = resolvePhaseImagePath(
-                    previewJourney,
+                    draftJourney,
                     template.id,
                     template.imagePath,
-                    imageOverrides[templateId],
                   );
-                  const hasOverride = Boolean(imageOverrides[templateId]);
                   return (
                     <li
                       key={templateId}
@@ -220,27 +159,8 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
                         <p className="truncate text-body-md text-on-surface">{template.title}</p>
                         <p className="text-label-caps text-on-surface-variant">
                           {template.durationDays} days
-                          {hasOverride ? ' · custom upload' : ''}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => openImageUpload(templateId)}
-                        aria-label={`Upload image for ${template.title}`}
-                        className="rounded-lg p-1 hover:bg-surface-container"
-                      >
-                        <Icon name="upload" size={18} />
-                      </button>
-                      {hasOverride ? (
-                        <button
-                          type="button"
-                          onClick={() => clearImageOverride(templateId)}
-                          aria-label={`Reset image for ${template.title}`}
-                          className="rounded-lg p-1 hover:bg-surface-container"
-                        >
-                          <Icon name="restart_alt" size={18} />
-                        </button>
-                      ) : null}
                       <button type="button" onClick={() => moveTemplate(templateId, -1)} aria-label="Move up">
                         <Icon name="arrow_upward" size={18} />
                       </button>
@@ -298,7 +218,6 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
                         draftJourney,
                         template.id,
                         template.imagePath,
-                        imageOverrides[template.id],
                       )
                     : undefined;
                   return (

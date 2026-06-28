@@ -232,30 +232,6 @@ export function saveJourney(journey: Journey): void {
   persist({ ...progress, journeys });
 }
 
-/** Persist user-uploaded image overrides for a custom journey phase. */
-export function saveJourneyImages(
-  journeyId: string,
-  images: Record<string, string | undefined>,
-): void {
-  const progress = getProgress();
-  const journeys = progress.journeys.map((journey) => {
-    if (journey.id !== journeyId || journey.locked) return journey;
-    return {
-      ...journey,
-      phases: journey.phases.map((phase) => {
-        const imagePath = images[phase.templateId];
-        if (imagePath === undefined) return phase;
-        if (!imagePath) {
-          const { imagePath: _removed, ...rest } = phase;
-          return rest;
-        }
-        return { ...phase, imagePath };
-      }),
-    };
-  });
-  persist({ ...progress, journeys });
-}
-
 export function setActiveJourney(id: string): void {
   const progress = getProgress();
   if (!progress.journeys.some((j) => j.id === id)) {

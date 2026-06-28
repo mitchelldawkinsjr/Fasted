@@ -12,7 +12,3 @@ export const CUSTOM_JOURNEY_IMAGES: Record<string, string> = {
   'esther-preparation': '/assets/phases/custom/phase-07-esther-preparation-fast.png',
   'year-end-consecration': '/assets/phases/custom/phase-08-year-end-consecration.png',
 };
-
-export function getCustomJourneyImagePath(templateId: string): string | undefined {
-  return CUSTOM_JOURNEY_IMAGES[templateId];
-}

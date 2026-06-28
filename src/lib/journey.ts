@@ -111,10 +111,6 @@ export function getPhaseContextForDate(date: string, journey: Journey): PhaseCon
   };
 }
 
-function getPhaseImageOverride(journey: Journey, templateId: string): string | undefined {
-  return journey.phases.find((phase) => phase.templateId === templateId)?.imagePath;
-}
-
 export function getPhasesForJourney(journey: Journey): FastPhase[] {
   return getJourneyPhaseWindows(journey).flatMap((window) => {
     const template = getTemplateById(window.templateId);
@@ -138,7 +134,6 @@ export function getPhasesForJourney(journey: Journey): FastPhase[] {
           journey,
           template.id,
           template.imagePath,
-          getPhaseImageOverride(journey, template.id),
         ),
         safetyNote: template.safetyNote,
       },

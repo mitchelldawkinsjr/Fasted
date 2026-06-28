@@ -41,8 +41,6 @@ export type FastPhaseTemplate = {
 export type JourneyPhase = {
   templateId: string;
   order: number;
-  /** Optional user-uploaded image override for custom journeys. */
-  imagePath?: string;
 };
 
 export type Journey = {

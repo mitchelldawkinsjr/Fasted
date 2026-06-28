@@ -33,7 +33,6 @@ export function getPhaseForDate(date: string, journey?: Journey): FastPhase | un
   const resolved = resolveJourney(journey);
   const ctx = getPhaseContextForDate(date, resolved);
   if (!ctx) return undefined;
-  const phaseOverride = resolved.phases.find((phase) => phase.templateId === ctx.templateId)?.imagePath;
   return {
     id: ctx.legacyId,
     templateId: ctx.templateId,
@@ -52,7 +51,6 @@ export function getPhaseForDate(date: string, journey?: Journey): FastPhase | un
       resolved,
       ctx.templateId,
       ctx.template.imagePath,
-      phaseOverride,
     ),
     safetyNote: ctx.template.safetyNote,
   };
