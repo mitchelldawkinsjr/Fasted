@@ -1,9 +1,6 @@
 import { FASTED_JOURNEY } from './phaseTemplates';
-import {
-  getPhaseContextForDate,
-  getPhasesForJourney,
-  getJourneyPlanEnd,
-} from '../lib/journey';
+import { getPhaseContextForDate, getPhasesForJourney, getJourneyPlanEnd } from '../lib/journey';
+import { resolvePhaseImagePath } from '../lib/journeyImages';
 import type { FastPhase, Journey } from '../types';
 import { getProgress } from '../lib/storage';
 import { getActiveJourney } from '../lib/journey';
@@ -33,7 +30,8 @@ export function getPhaseById(id: number, journey?: Journey): FastPhase | undefin
 }
 
 export function getPhaseForDate(date: string, journey?: Journey): FastPhase | undefined {
-  const ctx = getPhaseContextForDate(date, resolveJourney(journey));
+  const resolved = resolveJourney(journey);
+  const ctx = getPhaseContextForDate(date, resolved);
   if (!ctx) return undefined;
   return {
     id: ctx.legacyId,
@@ -49,7 +47,11 @@ export function getPhaseForDate(date: string, journey?: Journey): FastPhase | un
     avoid: ctx.template.avoid,
     dailyReadings: ctx.template.dailyReadings,
     prayerFocus: ctx.template.prayerFocus,
-    imagePath: ctx.template.imagePath,
+    imagePath: resolvePhaseImagePath(
+      resolved,
+      ctx.templateId,
+      ctx.template.imagePath,
+    ),
     safetyNote: ctx.template.safetyNote,
   };
 }

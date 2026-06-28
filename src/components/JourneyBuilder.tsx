@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { PHASE_TEMPLATES } from '../data/phaseTemplates';
 import { getJourneyPhaseWindows } from '../lib/journey';
+import { resolvePhaseImagePath } from '../lib/journeyImages';
 import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 import { saveJourney, setActiveJourney } from '../lib/storage';
+import { toast } from '../lib/toast';
 import type { Journey, JourneyPhase } from '../types';
 import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
@@ -32,7 +34,10 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
 
   const draftJourney = useMemo((): Journey | null => {
     if (!name.trim() || selected.length === 0) return null;
-    const phases: JourneyPhase[] = selected.map((templateId, order) => ({ templateId, order }));
+    const phases: JourneyPhase[] = selected.map((templateId, order) => ({
+      templateId,
+      order,
+    }));
     return { id: createJourneyId(), name: name.trim(), startDate, phases };
   }, [name, selected, startDate]);
 
@@ -58,6 +63,18 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
     });
   };
 
+  const resetForm = () => {
+    setStep(0);
+    setName('');
+    setStartDate(getLocalDateString());
+    setSelected(PHASE_TEMPLATES.map((t) => t.id));
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   const handleConfirm = async () => {
     if (!draftJourney) return;
     setBusy(true);
@@ -69,9 +86,9 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
         setActiveJourney(draftJourney.id);
       }
       onClose();
-      setStep(0);
-      setName('');
-      setSelected(PHASE_TEMPLATES.map((t) => t.id));
+      resetForm();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save journey.');
     } finally {
       setBusy(false);
     }
@@ -95,7 +112,7 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
           <h2 id="journey-builder-title" className="font-display text-headline-md text-primary">
             {title ?? 'Create Journey'}
           </h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-surface-container">
+          <button type="button" onClick={handleClose} className="rounded-lg p-2 hover:bg-surface-container">
             <Icon name="close" />
           </button>
         </div>
@@ -117,21 +134,26 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
           {step === 1 && (
             <>
               <p className="text-body-md text-on-surface-variant">
-                Choose phases and reorder. At least one phase is required.
+                Choose phases and reorder. Custom journey images are included for each fast.
               </p>
               <ul className="mt-4 space-y-2">
                 {selected.map((templateId) => {
                   const template = PHASE_TEMPLATES.find((t) => t.id === templateId);
-                  if (!template) return null;
+                  if (!template || !draftJourney) return null;
+                  const imagePath = resolvePhaseImagePath(
+                    draftJourney,
+                    template.id,
+                    template.imagePath,
+                  );
                   return (
                     <li
                       key={templateId}
                       className="flex items-center gap-2 rounded-xl border border-surface-variant bg-surface-container-low p-3"
                     >
                       <img
-                        src={template.imagePath}
+                        src={imagePath}
                         alt=""
-                        className="h-10 w-10 rounded-lg object-cover"
+                        className="h-10 w-10 shrink-0 rounded-lg object-cover object-top"
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-body-md text-on-surface">{template.title}</p>
@@ -191,10 +213,31 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
               <ul className="mt-4 space-y-2">
                 {windows.map((window) => {
                   const template = PHASE_TEMPLATES.find((t) => t.id === window.templateId);
+                  const imagePath = template
+                    ? resolvePhaseImagePath(
+                        draftJourney,
+                        template.id,
+                        template.imagePath,
+                      )
+                    : undefined;
                   return (
-                    <li key={window.templateId} className="rounded-xl bg-surface-container-low p-3 text-body-md">
-                      {template?.title}: {formatDisplayDate(window.startDate)} –{' '}
-                      {formatDisplayDate(window.endDate)}
+                    <li
+                      key={window.templateId}
+                      className="flex items-center gap-3 rounded-xl bg-surface-container-low p-3 text-body-md"
+                    >
+                      {imagePath ? (
+                        <img
+                          src={imagePath}
+                          alt=""
+                          className="h-12 w-12 shrink-0 rounded-lg object-cover object-top"
+                        />
+                      ) : null}
+                      <div>
+                        <p>{template?.title}</p>
+                        <p className="text-label-caps text-on-surface-variant">
+                          {formatDisplayDate(window.startDate)} – {formatDisplayDate(window.endDate)}
+                        </p>
+                      </div>
                     </li>
                   );
                 })}

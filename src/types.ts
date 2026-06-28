@@ -38,7 +38,10 @@ export type FastPhaseTemplate = {
   safetyNote?: string;
 };
 
-export type JourneyPhase = { templateId: string; order: number };
+export type JourneyPhase = {
+  templateId: string;
+  order: number;
+};
 
 export type Journey = {
   id: string;

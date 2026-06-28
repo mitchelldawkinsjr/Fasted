@@ -1,4 +1,5 @@
 import { FASTED_JOURNEY, getTemplateById } from '../data/phaseTemplates';
+import { resolvePhaseImagePath } from './journeyImages';
 import type { FastPhase, Journey, JourneyPhase, UserProgress } from '../types';
 
 function isValidJourneyPhase(phase: JourneyPhase): boolean {
@@ -129,7 +130,11 @@ export function getPhasesForJourney(journey: Journey): FastPhase[] {
         avoid: template.avoid,
         dailyReadings: template.dailyReadings,
         prayerFocus: template.prayerFocus,
-        imagePath: template.imagePath,
+        imagePath: resolvePhaseImagePath(
+          journey,
+          template.id,
+          template.imagePath,
+        ),
         safetyNote: template.safetyNote,
       },
     ];
