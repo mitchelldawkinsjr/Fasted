@@ -97,7 +97,8 @@ If you changed any file under `src/components/`, `src/pages/`, theme/CSS, or use
    # Example: one-off script or npx playwright test with screenshot output
    ```
 4. Save files under `artifacts/issue-{N}/` (e.g. `journal-form.png`, `journal-viewer.png`)
-5. **Commit the PNGs to your branch** so they have stable raw GitHub URLs
+5. Run `npm run compress:artifacts` so screenshots stay small in git
+6. **Commit the PNGs to your branch** so they have stable raw GitHub URLs
 
 ### Post to the issue
 
