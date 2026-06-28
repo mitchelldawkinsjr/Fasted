@@ -11,13 +11,14 @@ import {
   isDailyReflectionEntry,
   isSingleContentJournalEntry,
 } from '../lib/journalTags';
-import type { JournalEntry } from '../types';
+import type { JournalEntry, JournalEntryType } from '../types';
 
 type Props = {
   entry: JournalEntry;
   onBack: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onTypeClick: (type: JournalEntryType) => void;
 };
 
 type FieldDef<T extends string> = { key: T; label: string };
@@ -54,7 +55,7 @@ function FieldListBody<T extends string>({
   );
 }
 
-export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
+export function JournalViewer({ entry, onBack, onEdit, onDelete, onTypeClick }: Props) {
   const simpleContentLabel =
     entry.type === 'fitness' ? FITNESS_JOURNAL_LABEL : JOURNAL_ENTRY_TYPE_LABELS[entry.type];
 
@@ -64,7 +65,7 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete }: Props) {
         <div>
           <p className="label-caps text-on-surface-variant">{formatDisplayDate(entry.date)}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <JournalTypeBadge type={entry.type} />
+            <JournalTypeBadge type={entry.type} onClick={onTypeClick} />
             {isDailyReflectionEntry(entry) && entry.dayMood && (
               <MoodBadge mood={entry.dayMood} />
             )}
