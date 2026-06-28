@@ -371,7 +371,7 @@ export function BadgeGalleryPage() {
           Assets — <code className="text-primary">public/assets/badges/</code>
         </p>
         <p className="text-body-md text-on-surface-variant">
-          Regenerate: <code className="text-primary">node scripts/generate-badge-sprites.mjs</code>
+          Badge artwork lives in <code className="text-primary">public/assets-2/badges/</code> as PNG sprites.
         </p>
       </footer>
     </div>

@@ -115,7 +115,3 @@ After clicking a social button the browser is redirected to the provider. On ret
 - **Sign in with empty local data** → downloads cloud copy.
 - **Sign in with existing local data** → uploads local copy to cloud.
 - Newer `updatedAt` wins on reconcile.
-
-## One-time PocketBase migration
-
-If migrating from a legacy PocketBase install, use `scripts/migrate-pb-to-supabase.mjs` with env vars set (see script header). PocketBase is no longer part of the production stack.
