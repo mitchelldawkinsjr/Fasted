@@ -16,8 +16,4 @@ export function getBadgeSpritePath(id: BadgeId): string {
   return BADGE_SPRITE_PATHS[id] ?? `${BADGE_BASE}/${id}.png`;
 }
 
-export function hasBadgeSprite(id: BadgeId): boolean {
-  return id in BADGE_SPRITE_PATHS;
-}
-
 export { ALL_BADGE_IDS, BADGE_SPRITE_PATHS };

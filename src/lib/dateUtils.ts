@@ -34,7 +34,7 @@ export function getDayOfWeek(dateStr: string): number {
   return parseLocalDate(dateStr).getDay();
 }
 
-function resolveJourney(journey?: Journey): Journey {
+export function resolveJourney(journey?: Journey): Journey {
   if (journey) return journey;
   try {
     return getActiveJourney(getProgress());

@@ -54,17 +54,6 @@ export function isMilestoneEarned(
   return getMilestoneProgress(milestone, phaseStart, phaseEnd) >= target;
 }
 
-export function getPhaseCheckInCountUpTo(
-  phaseStart: string,
-  phaseEnd: string,
-  today: string,
-): number {
-  const phaseDates = new Set(
-    getAllPlanDates().filter((d) => d >= phaseStart && d <= phaseEnd && d <= today),
-  );
-  return getProgress().checkIns.filter((c) => phaseDates.has(c.date)).length;
-}
-
 export function getNextPhaseMilestone(
   phaseId: number,
   phaseStart: string,

@@ -232,10 +232,6 @@ export async function reconcileWithCloud(options?: {
   }
 }
 
-export async function syncOnLogin(guestFallback?: UserProgress): Promise<void> {
-  await reconcileWithCloud({ guestFallback });
-}
-
 export function scheduleCloudSync(): void {
   void isLoggedIn().then((loggedIn) => {
     if (!loggedIn) return;
@@ -318,7 +314,7 @@ async function completeAuthOrWarn(userId: string, guestFallback?: UserProgress):
   switchStorageScope(userId);
 
   try {
-    await syncOnLogin(pendingGuestMigration);
+    await reconcileWithCloud({ guestFallback: pendingGuestMigration });
     clearPendingGuestMigration();
     return {};
   } catch (syncErr) {

@@ -51,13 +51,6 @@ function buildGlobalBadge(def: GlobalBadgeDef): Omit<Badge, 'earnedAt'> {
   };
 }
 
-const ALL_BADGE_DEFS: Omit<Badge, 'earnedAt'>[] = [
-  ...GLOBAL_BADGES.map(buildGlobalBadge),
-  ...PHASE_MILESTONES.map(buildPhaseBadge),
-];
-
-const BADGE_DEF_MAP = new Map(ALL_BADGE_DEFS.map((b) => [b.id, b]));
-
 function getEarnedBadgeMap(): Map<string, Badge> {
   const map = new Map<string, Badge>();
   for (const badge of getProgress().badges) {
@@ -258,7 +251,3 @@ export function getPhasesCompletedCount(_today: string): number {
   }).length;
 }
 
-/** Resolve badge definition for display (e.g. celebration modal). */
-export function getBadgeDefinition(id: BadgeId): Omit<Badge, 'earnedAt'> | undefined {
-  return BADGE_DEF_MAP.get(normalizeBadgeId(id));
-}

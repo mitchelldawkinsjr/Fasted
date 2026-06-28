@@ -173,6 +173,3 @@ export function getTemplateById(templateId: string): FastPhaseTemplate | undefin
   return PHASE_TEMPLATES.find((t) => t.id === templateId);
 }
 
-export function getTemplateByLegacyId(legacyId: number): FastPhaseTemplate | undefined {
-  return PHASE_TEMPLATES.find((t) => t.legacyId === legacyId);
-}

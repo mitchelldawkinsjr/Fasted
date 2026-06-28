@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GroupRecord } from '../types';
-import { isGroupsConfigured, listMyGroups } from '../lib/groups';
+import { listMyGroups } from '../lib/groups';
+import { isSyncConfigured } from '../lib/supabase';
 
 export function useGroups() {
   const [groups, setGroups] = useState<GroupRecord[]>([]);
@@ -9,7 +10,7 @@ export function useGroups() {
   const requestIdRef = useRef(0);
 
   const refresh = useCallback(async () => {
-    if (!isGroupsConfigured()) {
+    if (!isSyncConfigured()) {
       setGroups([]);
       setLoading(false);
       setError(null);
