@@ -119,7 +119,7 @@ export function SettingsPage() {
 
       <section className="stitch-card overflow-hidden">
         <div className="border-b border-surface-variant px-gutter py-4">
-          <h3 className="label-caps text-secondary">PREFERENCES</h3>
+          <h2 className="label-caps text-secondary">PREFERENCES</h2>
         </div>
         <div className="divide-y divide-surface-variant p-gutter space-y-4">
           <label className="block">
@@ -145,7 +145,7 @@ export function SettingsPage() {
 
       <section className="stitch-card overflow-hidden">
         <div className="border-b border-surface-variant px-gutter py-4">
-          <h3 className="label-caps text-secondary">JOURNAL BACKUP</h3>
+          <h2 className="label-caps text-secondary">JOURNAL BACKUP</h2>
         </div>
         <div className="divide-y divide-surface-variant">
           <button
@@ -195,7 +195,7 @@ export function SettingsPage() {
 
       <section className="stitch-card overflow-hidden border-l-4 border-error">
         <div className="border-b border-surface-variant px-gutter py-4">
-          <h3 className="label-caps text-error">DANGER ZONE</h3>
+          <h2 className="label-caps text-error">DANGER ZONE</h2>
         </div>
         <button
           type="button"
@@ -208,7 +208,7 @@ export function SettingsPage() {
       </section>
 
       <section className="stitch-card min-w-0 overflow-hidden p-gutter">
-        <h3 className="mb-2 font-display text-headline-md text-primary">Scripture Note</h3>
+        <h2 className="mb-2 font-display text-headline-md text-primary">Scripture Note</h2>
         <p className="text-wrap-anywhere text-body-md text-on-surface-variant">
           {progress.settings.scriptureNote}
         </p>

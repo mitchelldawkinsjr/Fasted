@@ -327,9 +327,9 @@ export function JournalPage() {
                       <MoodBadge mood={entry.dayMood} />
                     )}
                   </div>
-                  <h3 className="text-wrap-anywhere mb-2 font-display text-headline-md text-primary">
+                  <h2 className="text-wrap-anywhere mb-2 font-display text-headline-md text-primary">
                     {getJournalEntryTitle(entry)}
-                  </h3>
+                  </h2>
                   <p className="text-wrap-anywhere line-clamp-3 text-body-md leading-relaxed text-on-surface-variant">
                     {getJournalEntryPreview(entry)}
                   </p>

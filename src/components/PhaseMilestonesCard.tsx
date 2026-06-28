@@ -32,11 +32,11 @@ export function PhaseMilestonesCard({ phaseId, today, compact = false }: Props) 
     return (
       <div className="rounded-xl bg-surface-container-high/60 px-3 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="label-caps text-on-surface-variant">{metricLabel}</span>
+          <span className="label-caps text-on-surface">{metricLabel}</span>
           <span className="font-display text-body-md text-primary">{progressValue}</span>
         </div>
         {next && (
-          <p className="mt-1 text-label-caps text-on-surface-variant">
+          <p className="mt-1 text-label-caps text-on-surface">
             Next: {next.title} ({next.current}/{next.target})
           </p>
         )}
@@ -71,10 +71,10 @@ export function PhaseMilestonesCard({ phaseId, today, compact = false }: Props) 
   }
 
   return (
-    <section className="stitch-card p-stack-md" aria-labelledby={`phase-${phaseId}-milestones`}>
+    <section className="stitch-card p-stack-md" aria-label={`${phase.title} milestones`}>
       <div className="mb-stack-md flex items-start justify-between gap-3">
         <div>
-          <h3 id={`phase-${phaseId}-milestones`} className="font-display text-headline-md text-primary">
+          <h3 className="font-display text-headline-md text-primary">
             Sacred Milestones
           </h3>
           <p className="mt-1 text-body-md text-on-surface-variant">

@@ -35,7 +35,7 @@ export function StreakWidget({ today }: Props) {
             {stat.label}
           </span>
           <span className="mt-1 font-display text-xl leading-none text-primary">{stat.value}</span>
-          <span className="mt-0.5 text-[10px] uppercase text-on-surface-variant/70">{stat.unit}</span>
+          <span className="mt-0.5 text-[10px] uppercase text-on-surface-variant">{stat.unit}</span>
         </div>
       ))}
     </section>

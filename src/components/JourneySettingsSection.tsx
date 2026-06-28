@@ -31,7 +31,7 @@ export function JourneySettingsSection() {
     <>
       <section className="stitch-card overflow-hidden">
         <div className="border-b border-surface-variant px-gutter py-4">
-          <h3 className="label-caps text-secondary">YOUR JOURNEY</h3>
+          <h2 className="label-caps text-secondary">YOUR JOURNEY</h2>
         </div>
         <div className="min-w-0 divide-y divide-surface-variant p-gutter space-y-4">
           <div>

@@ -80,7 +80,7 @@ export function CloudSyncSection() {
     return (
       <section className="stitch-card overflow-hidden">
         <div className="border-b border-surface-variant px-gutter py-4">
-          <h3 className="label-caps text-secondary">ACCOUNT</h3>
+          <h2 className="label-caps text-secondary">ACCOUNT</h2>
         </div>
         <p className="p-gutter text-body-md text-on-surface-variant">
           Cloud sync is not configured. Set{' '}
@@ -186,7 +186,7 @@ export function CloudSyncSection() {
       className="stitch-card scroll-mt-24 overflow-hidden"
     >
       <div className="border-b border-surface-variant px-gutter py-4">
-        <h3 className="label-caps text-secondary">ACCOUNT</h3>
+        <h2 className="label-caps text-secondary">ACCOUNT</h2>
       </div>
 
       {isLoggedIn ? (
