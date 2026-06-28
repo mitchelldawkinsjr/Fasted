@@ -182,6 +182,7 @@ export function JournalPage() {
         </h2>
         <JournalViewer
           entry={displayedEntry}
+          onBack={closeDetailView}
           onEdit={() => {
             setEditing(displayedEntry);
             setViewing(null);

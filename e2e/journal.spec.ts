@@ -143,6 +143,12 @@ test('opens a read-only view of a saved entry', async ({ page }) => {
   await page.getByRole('button', { name: 'Go back' }).click();
   await expect(page.getByText('1 reflections')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Reflection' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: /View reflection from/i }).click();
+  await expect(page.getByRole('button', { name: 'Back to Journal' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to Journal' }).click();
+  await expect(page.getByText('1 reflections')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Reflection' })).toHaveCount(0);
 });
 
 test('filter chips show only entries with matching types', async ({ page }) => {
