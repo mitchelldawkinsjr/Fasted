@@ -28,11 +28,11 @@ jobs:
           cache: npm
 
       - name: Install app dependencies
-        working-directory: ..
+        working-directory: ${{ github.workspace }}
         run: npm ci
 
       - name: Build app
-        working-directory: ..
+        working-directory: ${{ github.workspace }}
         run: npm run build
 
       - name: Install audit dependencies
@@ -42,13 +42,14 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Start preview server
-        working-directory: ..
+        working-directory: ${{ github.workspace }}
         run: |
           npm run preview -- --host 127.0.0.1 --port 4173 &
           for i in $(seq 1 30); do
             curl -sf http://127.0.0.1:4173/ && break
             sleep 2
           done
+          curl -sf http://127.0.0.1:4173/ >/dev/null
 
       - name: Run axe accessibility audit
         env:
