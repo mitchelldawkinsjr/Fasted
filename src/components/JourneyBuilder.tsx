@@ -1,8 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { PHASE_TEMPLATES } from '../data/phaseTemplates';
 import { getJourneyPhaseWindows } from '../lib/journey';
+import {
+  readJourneyImageFile,
+  resolvePhaseImagePath,
+  validateJourneyImageFile,
+} from '../lib/journeyImages';
 import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 import { saveJourney, setActiveJourney } from '../lib/storage';
+import { toast } from '../lib/toast';
 import type { Journey, JourneyPhase } from '../types';
 import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
@@ -28,13 +34,34 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState(getLocalDateString());
   const [selected, setSelected] = useState<string[]>(PHASE_TEMPLATES.map((t) => t.id));
+  const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadTargetTemplateId, setUploadTargetTemplateId] = useState<string | null>(null);
+
+  const previewJourney = useMemo((): Journey => {
+    const phases: JourneyPhase[] = selected.map((templateId, order) => ({
+      templateId,
+      order,
+      ...(imageOverrides[templateId] ? { imagePath: imageOverrides[templateId] } : {}),
+    }));
+    return {
+      id: 'preview',
+      name: name.trim() || 'Custom Journey',
+      startDate,
+      phases,
+    };
+  }, [name, selected, startDate, imageOverrides]);
 
   const draftJourney = useMemo((): Journey | null => {
     if (!name.trim() || selected.length === 0) return null;
-    const phases: JourneyPhase[] = selected.map((templateId, order) => ({ templateId, order }));
+    const phases: JourneyPhase[] = selected.map((templateId, order) => ({
+      templateId,
+      order,
+      ...(imageOverrides[templateId] ? { imagePath: imageOverrides[templateId] } : {}),
+    }));
     return { id: createJourneyId(), name: name.trim(), startDate, phases };
-  }, [name, selected, startDate]);
+  }, [name, selected, startDate, imageOverrides]);
 
   const windows = draftJourney ? getJourneyPhaseWindows(draftJourney) : [];
 
@@ -58,6 +85,14 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
     });
   };
 
+  const resetForm = () => {
+    setStep(0);
+    setName('');
+    setStartDate(getLocalDateString());
+    setSelected(PHASE_TEMPLATES.map((t) => t.id));
+    setImageOverrides({});
+  };
+
   const handleConfirm = async () => {
     if (!draftJourney) return;
     setBusy(true);
@@ -69,12 +104,45 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
         setActiveJourney(draftJourney.id);
       }
       onClose();
-      setStep(0);
-      setName('');
-      setSelected(PHASE_TEMPLATES.map((t) => t.id));
+      resetForm();
     } finally {
       setBusy(false);
     }
+  };
+
+  const openImageUpload = (templateId: string) => {
+    setUploadTargetTemplateId(templateId);
+    fileInputRef.current?.click();
+  };
+
+  const handleImageSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    const templateId = uploadTargetTemplateId;
+    setUploadTargetTemplateId(null);
+    if (!file || !templateId) return;
+
+    const validation = validateJourneyImageFile(file);
+    if (!validation.ok) {
+      toast.error(validation.message);
+      return;
+    }
+
+    try {
+      const dataUrl = await readJourneyImageFile(file);
+      setImageOverrides((prev) => ({ ...prev, [templateId]: dataUrl }));
+      toast.success('Custom image attached');
+    } catch {
+      toast.error('Could not read the selected image.');
+    }
+  };
+
+  const clearImageOverride = (templateId: string) => {
+    setImageOverrides((prev) => {
+      const next = { ...prev };
+      delete next[templateId];
+      return next;
+    });
   };
 
   const inputClass =
@@ -85,6 +153,13 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-4">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={(event) => void handleImageSelected(event)}
+      />
       <div
         className="flex max-h-[min(90vh,calc(100dvh-6rem))] w-full max-w-lg flex-col rounded-2xl bg-surface-container-lowest shadow-grace-up sm:max-h-[90vh]"
         role="dialog"
@@ -117,28 +192,55 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
           {step === 1 && (
             <>
               <p className="text-body-md text-on-surface-variant">
-                Choose phases and reorder. At least one phase is required.
+                Choose phases and reorder. Custom journey images are included for each fast. You
+                can optionally upload your own image to replace one.
               </p>
               <ul className="mt-4 space-y-2">
                 {selected.map((templateId) => {
                   const template = PHASE_TEMPLATES.find((t) => t.id === templateId);
                   if (!template) return null;
+                  const imagePath = resolvePhaseImagePath(
+                    previewJourney,
+                    template.id,
+                    template.imagePath,
+                    imageOverrides[templateId],
+                  );
+                  const hasOverride = Boolean(imageOverrides[templateId]);
                   return (
                     <li
                       key={templateId}
                       className="flex items-center gap-2 rounded-xl border border-surface-variant bg-surface-container-low p-3"
                     >
                       <img
-                        src={template.imagePath}
+                        src={imagePath}
                         alt=""
-                        className="h-10 w-10 rounded-lg object-cover"
+                        className="h-10 w-10 shrink-0 rounded-lg object-cover object-top"
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-body-md text-on-surface">{template.title}</p>
                         <p className="text-label-caps text-on-surface-variant">
                           {template.durationDays} days
+                          {hasOverride ? ' · custom upload' : ''}
                         </p>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => openImageUpload(templateId)}
+                        aria-label={`Upload image for ${template.title}`}
+                        className="rounded-lg p-1 hover:bg-surface-container"
+                      >
+                        <Icon name="upload" size={18} />
+                      </button>
+                      {hasOverride ? (
+                        <button
+                          type="button"
+                          onClick={() => clearImageOverride(templateId)}
+                          aria-label={`Reset image for ${template.title}`}
+                          className="rounded-lg p-1 hover:bg-surface-container"
+                        >
+                          <Icon name="restart_alt" size={18} />
+                        </button>
+                      ) : null}
                       <button type="button" onClick={() => moveTemplate(templateId, -1)} aria-label="Move up">
                         <Icon name="arrow_upward" size={18} />
                       </button>
@@ -191,10 +293,32 @@ export function JourneyBuilder({ open, onClose, onComplete, confirmLabel, title 
               <ul className="mt-4 space-y-2">
                 {windows.map((window) => {
                   const template = PHASE_TEMPLATES.find((t) => t.id === window.templateId);
+                  const imagePath = template
+                    ? resolvePhaseImagePath(
+                        draftJourney,
+                        template.id,
+                        template.imagePath,
+                        imageOverrides[template.id],
+                      )
+                    : undefined;
                   return (
-                    <li key={window.templateId} className="rounded-xl bg-surface-container-low p-3 text-body-md">
-                      {template?.title}: {formatDisplayDate(window.startDate)} –{' '}
-                      {formatDisplayDate(window.endDate)}
+                    <li
+                      key={window.templateId}
+                      className="flex items-center gap-3 rounded-xl bg-surface-container-low p-3 text-body-md"
+                    >
+                      {imagePath ? (
+                        <img
+                          src={imagePath}
+                          alt=""
+                          className="h-12 w-12 shrink-0 rounded-lg object-cover object-top"
+                        />
+                      ) : null}
+                      <div>
+                        <p>{template?.title}</p>
+                        <p className="text-label-caps text-on-surface-variant">
+                          {formatDisplayDate(window.startDate)} – {formatDisplayDate(window.endDate)}
+                        </p>
+                      </div>
                     </li>
                   );
                 })}
