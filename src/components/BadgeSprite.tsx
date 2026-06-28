@@ -9,11 +9,12 @@ type Props = {
   title?: string;
 };
 
-export function BadgeSprite({ id, earned = true, size = 48, className = '', title }: Props) {
+export function BadgeSprite({ id, earned = true, size = 48, className = '' }: Props) {
   return (
     <img
       src={getBadgeSpritePath(id)}
-      alt={title ?? ''}
+      alt=""
+      aria-hidden
       width={size}
       height={size}
       draggable={false}

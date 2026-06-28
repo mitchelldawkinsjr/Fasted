@@ -102,11 +102,7 @@ export function MoodWheel({
                 }}
                 tabIndex={entry && linkDays ? 0 : -1}
                 role={entry && linkDays ? 'link' : undefined}
-                aria-label={
-                  entry
-                    ? `Day ${day}, ${entry.label}, view reflection`
-                    : `Day ${day}, no mood logged`
-                }
+                aria-label={entry && linkDays ? `Day ${day}, ${entry.label}, view reflection` : undefined}
               />
             );
           })}

@@ -10,7 +10,7 @@ export function GroupsSettingsSection() {
     return (
       <section className="stitch-card overflow-hidden">
         <div className="border-b border-surface-variant px-gutter py-4">
-          <h3 className="label-caps text-secondary">GROUPS</h3>
+          <h2 className="label-caps text-secondary">GROUPS</h2>
         </div>
         <p className="p-gutter text-body-md text-on-surface-variant">
           Configure your account above to create or join fasting groups.
@@ -22,7 +22,7 @@ export function GroupsSettingsSection() {
   return (
     <section className="stitch-card overflow-hidden">
       <div className="border-b border-surface-variant px-gutter py-4">
-        <h3 className="label-caps text-secondary">GROUPS</h3>
+        <h2 className="label-caps text-secondary">GROUPS</h2>
       </div>
       <div className="p-gutter space-y-3">
         <p className="text-body-md text-on-surface-variant">

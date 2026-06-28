@@ -42,7 +42,7 @@ export function ScriptureCard({ phaseId, references }: Props) {
         &ldquo;{phase.scriptureTextNLT}&rdquo;
       </blockquote>
       <cite className="not-italic">
-        <span className="label-caps text-outline">
+        <span className="label-caps text-on-surface-variant">
           —{' '}
           {references.map((reference, index) => (
             <span key={reference}>
