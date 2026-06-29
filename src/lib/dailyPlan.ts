@@ -8,17 +8,44 @@ import type {
 import { getDayOfWeek, getWeekIndexInPhase, resolveJourney } from './dateUtils';
 import { getPhaseContextForDate } from './journey';
 
+function formatFoodList(items: string[]): string {
+  return items.map((item) => item.toLowerCase()).join(', ');
+}
+
+/** Food/drink rules from the phase infographic (see public/assets/phases/). */
+function appendFoodRules(
+  template: FastPhaseTemplate,
+  isFastDay: boolean,
+  instructions: string[],
+): void {
+  if (isFastDay) {
+    if (template.beverages?.length) {
+      instructions.push(`Beverages: ${formatFoodList(template.beverages)}.`);
+    }
+    return;
+  }
+
+  if (template.allowed?.length) {
+    instructions.push(`Allowed food items: ${formatFoodList(template.allowed)}.`);
+  }
+  if (template.beverages?.length) {
+    instructions.push(`Beverages: ${formatFoodList(template.beverages)}.`);
+  }
+  if (template.avoid?.length) {
+    instructions.push(`Avoid: ${formatFoodList(template.avoid)}.`);
+  }
+}
+
 function buildDanielFastInstructions(template: FastPhaseTemplate): string[] {
-  const instructions = [
-    'Follow the Daniel Fast eating pattern today.',
-    'Eat: vegetables, fruit, beans, rice, oats, and water.',
-    'Avoid: meat, dairy, sweets, and fried foods.',
-  ];
+  const instructions = ['Follow the Daniel Fast eating pattern today.'];
+  if (template.allowed?.length) {
+    instructions.push(`Allowed food items: ${formatFoodList(template.allowed)}.`);
+  }
+  if (template.avoid?.length) {
+    instructions.push(`Avoid: ${formatFoodList(template.avoid)}.`);
+  }
   if (template.schedulePattern.kind === 'consecutive-daniel' && template.schedulePattern.includesWalk) {
     instructions.push('Take a daily walk as part of this phase.');
-  }
-  if (template.allowed) {
-    instructions.push(`Allowed: ${template.allowed.join(', ')}.`);
   }
   return instructions;
 }
@@ -39,20 +66,15 @@ function interpretPattern(
             ? [
                 'Sunrise-to-sunset fast today—water only.',
                 'Hydrate well before and after the fast.',
-                'On non-fast days: lean protein, vegetables, fruit, and water.',
-                'Avoid: soda, candy, and fast food.',
               ]
             : template.legacyId === 2
-              ? [
-                  'Sunrise-to-sunset fast today.',
-                  'Allowed: water, black coffee, and unsweet tea.',
-                  'Spend extra time in prayer and scripture.',
-                ]
+              ? ['Sunrise-to-sunset fast today.', 'Spend extra time in prayer and scripture.']
               : template.legacyId === 4
                 ? [
                     'Sunrise-to-sunset fast today—water only.',
                     'Read Joel 2 today.',
                     'Return to God with all your heart.',
+                    'Drink plenty of water during your fast.',
                   ]
                 : template.legacyId === 5
                   ? [
@@ -62,17 +84,13 @@ function interpretPattern(
                     ]
                   : ['Sunrise-to-sunset fast today—water only.', 'Hydrate well before and after the fast.'];
 
+        appendFoodRules(template, true, instructions);
         return { isFastDay: true, fastType: pattern.fastType, instructions };
       }
 
       const nonFast =
         template.legacyId === 1
-          ? [
-              'Normal eating day with Daniel 1 pattern.',
-              'Eat: lean protein, vegetables, fruit, and water.',
-              'Avoid: soda, candy, and fast food.',
-              'Next Wednesday is a sunrise-to-sunset water fast.',
-            ]
+          ? ['Normal eating day with Daniel 1 pattern.', 'Next Wednesday is a sunrise-to-sunset water fast.']
           : template.legacyId === 2
             ? [
                 'Preparation / normal eating day.',
@@ -93,6 +111,7 @@ function interpretPattern(
                   ]
                 : ['Normal eating day—stay hydrated and prepare for upcoming fast days.'];
 
+      appendFoodRules(template, false, nonFast);
       return { isFastDay: false, fastType: 'normal-eating', instructions: nonFast };
     }
 
