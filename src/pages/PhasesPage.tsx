@@ -59,7 +59,7 @@ export function PhasesPage() {
               <p className="mt-1 text-label-caps text-white/80">
                 {formatPhaseDates(phase.startDate, phase.endDate)}
               </p>
-              <p className="mt-2 line-clamp-2 text-body-md text-white/90">
+              <p className="mt-2 line-clamp-3 text-body-md text-white/90">
                 {phase.scheduleSummary}
               </p>
               <span className="mt-stack-md inline-flex items-center gap-1 text-body-md font-semibold text-secondary-container">

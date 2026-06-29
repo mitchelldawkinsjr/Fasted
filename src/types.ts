@@ -31,6 +31,8 @@ export type FastPhaseTemplate = {
   scheduleSummary: string;
   schedulePattern: SchedulePattern;
   allowed?: string[];
+  /** Beverages allowed on non-fast or fast days (from phase infographic). */
+  beverages?: string[];
   avoid?: string[];
   dailyReadings?: string[];
   prayerFocus: string[];
