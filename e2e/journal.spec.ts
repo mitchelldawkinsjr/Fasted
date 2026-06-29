@@ -71,8 +71,8 @@ test('saves a simple prayer entry in one text box', async ({ page }) => {
 test('saved entry remains visible after clearing an active search filter', async ({ page }) => {
   await page.getByRole('searchbox', { name: 'Search journal entries' }).fill('nothing-matches');
   await page.getByRole('button', { name: '+ New' }).click();
-  await selectType(page, 'Victory');
-  await page.getByLabel('Victory').fill('Visible after save');
+  await selectType(page, 'Revelations');
+  await page.getByLabel('What is God saying?').fill('Visible after save');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await expect(page.getByText('1 reflections')).toBeVisible();
@@ -158,8 +158,8 @@ test('filter chips and listing hashtags show only entries with matching types', 
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.getByRole('button', { name: '+ New' }).click();
-  await selectType(page, 'Victory');
-  await page.getByLabel('Victory').fill('Victory only entry');
+  await selectType(page, 'Revelations');
+  await page.getByLabel('What is God saying?').fill('Victory only entry');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.getByRole('button', { name: 'Prayer', exact: true }).click();
@@ -167,7 +167,7 @@ test('filter chips and listing hashtags show only entries with matching types', 
   await expect(page.getByRole('listitem').filter({ hasText: 'Prayer only entry' })).toBeVisible();
   await expect(page.getByRole('listitem').filter({ hasText: 'Victory only entry' })).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Victory', exact: true }).click();
+  await page.getByRole('button', { name: 'Revelations', exact: true }).click();
   await expect(page).toHaveURL('/journal?type=victory');
   await expect(page.getByRole('listitem').filter({ hasText: 'Victory only entry' })).toBeVisible();
   await expect(page.getByRole('listitem').filter({ hasText: 'Prayer only entry' })).toHaveCount(0);
@@ -186,8 +186,8 @@ test('filter chips and listing hashtags show only entries with matching types', 
 
 test('viewer hashtag returns to filtered journal listing', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
-  await selectType(page, 'Victory');
-  await page.getByLabel('Victory').fill('Victory viewer hashtag entry');
+  await selectType(page, 'Revelations');
+  await page.getByLabel('What is God saying?').fill('Victory viewer hashtag entry');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.getByRole('button', { name: '+ New' }).click();

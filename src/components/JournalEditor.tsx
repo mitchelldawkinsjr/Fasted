@@ -11,6 +11,7 @@ import {
   FITNESS_JOURNAL_LABEL,
   FOOD_JOURNAL_FIELDS,
   JOURNAL_ENTRY_TYPE_LABELS,
+  REVELATIONS_JOURNAL_LABEL,
   isDailyReflectionEntry,
   isSingleContentJournalEntry,
   isSingleContentJournalType,
@@ -225,7 +226,11 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   }));
 
   const simpleContentLabel =
-    entryType === 'fitness' ? FITNESS_JOURNAL_LABEL : JOURNAL_ENTRY_TYPE_LABELS[entryType];
+    entryType === 'fitness'
+      ? FITNESS_JOURNAL_LABEL
+      : entryType === 'victory'
+        ? REVELATIONS_JOURNAL_LABEL
+        : JOURNAL_ENTRY_TYPE_LABELS[entryType];
 
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md grace-shadow focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';

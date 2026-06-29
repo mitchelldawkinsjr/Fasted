@@ -32,7 +32,7 @@ export const JOURNAL_ENTRY_TYPE_LABELS: Record<JournalEntryType, string> = {
   'daily-reflection': 'Daily Reflection',
   prayer: 'Prayer',
   gratitude: 'Gratitude',
-  victory: 'Victory',
+  victory: 'Revelations',
   food: 'Food',
   fitness: 'Fitness',
 };
@@ -62,6 +62,8 @@ export const FOOD_JOURNAL_FIELDS = [
 }>;
 
 export const FITNESS_JOURNAL_LABEL = 'How did you move your body today?';
+
+export const REVELATIONS_JOURNAL_LABEL = 'What is God saying?';
 
 export const JOURNAL_TYPE_PILL_BASE_CLASS =
   'flex min-h-[2.75rem] items-center justify-center rounded-full px-2 py-1.5 text-center label-caps leading-tight transition-colors';
