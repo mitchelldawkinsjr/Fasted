@@ -127,7 +127,6 @@ export function getPhasesForJourney(journey: Journey): FastPhase[] {
         scriptureTextNLT: template.scriptureTextNLT,
         scheduleSummary: template.scheduleSummary,
         allowed: template.allowed,
-        beverages: template.beverages,
         avoid: template.avoid,
         dailyReadings: template.dailyReadings,
         prayerFocus: template.prayerFocus,

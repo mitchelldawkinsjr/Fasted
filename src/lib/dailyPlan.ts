@@ -8,42 +8,35 @@ import type {
 import { getDayOfWeek, getWeekIndexInPhase, resolveJourney } from './dateUtils';
 import { getPhaseContextForDate } from './journey';
 
-function formatFoodList(items: string[]): string {
-  return items.map((item) => item.toLowerCase()).join(', ');
-}
-
 /** Food/drink rules from the phase infographic (see public/assets/phases/). */
 function appendFoodRules(
   template: FastPhaseTemplate,
   isFastDay: boolean,
   instructions: string[],
 ): void {
+  const foodList = (items: string[]) => items.map((item) => item.toLowerCase()).join(', ');
+
   if (isFastDay) {
     if (template.beverages?.length) {
-      instructions.push(`Beverages: ${formatFoodList(template.beverages)}.`);
+      instructions.push(`Beverages: ${foodList(template.beverages)}.`);
     }
     return;
   }
 
   if (template.allowed?.length) {
-    instructions.push(`Allowed food items: ${formatFoodList(template.allowed)}.`);
+    instructions.push(`Allowed food items: ${foodList(template.allowed)}.`);
   }
   if (template.beverages?.length) {
-    instructions.push(`Beverages: ${formatFoodList(template.beverages)}.`);
+    instructions.push(`Beverages: ${foodList(template.beverages)}.`);
   }
   if (template.avoid?.length) {
-    instructions.push(`Avoid: ${formatFoodList(template.avoid)}.`);
+    instructions.push(`Avoid: ${foodList(template.avoid)}.`);
   }
 }
 
 function buildDanielFastInstructions(template: FastPhaseTemplate): string[] {
   const instructions = ['Follow the Daniel Fast eating pattern today.'];
-  if (template.allowed?.length) {
-    instructions.push(`Allowed food items: ${formatFoodList(template.allowed)}.`);
-  }
-  if (template.avoid?.length) {
-    instructions.push(`Avoid: ${formatFoodList(template.avoid)}.`);
-  }
+  appendFoodRules(template, false, instructions);
   if (template.schedulePattern.kind === 'consecutive-daniel' && template.schedulePattern.includesWalk) {
     instructions.push('Take a daily walk as part of this phase.');
   }
