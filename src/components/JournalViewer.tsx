@@ -5,10 +5,8 @@ import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
   DAILY_REFLECTION_FIELDS,
-  FITNESS_JOURNAL_LABEL,
   FOOD_JOURNAL_FIELDS,
-  JOURNAL_ENTRY_TYPE_LABELS,
-  REVELATIONS_JOURNAL_LABEL,
+  getSimpleContentLabel,
   isDailyReflectionEntry,
   isSingleContentJournalEntry,
 } from '../lib/journalTags';
@@ -57,12 +55,7 @@ function FieldListBody<T extends string>({
 }
 
 export function JournalViewer({ entry, onBack, onEdit, onDelete, onTypeClick }: Props) {
-  const simpleContentLabel =
-    entry.type === 'fitness'
-      ? FITNESS_JOURNAL_LABEL
-      : entry.type === 'victory'
-        ? REVELATIONS_JOURNAL_LABEL
-        : JOURNAL_ENTRY_TYPE_LABELS[entry.type];
+  const simpleContentLabel = getSimpleContentLabel(entry.type);
 
   return (
     <div className="space-y-stack-md">

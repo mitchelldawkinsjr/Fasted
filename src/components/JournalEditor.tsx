@@ -8,10 +8,8 @@ import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
 import {
   DEFAULT_JOURNAL_ENTRY_TYPE,
   DAILY_REFLECTION_FIELDS,
-  FITNESS_JOURNAL_LABEL,
   FOOD_JOURNAL_FIELDS,
-  JOURNAL_ENTRY_TYPE_LABELS,
-  REVELATIONS_JOURNAL_LABEL,
+  getSimpleContentLabel,
   isDailyReflectionEntry,
   isSingleContentJournalEntry,
   isSingleContentJournalType,
@@ -225,12 +223,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     set: foodFieldState[key][1],
   }));
 
-  const simpleContentLabel =
-    entryType === 'fitness'
-      ? FITNESS_JOURNAL_LABEL
-      : entryType === 'victory'
-        ? REVELATIONS_JOURNAL_LABEL
-        : JOURNAL_ENTRY_TYPE_LABELS[entryType];
+  const simpleContentLabel = getSimpleContentLabel(entryType);
 
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md grace-shadow focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
