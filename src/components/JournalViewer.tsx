@@ -10,7 +10,8 @@ import {
   isDailyReflectionEntry,
   isSingleContentJournalEntry,
 } from '../lib/journalTags';
-import type { JournalEntry, JournalEntryType } from '../types';
+import { getMealImages } from '../lib/storage';
+import type { FoodMealKey, JournalEntry, JournalEntryType } from '../types';
 
 type Props = {
   entry: JournalEntry;
@@ -26,12 +27,16 @@ function FieldListBody<T extends string>({
   fields,
   getValue,
   renderHeading,
+  renderExtra,
 }: {
   fields: ReadonlyArray<FieldDef<T>>;
   getValue: (key: T) => string;
   renderHeading?: (field: FieldDef<T>) => ReactNode;
+  renderExtra?: (field: FieldDef<T>) => ReactNode;
 }) {
-  const filledFields = fields.filter((field) => getValue(field.key).trim());
+  const filledFields = fields.filter(
+    (field) => getValue(field.key).trim() || renderExtra?.(field),
+  );
   if (filledFields.length === 0) {
     return <p className="text-body-md text-on-surface-variant">No reflection notes recorded.</p>;
   }
@@ -45,9 +50,12 @@ function FieldListBody<T extends string>({
           ) : (
             <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
           )}
-          <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
-            {getValue(field.key)}
-          </p>
+          {getValue(field.key).trim() ? (
+            <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
+              {getValue(field.key)}
+            </p>
+          ) : null}
+          {renderExtra?.(field)}
         </section>
       ))}
     </div>
@@ -56,6 +64,25 @@ function FieldListBody<T extends string>({
 
 export function JournalViewer({ entry, onBack, onEdit, onDelete, onTypeClick }: Props) {
   const simpleContentLabel = getSimpleContentLabel(entry.type);
+  const mealImages = entry.type === 'food' ? getMealImages(entry.id) : {};
+
+  const renderMealImages = (key: FoodMealKey, sectionName: string) => {
+    const images = mealImages[key];
+    if (!images || images.length === 0) return null;
+
+    return (
+      <div className="mt-2 flex flex-wrap gap-2">
+        {images.map((src, index) => (
+          <img
+            key={`${key}-${index}`}
+            src={src}
+            alt={`${sectionName} photo ${index + 1}`}
+            className="h-24 w-24 rounded-lg border border-outline-variant object-cover"
+          />
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-stack-md">
@@ -100,7 +127,14 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete, onTypeClick }: 
           }
         />
       ) : entry.type === 'food' ? (
-        <FieldListBody fields={FOOD_JOURNAL_FIELDS} getValue={(key) => entry[key]} />
+        <FieldListBody
+          fields={FOOD_JOURNAL_FIELDS}
+          getValue={(key) => entry[key]}
+          renderExtra={(field) => {
+            const section = FOOD_JOURNAL_FIELDS.find((item) => item.key === field.key);
+            return renderMealImages(field.key, section?.sectionName ?? field.label);
+          }}
+        />
       ) : isSingleContentJournalEntry(entry) && entry.content.trim() ? (
         <section>
           <h3 className="mb-1 text-body-md font-medium text-on-surface">{simpleContentLabel}</h3>

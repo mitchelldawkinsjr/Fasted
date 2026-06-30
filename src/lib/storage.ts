@@ -4,6 +4,7 @@ import type {
   CheckIn,
   JournalEntry,
   Journey,
+  MealSectionImages,
   UserProgress,
 } from '../types';
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
@@ -34,6 +35,7 @@ const DEFAULT_PROGRESS: UserProgress = {
   checkIns: [],
   checkInStreak: 0,
   journalEntries: [],
+  mealImages: {},
   badges: [],
   settings: DEFAULT_SETTINGS,
   activeJourneyId: FASTED_JOURNEY.id,
@@ -82,6 +84,7 @@ function loadRaw(): UserProgress {
       ...parsed,
       checkInStreak: parsed.checkInStreak ?? 0,
       journalEntries,
+      mealImages: parsed.mealImages ?? {},
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
       journeys,
       activeJourneyId,
@@ -142,6 +145,7 @@ export function persistFromCloud(data: UserProgress): void {
     ...data,
     checkInStreak: data.checkInStreak ?? 0,
     journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
+    mealImages: data.mealImages ?? {},
     settings: { ...DEFAULT_SETTINGS, ...data.settings },
     journeys,
     activeJourneyId,
@@ -199,9 +203,32 @@ export function saveJournalEntry(entry: JournalEntry): void {
 
 export function deleteJournalEntry(id: string): void {
   const progress = getProgress();
+  const { [id]: _removed, ...remainingMealImages } = progress.mealImages;
   persist({
     ...progress,
     journalEntries: progress.journalEntries.filter((e) => e.id !== id),
+    mealImages: remainingMealImages,
+  });
+}
+
+export function getMealImages(entryId: string): MealSectionImages {
+  return getProgress().mealImages[entryId] ?? {};
+}
+
+export function saveMealImages(entryId: string, images: MealSectionImages): void {
+  const progress = getProgress();
+  const hasImages = Object.values(images).some((section) => section && section.length > 0);
+  const nextMealImages = { ...progress.mealImages };
+
+  if (hasImages) {
+    nextMealImages[entryId] = images;
+  } else {
+    delete nextMealImages[entryId];
+  }
+
+  persist({
+    ...progress,
+    mealImages: nextMealImages,
   });
 }
 

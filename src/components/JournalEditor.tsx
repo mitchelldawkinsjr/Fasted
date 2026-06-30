@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
+import { MealImageUpload } from './MealImageUpload';
 import { MoodPicker } from './MoodPicker';
 import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 import { useActiveJourney } from '../hooks/useActiveJourney';
@@ -15,15 +16,18 @@ import {
   isSingleContentJournalType,
   joinTrimmedValues,
 } from '../lib/journalTags';
+import { emptyMealSectionImages, mealSectionHasImages } from '../lib/mealImages';
 import { formatError, messages } from '../lib/messages';
-import { createJournalEntryId, saveJournalEntry } from '../lib/storage';
+import { createJournalEntryId, getMealImages, saveJournalEntry, saveMealImages } from '../lib/storage';
 import { toast } from '../lib/toast';
 import type {
   DailyReflectionEntry,
   DayMood,
   FoodJournalEntry,
+  FoodMealKey,
   JournalEntry,
   JournalEntryType,
+  MealSectionImages,
 } from '../types';
 
 type Props = {
@@ -51,6 +55,16 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   const [lunch, setLunch] = useState(entry?.type === 'food' ? entry.lunch : '');
   const [dinner, setDinner] = useState(entry?.type === 'food' ? entry.dinner : '');
   const [snack, setSnack] = useState(entry?.type === 'food' ? entry.snack : '');
+  const [mealImages, setMealImages] = useState<Record<FoodMealKey, string[]>>(() => {
+    const sections = emptyMealSectionImages();
+    if (entry?.type === 'food') {
+      const stored = getMealImages(entry.id);
+      for (const key of Object.keys(sections) as FoodMealKey[]) {
+        sections[key] = stored[key] ?? [];
+      }
+    }
+    return sections;
+  });
   const [prayerFocus, setPrayerFocus] = useState(
     entry && isDailyReflectionEntry(entry) ? entry.prayerFocus : '',
   );
@@ -77,6 +91,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     setLunch('');
     setDinner('');
     setSnack('');
+    setMealImages(emptyMealSectionImages());
   };
 
   const getPreservedText = (): string => {
@@ -135,7 +150,8 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     const hasSimpleContent = isSingleContentJournalType(entryType)
       ? content.trim().length > 0
       : entryType === 'food'
-        ? [breakfast, lunch, dinner, snack].some((value) => value.trim().length > 0)
+        ? [breakfast, lunch, dinner, snack].some((value) => value.trim().length > 0) ||
+          mealSectionHasImages(mealImages)
         : false;
 
     if (entryType !== 'daily-reflection' && !hasSimpleContent) {
@@ -184,6 +200,15 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
     try {
       saveJournalEntry(saved);
+      if (entryType === 'food') {
+        const imagesToSave: MealSectionImages = {};
+        for (const { key } of FOOD_JOURNAL_FIELDS) {
+          if (mealImages[key].length > 0) {
+            imagesToSave[key] = mealImages[key];
+          }
+        }
+        saveMealImages(saved.id, imagesToSave);
+      }
       toast.success(entry ? messages.save.journalUpdated : messages.save.journal);
       onSave();
     } catch (err) {
@@ -216,9 +241,14 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     snack: [snack, setSnack] as const,
   };
 
-  const foodFields = FOOD_JOURNAL_FIELDS.map(({ key, label }) => ({
+  const updateMealSectionImages = (key: FoodMealKey, images: string[]) => {
+    setMealImages((current) => ({ ...current, [key]: images }));
+  };
+
+  const foodFields = FOOD_JOURNAL_FIELDS.map(({ key, label, sectionName }) => ({
     key,
     label,
+    sectionName,
     value: foodFieldState[key][0],
     set: foodFieldState[key][1],
   }));
@@ -277,18 +307,25 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         </>
       ) : entryType === 'food' ? (
         foodFields.map((field) => (
-          <label key={field.key} className="block">
-            <span className="mb-1 block text-body-md font-medium text-on-surface">
-              {field.label}
-            </span>
-            <textarea
-              value={field.value}
-              onChange={(e) => field.set(e.target.value)}
-              rows={2}
-              className={inputClass}
-              aria-label={field.label}
+          <div key={field.key} className="block">
+            <label className="block">
+              <span className="mb-1 block text-body-md font-medium text-on-surface">
+                {field.label}
+              </span>
+              <textarea
+                value={field.value}
+                onChange={(e) => field.set(e.target.value)}
+                rows={2}
+                className={inputClass}
+                aria-label={field.label}
+              />
+            </label>
+            <MealImageUpload
+              images={mealImages[field.key]}
+              onChange={(images) => updateMealSectionImages(field.key, images)}
+              sectionName={field.sectionName}
             />
-          </label>
+          </div>
         ))
       ) : (
         <label className="block">

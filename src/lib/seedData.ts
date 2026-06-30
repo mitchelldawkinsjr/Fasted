@@ -59,6 +59,7 @@ function buildSeedProgress(endDate: string = getLocalDateString()): UserProgress
     checkIns,
     checkInStreak: computeCheckInStreak(checkIns, endDate),
     journalEntries,
+    mealImages: {},
     badges: [],
     settings: {
       reminderTime: '07:00',
