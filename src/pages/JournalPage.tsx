@@ -102,11 +102,12 @@ export function JournalPage() {
       toast.info(messages.export.journalPdfEmpty);
       return;
     }
-    const printWindow = window.open('/journal/print', '_blank', 'noopener,noreferrer');
+    const printWindow = window.open('/journal/print', '_blank');
     if (!printWindow) {
       toast.warning(messages.export.journalPdfBlocked);
       return;
     }
+    printWindow.opener = null;
     toast.info(messages.export.journalPdf);
   };
 
