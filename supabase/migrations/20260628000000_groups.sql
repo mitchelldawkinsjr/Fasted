@@ -289,7 +289,9 @@ select
   ) as avg_checkins_per_member
 from group_memberships gm
 left join user_progress up on up.user_id = gm.user_id
-left join lateral jsonb_array_elements(coalesce(up.data->'checkIns', '[]'::jsonb)) ci on true
+left join lateral jsonb_array_elements(
+  coalesce(up.data->'groupCheckIns'->(gm.group_id::text), '[]'::jsonb)
+) ci on true
 group by gm.group_id;
 
 grant select on group_checkin_stats to authenticated;

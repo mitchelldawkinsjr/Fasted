@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { messages } from '../src/lib/messages';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
 
@@ -430,4 +431,130 @@ test('journal list back arrow returns to the calendar on direct entry', async ({
   await page.getByRole('link', { name: 'Go back' }).click();
 
   await expect(page).toHaveURL('/calendar');
+});
+
+test('disables PDF export when journal is empty', async ({ page }) => {
+  await expect(page.getByRole('button', { name: 'Export journal as PDF' })).toBeDisabled();
+});
+
+test('opens print document when exporting journal as PDF', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByLabel('Verse of the Day').fill('Export cover verse');
+  await page.getByLabel('Victory today').fill('Export victory note');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Export journal as PDF' }).click(),
+  ]);
+
+  await expect(page.getByText(messages.export.journalPdf)).toBeVisible();
+  await popup.waitForLoadState('domcontentloaded');
+  await expect(popup.getByText('Fasted', { exact: true })).toBeVisible();
+  await expect(popup.getByText('Export cover verse')).toBeVisible();
+  await expect(popup.getByText('Export victory note')).toBeVisible();
+  await popup.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  await expect(popup.getByText('Fasted', { exact: true })).toBeVisible();
+  await popup.close();
+});
+
+test('shows a blocked popup message when PDF export cannot open', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByLabel('Verse of the Day').fill('Blocked popup verse');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.evaluate(() => {
+    window.open = () => null;
+  });
+  await page.getByRole('button', { name: 'Export journal as PDF' }).click();
+
+  await expect(page.getByText(messages.export.journalPdfBlocked)).toBeVisible();
+  await expect(page.getByText(messages.export.journalPdf)).toHaveCount(0);
+});
+
+test('waits for print fonts before opening the print dialog', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Prayer');
+  await page.getByLabel('Prayer').fill('Fonts should load before printing');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.context().addInitScript(() => {
+    const testWindow = window as Window & typeof globalThis & {
+      __printCalls?: number;
+      __resolvePrintFonts?: () => void;
+    };
+    let resolveFonts: () => void = () => undefined;
+    const fontsReady = new Promise<void>((resolve) => {
+      resolveFonts = resolve;
+    });
+
+    testWindow.__printCalls = 0;
+    testWindow.__resolvePrintFonts = resolveFonts;
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: { ready: fontsReady },
+    });
+    if (document.fonts.ready !== fontsReady) {
+      Object.defineProperty(document.fonts, 'ready', {
+        configurable: true,
+        value: fontsReady,
+      });
+    }
+    window.print = () => {
+      testWindow.__printCalls = (testWindow.__printCalls ?? 0) + 1;
+    };
+  });
+
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Export journal as PDF' }).click(),
+  ]);
+
+  await popup.waitForLoadState('domcontentloaded');
+  await expect(popup.getByText('Fonts should load before printing')).toBeVisible();
+  await expect
+    .poll(() =>
+      popup.evaluate(() => {
+        const testWindow = window as Window & typeof globalThis & { __printCalls?: number };
+        return testWindow.__printCalls ?? 0;
+      }),
+    )
+    .toBe(0);
+
+  await popup.evaluate(() => {
+    const testWindow = window as Window & typeof globalThis & {
+      __resolvePrintFonts?: () => void;
+    };
+    testWindow.__resolvePrintFonts?.();
+  });
+  await expect
+    .poll(() =>
+      popup.evaluate(() => {
+        const testWindow = window as Window & typeof globalThis & { __printCalls?: number };
+        return testWindow.__printCalls ?? 0;
+      }),
+    )
+    .toBe(1);
+  await popup.close();
+});
+
+test('settings PDF export opens print document', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Prayer');
+  await page.getByLabel('Prayer').fill('Settings export prayer');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.goto('/settings');
+
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Export journal (PDF)' }).click(),
+  ]);
+
+  await expect(page.getByText(messages.export.journalPdf)).toBeVisible();
+  await popup.waitForLoadState('domcontentloaded');
+  await expect(popup.getByText('Settings export prayer')).toBeVisible();
+  await popup.close();
 });

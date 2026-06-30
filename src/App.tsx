@@ -8,6 +8,7 @@ import { GroupDetailPage } from './pages/GroupDetailPage';
 import { GroupsHubPage } from './pages/GroupsHubPage';
 import { JoinGroupPage } from './pages/JoinGroupPage';
 import { JournalPage } from './pages/JournalPage';
+import { JournalPrintPage } from './pages/JournalPrintPage';
 import { LeaderDashboardPage } from './pages/LeaderDashboardPage';
 import { PhasesPage } from './pages/PhasesPage';
 import { BadgeGalleryPage } from './pages/BadgeGalleryPage';
@@ -23,6 +24,7 @@ export default function App() {
         <ThemeProvider>
           <ScrollToTop />
           <Routes>
+          <Route path="journal/print" element={<JournalPrintPage />} />
           <Route element={<Layout />}>
             <Route index element={<TodayPage />} />
             <Route path="calendar" element={<CalendarPage />} />

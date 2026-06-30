@@ -23,37 +23,55 @@ type Props = {
 
 type FieldDef<T extends string> = { key: T; label: string };
 
+type JournalEntryBodyClasses = {
+  fields: string;
+  section: string;
+  label: string;
+  value: string;
+  empty: string;
+};
+
+const DEFAULT_ENTRY_BODY_CLASSES: JournalEntryBodyClasses = {
+  fields: 'space-y-stack-md',
+  section: '',
+  label: 'mb-1 text-body-md font-medium text-on-surface',
+  value: 'text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant',
+  empty: 'text-body-md text-on-surface-variant',
+};
+
 function FieldListBody<T extends string>({
   fields,
   getValue,
   renderHeading,
   renderExtra,
+  classes,
+  emptyMessage,
 }: {
   fields: ReadonlyArray<FieldDef<T>>;
   getValue: (key: T) => string;
   renderHeading?: (field: FieldDef<T>) => ReactNode;
   renderExtra?: (field: FieldDef<T>) => ReactNode;
+  classes: JournalEntryBodyClasses;
+  emptyMessage: ReactNode;
 }) {
   const filledFields = fields.filter(
     (field) => getValue(field.key).trim() || renderExtra?.(field),
   );
   if (filledFields.length === 0) {
-    return <p className="text-body-md text-on-surface-variant">No reflection notes recorded.</p>;
+    return emptyMessage ? <p className={classes.empty}>{emptyMessage}</p> : null;
   }
 
   return (
-    <div className="space-y-stack-md">
+    <div className={classes.fields}>
       {filledFields.map((field) => (
-        <section key={field.key}>
+        <section key={field.key} className={classes.section}>
           {renderHeading ? (
             renderHeading(field)
           ) : (
-            <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
+            <h3 className={classes.label}>{field.label}</h3>
           )}
           {getValue(field.key).trim() ? (
-            <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
-              {getValue(field.key)}
-            </p>
+            <p className={classes.value}>{getValue(field.key)}</p>
           ) : null}
           {renderExtra?.(field)}
         </section>
@@ -62,7 +80,19 @@ function FieldListBody<T extends string>({
   );
 }
 
-export function JournalViewer({ entry, onBack, onEdit, onDelete, onTypeClick }: Props) {
+type JournalEntryBodyProps = {
+  entry: JournalEntry;
+  classes?: JournalEntryBodyClasses;
+  emptyMessage?: ReactNode;
+  renderVerseHeading?: (entry: JournalEntry) => ReactNode;
+};
+
+export function JournalEntryBody({
+  entry,
+  classes = DEFAULT_ENTRY_BODY_CLASSES,
+  emptyMessage = 'No reflection notes recorded.',
+  renderVerseHeading = (item) => <VerseOfTheDayLabel date={item.date} as="heading" />,
+}: JournalEntryBodyProps) {
   const simpleContentLabel = getSimpleContentLabel(entry.type);
   const mealImages = entry.type === 'food' ? getMealImages(entry.id) : {};
 
@@ -84,6 +114,52 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete, onTypeClick }: 
     );
   };
 
+  if (isDailyReflectionEntry(entry)) {
+    return (
+      <FieldListBody
+        fields={DAILY_REFLECTION_FIELDS}
+        getValue={(key) => entry[key]}
+        classes={classes}
+        emptyMessage={emptyMessage}
+        renderHeading={(field) =>
+          field.key === 'prayerFocus' ? (
+            renderVerseHeading(entry)
+          ) : (
+            <h3 className={classes.label}>{field.label}</h3>
+          )
+        }
+      />
+    );
+  }
+
+  if (entry.type === 'food') {
+    return (
+      <FieldListBody
+        fields={FOOD_JOURNAL_FIELDS}
+        getValue={(key) => entry[key]}
+        classes={classes}
+        emptyMessage={emptyMessage}
+        renderExtra={(field) => {
+          const section = FOOD_JOURNAL_FIELDS.find((item) => item.key === field.key);
+          return renderMealImages(field.key, section?.sectionName ?? field.label);
+        }}
+      />
+    );
+  }
+
+  if (isSingleContentJournalEntry(entry) && entry.content.trim()) {
+    return (
+      <section className={classes.section}>
+        <h3 className={classes.label}>{simpleContentLabel}</h3>
+        <p className={classes.value}>{entry.content}</p>
+      </section>
+    );
+  }
+
+  return emptyMessage ? <p className={classes.empty}>{emptyMessage}</p> : null;
+}
+
+export function JournalViewer({ entry, onBack, onEdit, onDelete, onTypeClick }: Props) {
   return (
     <div className="space-y-stack-md">
       <header className="flex items-start justify-between gap-3">
@@ -114,37 +190,7 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete, onTypeClick }: 
         </div>
       </header>
 
-      {isDailyReflectionEntry(entry) ? (
-        <FieldListBody
-          fields={DAILY_REFLECTION_FIELDS}
-          getValue={(key) => entry[key]}
-          renderHeading={(field) =>
-            field.key === 'prayerFocus' ? (
-              <VerseOfTheDayLabel date={entry.date} as="heading" />
-            ) : (
-              <h3 className="mb-1 text-body-md font-medium text-on-surface">{field.label}</h3>
-            )
-          }
-        />
-      ) : entry.type === 'food' ? (
-        <FieldListBody
-          fields={FOOD_JOURNAL_FIELDS}
-          getValue={(key) => entry[key]}
-          renderExtra={(field) => {
-            const section = FOOD_JOURNAL_FIELDS.find((item) => item.key === field.key);
-            return renderMealImages(field.key, section?.sectionName ?? field.label);
-          }}
-        />
-      ) : isSingleContentJournalEntry(entry) && entry.content.trim() ? (
-        <section>
-          <h3 className="mb-1 text-body-md font-medium text-on-surface">{simpleContentLabel}</h3>
-          <p className="text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
-            {entry.content}
-          </p>
-        </section>
-      ) : (
-        <p className="text-body-md text-on-surface-variant">No reflection notes recorded.</p>
-      )}
+      <JournalEntryBody entry={entry} />
 
       <button type="button" onClick={onBack} className="btn-stitch-secondary w-full">
         Back to Journal

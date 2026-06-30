@@ -122,67 +122,75 @@ function interpretPattern(
       );
       if (match) {
         if (match.fastType === 'twenty-four-hour-water') {
-          return {
-            isFastDay: true,
-            fastType: match.fastType,
-            instructions: [
-              `24-hour water fast (Week ${weekIndex + 1}).`,
-              'Water only—hydrate steadily.',
-              'Break your fast gently when the 24 hours end.',
-              'Speak with a healthcare professional if you have medical concerns.',
-            ],
-          };
+          const instructions = [
+            `24-hour water fast (Week ${weekIndex + 1}).`,
+            'Water only—hydrate steadily.',
+            'Break your fast gently when the 24 hours end.',
+            'Speak with a healthcare professional if you have medical concerns.',
+          ];
+          appendFoodRules(template, true, instructions);
+          return { isFastDay: true, fastType: match.fastType, instructions };
         }
+        const instructions = [
+          'Sunrise-to-sunset water fast (Week 3).',
+          'Water only from sunrise to sunset.',
+          'Break your fast gently after sunset.',
+        ];
+        appendFoodRules(template, true, instructions);
         return {
           isFastDay: true,
           fastType: match.fastType,
-          instructions: [
-            'Sunrise-to-sunset water fast (Week 3).',
-            'Water only from sunrise to sunset.',
-            'Break your fast gently after sunset.',
-          ],
+          instructions,
         };
       }
+      const instructions = [
+        'Preparation day—eat nourishing foods and stay hydrated.',
+        'Prepare your heart for the next fast in this Esther phase.',
+      ];
+      appendFoodRules(template, false, instructions);
       return {
         isFastDay: false,
         fastType: 'normal-eating',
-        instructions: [
-          'Preparation day—eat nourishing foods and stay hydrated.',
-          'Prepare your heart for the next fast in this Esther phase.',
-        ],
+        instructions,
       };
     }
 
     case 'weekday-with-prayer': {
       if (pattern.prayerDays.includes(day)) {
+        const instructions = [
+          'Extended prayer time today.',
+          'Set aside extra time for worship, intercession, and listening.',
+          'Read: Isaiah 58, Psalm 103, Matthew 6, and James 5.',
+        ];
+        appendFoodRules(template, false, instructions);
         return {
           isFastDay: false,
           fastType: 'extended-prayer',
-          instructions: [
-            'Extended prayer time today.',
-            'Set aside extra time for worship, intercession, and listening.',
-            'Read: Isaiah 58, Psalm 103, Matthew 6, and James 5.',
-          ],
+          instructions,
         };
       }
       if (pattern.fastDays.includes(day)) {
+        const instructions = [
+          'Sunrise-to-sunset fast today—water only.',
+          'Read: Isaiah 58, Psalm 103, Matthew 6, and James 5.',
+        ];
+        appendFoodRules(template, true, instructions);
         return {
           isFastDay: true,
           fastType: pattern.fastType,
-          instructions: [
-            'Sunrise-to-sunset fast today—water only.',
-            'Read: Isaiah 58, Psalm 103, Matthew 6, and James 5.',
-          ],
+          instructions,
         };
       }
+      const instructions = [
+        'Consecration day—stay attentive to God’s leading.',
+        'Read: Isaiah 58, Psalm 103, Matthew 6, and James 5.',
+        'Monday and Thursday are fast days; Saturday is extended prayer.',
+      ];
+      appendFoodRules(template, false, instructions);
       return {
         isFastDay: false,
         fastType: 'normal-eating',
-        instructions: [
-          'Consecration day—stay attentive to God’s leading.',
-          'Read: Isaiah 58, Psalm 103, Matthew 6, and James 5.',
-          'Monday and Thursday are fast days; Saturday is extended prayer.',
-        ],
+        instructions,
       };
     }
   }

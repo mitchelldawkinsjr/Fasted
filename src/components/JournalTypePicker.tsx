@@ -50,17 +50,22 @@ export const JOURNAL_META_CHIP_CLASS =
 type BadgeProps = {
   type: JournalEntryType;
   className?: string;
-  onClick: (type: JournalEntryType) => void;
+  onClick?: (type: JournalEntryType) => void;
 };
 
 export function JournalTypeBadge({ type, className = '', onClick }: BadgeProps) {
   const label = `#${JOURNAL_ENTRY_TYPE_LABELS[type].toUpperCase().replace(/\s+/g, ' ')}`;
+  const chipClass = `${JOURNAL_META_CHIP_CLASS} ${className}`;
+
+  if (!onClick) {
+    return <span className={chipClass}>{label}</span>;
+  }
 
   return (
     <button
       type="button"
       onClick={() => onClick(type)}
-      className={`${JOURNAL_META_CHIP_CLASS} ${className} cursor-pointer transition hover:opacity-80`}
+      className={`${chipClass} cursor-pointer transition hover:opacity-80`}
       aria-label={`Filter by ${JOURNAL_ENTRY_TYPE_LABELS[type]}`}
     >
       {label}
