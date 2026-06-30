@@ -13,6 +13,9 @@ export const messages = {
   export: {
     journalJson: 'Journal exported as JSON.',
     journalMarkdown: 'Journal exported as Markdown.',
+    journalPdf:
+      'Print dialog opened — choose Save as PDF to keep a copy of your journal.',
+    journalPdfEmpty: 'Add at least one journal entry before exporting.',
   },
   import: {
     journalSuccess: 'Journal imported successfully.',

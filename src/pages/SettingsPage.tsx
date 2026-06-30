@@ -10,6 +10,7 @@ import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
 import { confirmAction } from '../lib/confirm';
 import { formatError, messages } from '../lib/messages';
+import { exportJournalPdf } from '../lib/journalExport';
 import {
   exportJournal,
   exportJournalMarkdown,
@@ -173,6 +174,25 @@ export function SettingsPage() {
             <div className="flex items-center gap-4">
               <Icon name="description" className="text-on-surface-variant group-hover:text-primary" />
               <span className="text-body-md text-on-surface">Export as Markdown</span>
+            </div>
+            <Icon name="chevron_right" className="text-outline-variant" />
+          </button>
+          <button
+            type="button"
+            disabled={progress.journalEntries.length === 0}
+            onClick={() => {
+              if (progress.journalEntries.length === 0) {
+                toast.info(messages.export.journalPdfEmpty);
+                return;
+              }
+              exportJournalPdf();
+              toast.info(messages.export.journalPdf);
+            }}
+            className="group flex w-full items-center justify-between p-gutter transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <div className="flex items-center gap-4">
+              <Icon name="picture_as_pdf" className="text-on-surface-variant group-hover:text-primary" />
+              <span className="text-body-md text-on-surface">Export journal (PDF)</span>
             </div>
             <Icon name="chevron_right" className="text-outline-variant" />
           </button>
