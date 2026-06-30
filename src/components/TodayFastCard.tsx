@@ -92,7 +92,10 @@ export function TodayFastCard({ plan }: Props) {
           <Icon name={plan.isFastDay ? 'water_drop' : 'eco'} className="text-secondary" />
           <p className="font-display text-headline-md text-primary">Today&apos;s Instructions</p>
         </div>
-        <ul className="space-y-2 text-body-md leading-relaxed text-on-surface-variant">
+        <ul
+          data-testid="today-instructions-list"
+          className="space-y-2 text-body-md leading-relaxed text-on-surface-variant"
+        >
           {plan.instructions.map((instruction) => (
             <li key={instruction} className="flex items-start gap-2">
               <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-secondary" aria-hidden />

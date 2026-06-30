@@ -2,6 +2,23 @@ import type { FastPhaseTemplate, Journey } from '../types';
 
 // Food rules for each phase match the phase infographic assets in public/assets/phases/custom/.
 
+const WHOLE_FOOD_ALLOWED_BASE = [
+  'Whole, unprocessed foods',
+  'Plenty of vegetables & greens',
+  'Fruit in moderation',
+  'Lean protein (fish, chicken, beans, lentils)',
+  'Whole grains (rice, oats, quinoa)',
+];
+
+const WHOLE_FOOD_ALLOWED = [...WHOLE_FOOD_ALLOWED_BASE, 'Plenty of water'];
+const WHOLE_FOOD_AVOID = ['Rich, indulgent foods'];
+
+const YEAR_END_ALLOWED = [
+  ...WHOLE_FOOD_ALLOWED_BASE,
+  'Healthy fats (nuts, seeds, avocado, olive oil)',
+  'Plenty of water',
+];
+
 export const PHASE_TEMPLATES: FastPhaseTemplate[] = [
   {
     id: 'daniel-1',
@@ -79,15 +96,8 @@ export const PHASE_TEMPLATES: FastPhaseTemplate[] = [
     scheduleSummary:
       'Monday and Thursday: sunrise to sunset fast (water only). Daily reading: Joel 2. Eat whole, unprocessed foods with vegetables, fruit in moderation, lean protein, whole grains, and plenty of water. Avoid rich, indulgent foods.',
     schedulePattern: { kind: 'weekday-fast', fastDays: [1, 4], fastType: 'sunrise-to-sunset-water' },
-    allowed: [
-      'Whole, unprocessed foods',
-      'Plenty of vegetables & greens',
-      'Fruit in moderation',
-      'Lean protein (fish, chicken, beans, lentils)',
-      'Whole grains (rice, oats, quinoa)',
-      'Plenty of water',
-    ],
-    avoid: ['Rich, indulgent foods'],
+    allowed: WHOLE_FOOD_ALLOWED,
+    avoid: WHOLE_FOOD_AVOID,
     dailyReadings: ['Joel 2'],
     prayerFocus: ['Repentance', 'Revival', 'Holiness'],
     imagePath: '/assets/phases/custom/phase-04-joel-repentance-fast.png',
@@ -104,15 +114,8 @@ export const PHASE_TEMPLATES: FastPhaseTemplate[] = [
     scheduleSummary:
       'Every Wednesday: sunrise to sunset fast (water only). Eat whole, unprocessed foods with vegetables, fruit in moderation, lean protein, whole grains, and plenty of water. Avoid rich, indulgent foods. Each week: give food or resources to someone in need, encourage one person, and perform one act of service.',
     schedulePattern: { kind: 'weekday-fast', fastDays: [3], fastType: 'sunrise-to-sunset-water' },
-    allowed: [
-      'Whole, unprocessed foods',
-      'Plenty of vegetables & greens',
-      'Fruit in moderation',
-      'Lean protein (fish, chicken, beans, lentils)',
-      'Whole grains (rice, oats, quinoa)',
-      'Plenty of water',
-    ],
-    avoid: ['Rich, indulgent foods'],
+    allowed: WHOLE_FOOD_ALLOWED,
+    avoid: WHOLE_FOOD_AVOID,
     prayerFocus: ['Healing', 'Compassion', 'Kingdom impact'],
     imagePath: '/assets/phases/custom/phase-05-isaiah-58-fast.png',
   },
@@ -152,15 +155,8 @@ export const PHASE_TEMPLATES: FastPhaseTemplate[] = [
         { weekIndex: 2, dayOfWeek: 3, fastType: 'sunrise-to-sunset-water' },
       ],
     },
-    allowed: [
-      'Whole, unprocessed foods',
-      'Plenty of vegetables & greens',
-      'Fruit in moderation',
-      'Lean protein (fish, chicken, beans, lentils)',
-      'Whole grains (rice, oats, quinoa)',
-      'Plenty of water',
-    ],
-    avoid: ['Rich, indulgent foods'],
+    allowed: WHOLE_FOOD_ALLOWED,
+    avoid: WHOLE_FOOD_AVOID,
     prayerFocus: ['Courage', 'Faith', "Trust in God's provision"],
     imagePath: '/assets/phases/custom/phase-07-esther-preparation-fast.png',
     safetyNote:
@@ -183,15 +179,7 @@ export const PHASE_TEMPLATES: FastPhaseTemplate[] = [
       fastType: 'sunrise-to-sunset-water',
       prayerDays: [6],
     },
-    allowed: [
-      'Whole, unprocessed foods',
-      'Plenty of vegetables & greens',
-      'Fruit in moderation',
-      'Lean protein (fish, chicken, beans, lentils)',
-      'Whole grains (rice, oats, quinoa)',
-      'Healthy fats (nuts, seeds, avocado, olive oil)',
-      'Plenty of water',
-    ],
+    allowed: YEAR_END_ALLOWED,
     avoid: ['Rich, indulgent choices'],
     dailyReadings: ['Isaiah 58', 'Psalm 103', 'Matthew 6', 'James 5'],
     prayerFocus: ['Gratitude', 'Healing', 'Family', 'Vision for 2027'],

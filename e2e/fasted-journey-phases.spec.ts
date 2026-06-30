@@ -79,9 +79,9 @@ test.describe('Fasted journey phase images and instructions', () => {
       const phaseImage = page.getByRole('button', { name: /View .* image/ }).locator('img');
       await expect(phaseImage).toHaveAttribute('src', phaseCase.image);
 
-      const instructionsCard = page.getByText("Today's Instructions").locator('..').locator('..');
+      const instructionsList = page.getByTestId('today-instructions-list');
       for (const instruction of phaseCase.instructions) {
-        await expect(instructionsCard).toContainText(instruction);
+        await expect(instructionsList).toContainText(instruction);
       }
     });
   }
