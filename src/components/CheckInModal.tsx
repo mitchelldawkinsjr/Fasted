@@ -1,5 +1,6 @@
 import confetti from 'canvas-confetti';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
@@ -158,7 +159,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
     }, earned.length > 0 ? 2800 : 1800);
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4 sm:items-center"
       role="dialog"
@@ -167,7 +168,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
     >
       <div className="flex max-h-[90vh] w-full max-w-md animate-fade-in-up flex-col overflow-hidden rounded-xl bg-surface-container-lowest shadow-grace">
         {celebrating ? (
-          <div className="animate-gentle-pulse p-stack-lg py-6 text-center">
+          <div className="animate-gentle-pulse p-3 py-6 text-center sm:p-stack-lg">
             <Icon name="celebration" className="mb-2 text-4xl text-secondary" />
             <p className="font-display text-headline-md text-primary">{message}</p>
             {savedStreak !== null && (
@@ -210,49 +211,51 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto p-stack-lg">
-              <h2 id="checkin-title" className="mb-stack-md font-display text-headline-md text-primary">
+            <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-stack-lg">
+              <h2 id="checkin-title" className="mb-2 font-display text-xl text-primary sm:mb-stack-md sm:text-headline-md">
                 Complete Today&apos;s Check-In
               </h2>
 
               {phase && (
-                <InfoBanner variant="phase" icon="flag" className="mb-stack-md">
+                <InfoBanner variant="phase" icon="flag" className="mb-2 px-2 py-1 text-xs sm:mb-stack-md sm:px-3 sm:py-2 sm:text-body-md">
                   Phase {phase.id}: {phase.title}
                 </InfoBanner>
               )}
 
-              <div className="mb-stack-md rounded-xl border border-outline-variant/30 bg-surface-container-low px-4 py-3 text-center">
-                <span className="label-caps text-on-surface-variant">Check-in streak</span>
-                <p className="mt-1 font-display text-headline-md text-primary">
+              <div className="mb-2 rounded-xl border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-center sm:mb-stack-md sm:px-4 sm:py-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-on-surface-variant sm:font-label sm:text-label-caps sm:tracking-widest">
+                  Check-in streak
+                </span>
+                <p className="font-display text-xl text-primary sm:mt-1 sm:text-headline-md">
                   {currentStreak}{' '}
-                  <span className="text-body-md font-normal text-on-surface-variant">
+                  <span className="text-xs font-normal text-on-surface-variant sm:text-body-md">
                     consecutive {currentStreak === 1 ? 'day' : 'days'}
                   </span>
                 </p>
               </div>
 
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 sm:block sm:space-y-3">
                 <CheckRow label="Did you follow today's fasting plan?" checked={followedPlan} onChange={setFollowedPlan} />
                 <CheckRow label="Did you pray over today's focus?" checked={prayedFocus} onChange={setPrayedFocus} />
                 <CheckRow label="Did you read today's scripture?" checked={readScripture} onChange={setReadScripture} />
                 <CheckRow label="Did you journal today?" checked={journaled} onChange={setJournaled} />
 
-                <label className="block">
-                  <span className="mb-1 block text-body-md font-medium text-on-surface">
+                <label className="col-span-2 block">
+                  <span className="mb-1 block text-sm font-medium text-on-surface sm:text-body-md">
                     What is one win from today?
                   </span>
                   <textarea
                     value={win}
                     onChange={(e) => setWin(e.target.value)}
-                    rows={2}
-                    className="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+                    rows={1}
+                    className="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-1.5 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary sm:py-2"
                     placeholder="Even a small victory counts..."
                   />
                 </label>
               </div>
 
               {groupContexts.length > 0 && (
-                <div className="mt-stack-md space-y-4">
+                <div className="mt-2 space-y-4 sm:mt-stack-md">
                   {groupContexts.map((ctx) => (
                     <section key={ctx.group.id}>
                       <h3 className="mb-2 label-caps text-secondary">
@@ -271,7 +274,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
               )}
             </div>
 
-            <div className="flex shrink-0 gap-3 border-t border-surface-variant p-stack-lg pt-4">
+            <div className="flex shrink-0 gap-2 border-t border-surface-variant p-3 pt-4 sm:gap-3 sm:p-stack-lg">
               <LoadingButton type="button" onClick={onClose} variant="secondary" className="flex-1">
                 Cancel
               </LoadingButton>
@@ -287,7 +290,8 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -301,14 +305,14 @@ function CheckRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low p-3 transition-colors hover:bg-surface-container-high">
+    <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-low p-2 transition-colors hover:bg-surface-container-high sm:items-center sm:gap-3 sm:p-3">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded accent-primary"
+        className="mt-0.5 h-4 w-4 shrink-0 rounded accent-primary sm:mt-0"
       />
-      <span className="text-body-md text-on-surface">{label}</span>
+      <span className="text-xs leading-snug text-on-surface sm:text-body-md">{label}</span>
     </label>
   );
 }
