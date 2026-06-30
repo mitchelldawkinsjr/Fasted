@@ -20,8 +20,9 @@ import {
   journalEntryMatchesSearch,
   journalTypePillClass,
 } from '../lib/journalTags';
+import { openJournalPrintExport } from '../lib/journalPrintExport';
 import { messages } from '../lib/messages';
-import { deleteJournalEntry, exportJournalMarkdown } from '../lib/storage';
+import { deleteJournalEntry } from '../lib/storage';
 import { toast } from '../lib/toast';
 import type { JournalEntry, JournalEntryType } from '../types';
 
@@ -97,15 +98,12 @@ export function JournalPage() {
     });
   }, [filter, progress.journalEntries, search]);
 
-  const downloadMarkdown = () => {
-    const blob = new Blob([exportJournalMarkdown()], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'fasted-journal.md';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.info(messages.export.journalMarkdown);
+  const handleExportPdf = () => {
+    if (progress.journalEntries.length === 0) {
+      toast.info(messages.export.journalPdfEmpty);
+      return;
+    }
+    openJournalPrintExport();
   };
 
   const handleSaved = () => {
@@ -253,9 +251,15 @@ export function JournalPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={downloadMarkdown}
-            className="rounded-full p-2 text-primary transition hover:bg-surface-container-high"
-            aria-label="Export as Markdown"
+            onClick={handleExportPdf}
+            disabled={progress.journalEntries.length === 0}
+            className="rounded-full p-2 text-primary transition hover:bg-surface-container-high disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Export journal as PDF"
+            title={
+              progress.journalEntries.length === 0
+                ? messages.export.journalPdfEmpty
+                : 'Export journal as PDF'
+            }
           >
             <Icon name="picture_as_pdf" />
           </button>
