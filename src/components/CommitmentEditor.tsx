@@ -2,6 +2,7 @@ import type { CommitmentDefinition, CommitmentShape } from '../types';
 import {
   COMMITMENT_PRESET_LABELS,
   createCommitmentPreset,
+  newCommitmentId,
   type CommitmentPresetId,
 } from '../data/commitmentPresets';
 import { Icon } from './Icon';
@@ -16,14 +17,6 @@ const SHAPES: { value: CommitmentShape; label: string }[] = [
   { value: 'duration', label: 'Minutes' },
   { value: 'text_note', label: 'Short note' },
 ];
-
-function newCommitment(): CommitmentDefinition {
-  return {
-    id: `custom-${crypto.randomUUID().slice(0, 8)}`,
-    label: '',
-    shape: 'yes_no',
-  };
-}
 
 export function CommitmentEditor({ commitments, onChange }: Props) {
   const inputClass =
@@ -123,7 +116,12 @@ export function CommitmentEditor({ commitments, onChange }: Props) {
 
       <button
         type="button"
-        onClick={() => onChange([...commitments, newCommitment()])}
+        onClick={() =>
+          onChange([
+            ...commitments,
+            { id: newCommitmentId('custom'), label: '', shape: 'yes_no' },
+          ])
+        }
         className="inline-flex items-center gap-1 text-body-md text-secondary"
       >
         <Icon name="add" size={18} />
