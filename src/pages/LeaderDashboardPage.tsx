@@ -4,7 +4,6 @@ import { Icon } from '../components/Icon';
 import { RequireAuth } from '../components/RequireAuth';
 import {
   getGroup,
-  getGroupCheckinStats,
   getMemberProgressSummaries,
   getMyMembership,
   groupJourneyToLocalJourney,
@@ -12,26 +11,25 @@ import {
   setPrayerRequestPinned,
   listPrayerRequests,
 } from '../lib/groups';
-import type { GroupCheckinStats, GroupRecord, MemberProgressSummary, PrayerRequest } from '../types';
+import type { GroupRecord, MemberProgressSummary, PrayerRequest } from '../types';
 import { toast } from '../lib/toast';
 
 export function LeaderDashboardPage() {
   const { id = '' } = useParams();
   const [group, setGroup] = useState<GroupRecord | null>(null);
-  const [stats, setStats] = useState<GroupCheckinStats | null>(null);
   const [members, setMembers] = useState<MemberProgressSummary[]>([]);
   const [memberCount, setMemberCount] = useState(0);
   const [prayers, setPrayers] = useState<PrayerRequest[]>([]);
+  const [canViewDashboard, setCanViewDashboard] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const [groupData, membership, checkinStats, prayerList, memberships] = await Promise.all([
+      const [groupData, membership, prayerList, memberships] = await Promise.all([
         getGroup(id),
         getMyMembership(id),
-        getGroupCheckinStats(id),
         listPrayerRequests(id),
         listGroupMemberships(id),
       ]);
@@ -39,17 +37,23 @@ export function LeaderDashboardPage() {
       if (membership?.role !== 'leader') {
         toast.error('Leader access required');
         setGroup(groupData);
+        setCanViewDashboard(false);
         setLoading(false);
         return;
       }
 
       setGroup(groupData);
-      setStats(checkinStats);
+      setCanViewDashboard(true);
       setPrayers(prayerList);
       setMemberCount(memberships.length);
 
       if (groupData) {
-        const summaries = await getMemberProgressSummaries(id, groupData.privacy);
+        const journey = groupJourneyToLocalJourney(groupData.journey);
+        const summaries = await getMemberProgressSummaries(
+          id,
+          groupData.privacy,
+          journey?.startDate ?? groupData.journey?.start_date,
+        );
         setMembers(summaries);
       }
     } catch (err) {
@@ -73,7 +77,10 @@ export function LeaderDashboardPage() {
   };
 
   const journey = group ? groupJourneyToLocalJourney(group.journey) : null;
-  const isLeaderView = group && stats;
+  const isLeaderView = group && canViewDashboard;
+  const totalCheckins = members.reduce((sum, member) => sum + member.check_in_count, 0);
+  const avgCheckinsPerMember =
+    memberCount > 0 ? Math.round((totalCheckins / memberCount) * 100) / 100 : null;
 
   if (loading) {
     return (
@@ -114,16 +121,16 @@ export function LeaderDashboardPage() {
           <>
             <div className="grid grid-cols-2 gap-3">
               <div className="stitch-card p-gutter text-center">
-                <p className="text-headline-md text-primary">{memberCount || stats.member_count}</p>
+                <p className="text-headline-md text-primary">{memberCount}</p>
                 <p className="label-caps text-on-surface-variant">Members</p>
               </div>
               <div className="stitch-card p-gutter text-center">
-                <p className="text-headline-md text-primary">{stats.total_checkins}</p>
+                <p className="text-headline-md text-primary">{totalCheckins}</p>
                 <p className="label-caps text-on-surface-variant">Total check-ins</p>
               </div>
               <div className="stitch-card p-gutter text-center col-span-2">
                 <p className="text-headline-md text-primary">
-                  {stats.avg_checkins_per_member ?? '—'}
+                  {avgCheckinsPerMember ?? '—'}
                 </p>
                 <p className="label-caps text-on-surface-variant">Avg check-ins per member</p>
               </div>
@@ -136,19 +143,51 @@ export function LeaderDashboardPage() {
                 </div>
                 <ul className="divide-y divide-surface-variant">
                   {members.map((member) => (
-                    <li key={member.user_id} className="flex items-center justify-between p-gutter">
-                      <div>
-                        <p className="text-body-md text-on-surface">
-                          {member.display_name ?? 'Member'}
-                        </p>
+                    <li key={member.user_id} className="space-y-3 p-gutter">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-body-md text-on-surface">
+                            {member.display_name ?? 'Member'}
+                          </p>
+                          <p className="text-label-caps text-on-surface-variant">
+                            Last honor: {member.last_check_in ?? '—'}
+                          </p>
+                        </div>
+                        <div className="text-right text-label-caps text-on-surface-variant">
+                          <p>Streak: {member.streak ?? 0} days</p>
+                          <p>Completion: {member.completion_rate ?? 0}%</p>
+                          <p>Days missed: {member.days_missed ?? 0}</p>
+                        </div>
+                      </div>
+
+                      {member.today_commitments && member.today_commitments.length > 0 && (
+                        <div className="rounded-xl bg-surface-container-low p-3">
+                          <p className="mb-2 label-caps text-secondary">Today&apos;s commitments</p>
+                          <ul className="space-y-1">
+                            {member.today_commitments.map((item) => (
+                              <li
+                                key={item.commitmentId}
+                                className="flex items-center justify-between text-body-md"
+                              >
+                                <span className="text-on-surface">{item.label}</span>
+                                <span
+                                  className={
+                                    item.honored ? 'text-secondary' : 'text-on-surface-variant'
+                                  }
+                                >
+                                  {item.honored ? '✓' : '—'}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {!member.has_covenant && (
                         <p className="text-label-caps text-on-surface-variant">
-                          Last check-in: {member.last_check_in ?? '—'}
+                          Covenant not signed yet
                         </p>
-                      </div>
-                      <div className="text-right text-label-caps text-on-surface-variant">
-                        <p>{member.check_in_count} check-ins</p>
-                        <p>{member.journal_count} journal</p>
-                      </div>
+                      )}
                     </li>
                   ))}
                 </ul>
