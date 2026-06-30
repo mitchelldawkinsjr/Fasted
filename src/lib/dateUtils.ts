@@ -78,6 +78,12 @@ export function daysBetween(start: string, end: string): number {
   return Math.floor(ms / (1000 * 60 * 60 * 24)) + 1;
 }
 
+export function addLocalDays(date: string, offset: number): string {
+  const parsed = parseLocalDate(date);
+  parsed.setDate(parsed.getDate() + offset);
+  return getLocalDateString(parsed);
+}
+
 export function getWeekIndexInPhase(dateStr: string, phaseStart: string): number {
   const days = daysBetween(phaseStart, dateStr) - 1;
   return Math.floor(days / 7);

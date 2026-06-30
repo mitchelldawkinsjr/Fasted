@@ -170,7 +170,6 @@ export function GroupDetailPage() {
           groupName={group.name}
           commitments={covenant.commitments_snapshot}
           existing={covenant}
-          readOnly
           onClose={() => setShowCovenantModal(false)}
         />
       )}

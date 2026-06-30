@@ -1,6 +1,6 @@
 import type { CommitmentDefinition } from '../types';
 
-function id(prefix: string): string {
+export function newCommitmentId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
@@ -17,35 +17,35 @@ export function createCommitmentPreset(preset: CommitmentPresetId): CommitmentDe
     case 'fasted-default':
       return [
         {
-          id: id('move'),
+          id: newCommitmentId('move'),
           label: 'Move body daily',
           shape: 'duration',
           target: 30,
           description: 'At least 30 minutes of movement',
         },
-        { id: id('food'), label: 'Follow eating structure', shape: 'yes_no' },
-        { id: id('fast'), label: "Complete today's fast", shape: 'yes_no' },
-        { id: id('prayer'), label: 'Intentional time with God', shape: 'yes_no' },
-        { id: id('honest'), label: 'Be honest in check-ins', shape: 'yes_no' },
+        { id: newCommitmentId('food'), label: 'Follow eating structure', shape: 'yes_no' },
+        { id: newCommitmentId('fast'), label: "Complete today's fast", shape: 'yes_no' },
+        { id: newCommitmentId('prayer'), label: 'Intentional time with God', shape: 'yes_no' },
+        { id: newCommitmentId('honest'), label: 'Be honest in check-ins', shape: 'yes_no' },
       ];
     case 'discipleship':
       return [
-        { id: id('scripture'), label: 'Read assigned scripture', shape: 'yes_no' },
-        { id: id('prayer'), label: 'Intentional time with God', shape: 'yes_no' },
-        { id: id('reflection'), label: 'Weekly reflection', shape: 'text_note' },
-        { id: id('honest'), label: 'Be honest with your leader', shape: 'yes_no' },
+        { id: newCommitmentId('scripture'), label: 'Read assigned scripture', shape: 'yes_no' },
+        { id: newCommitmentId('prayer'), label: 'Intentional time with God', shape: 'yes_no' },
+        { id: newCommitmentId('reflection'), label: 'Weekly reflection', shape: 'text_note' },
+        { id: newCommitmentId('honest'), label: 'Be honest with your leader', shape: 'yes_no' },
       ];
     case 'fitness':
       return [
         {
-          id: id('workout'),
+          id: newCommitmentId('workout'),
           label: 'Complete workout',
           shape: 'duration',
           target: 30,
           description: 'Movement or training minutes',
         },
-        { id: id('hydrate'), label: 'Stay hydrated', shape: 'yes_no' },
-        { id: id('nutrition'), label: 'Follow nutrition plan', shape: 'yes_no' },
+        { id: newCommitmentId('hydrate'), label: 'Stay hydrated', shape: 'yes_no' },
+        { id: newCommitmentId('nutrition'), label: 'Follow nutrition plan', shape: 'yes_no' },
       ];
   }
 }

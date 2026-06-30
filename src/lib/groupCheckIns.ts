@@ -4,21 +4,32 @@ import type {
   GroupCheckIn,
   MemberCommitmentStatus,
 } from '../types';
-import { daysBetween, getLocalDateString, parseLocalDate } from './dateUtils';
+import { addLocalDays, daysBetween, getLocalDateString } from './dateUtils';
+
+export function computeCommitmentHonored(
+  definition: CommitmentDefinition,
+  result: Pick<CommitmentResult, 'honored' | 'value'> | undefined,
+): boolean {
+  if (definition.shape === 'yes_no') {
+    return Boolean(result?.honored);
+  }
+  if (definition.shape === 'duration') {
+    const minutes = typeof result?.value === 'number' ? result.value : Number(result?.value);
+    if (!Number.isFinite(minutes)) return false;
+    return definition.target == null || minutes >= definition.target;
+  }
+  if (definition.shape === 'text_note') {
+    return typeof result?.value === 'string' && result.value.trim().length > 0;
+  }
+  return Boolean(result?.honored);
+}
 
 export function isCommitmentHonored(
   definition: CommitmentDefinition,
   result: CommitmentResult | undefined,
 ): boolean {
   if (!result?.honored) return false;
-  if (definition.shape === 'duration' && definition.target != null) {
-    const minutes = typeof result.value === 'number' ? result.value : Number(result.value);
-    return Number.isFinite(minutes) && minutes >= definition.target;
-  }
-  if (definition.shape === 'text_note') {
-    return typeof result.value === 'string' && result.value.trim().length > 0;
-  }
-  return true;
+  return computeCommitmentHonored(definition, result);
 }
 
 export function allCommitmentsHonored(
@@ -35,12 +46,6 @@ export function getGroupCheckInForDate(
   date: string,
 ): GroupCheckIn | undefined {
   return records?.find((r) => r.date === date);
-}
-
-function addLocalDays(date: string, offset: number): string {
-  const parsed = parseLocalDate(date);
-  parsed.setDate(parsed.getDate() + offset);
-  return getLocalDateString(parsed);
 }
 
 function dayHonored(
