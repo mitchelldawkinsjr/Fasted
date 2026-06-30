@@ -20,6 +20,7 @@ import {
   journalEntryMatchesSearch,
   journalTypePillClass,
 } from '../lib/journalTags';
+import { openJournalPrintExport } from '../lib/journalPrintExport';
 import { messages } from '../lib/messages';
 import { deleteJournalEntry } from '../lib/storage';
 import { toast } from '../lib/toast';
@@ -102,13 +103,7 @@ export function JournalPage() {
       toast.info(messages.export.journalPdfEmpty);
       return;
     }
-    const printWindow = window.open('/journal/print', '_blank');
-    if (!printWindow) {
-      toast.warning(messages.export.journalPdfBlocked);
-      return;
-    }
-    printWindow.opener = null;
-    toast.info(messages.export.journalPdf);
+    openJournalPrintExport();
   };
 
   const handleSaved = () => {

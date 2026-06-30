@@ -1,24 +1,41 @@
-import { useEffect, useMemo } from 'react';
-import { buildJournalExportModel } from '../lib/journalExport';
+import { useEffect, useMemo, useRef } from 'react';
+import { buildJournalExportModel } from '../lib/journalExport/buildModel';
+import { useAuth } from '../hooks/useAuth';
 import { useProgress } from '../hooks/useProgress';
 import { JournalPrintDocument } from '../components/JournalPrintDocument';
 
 export function JournalPrintPage() {
+  const { initialized } = useAuth();
+  const initializedRef = useRef(initialized);
+  initializedRef.current = initialized;
+
   const progress = useProgress();
   const model = useMemo(() => buildJournalExportModel(progress), [progress]);
   const entryCount = model.entries.length;
+  const hasPrintedRef = useRef(false);
 
   useEffect(() => {
-    if (entryCount === 0) return;
+    if (entryCount === 0 || hasPrintedRef.current) return;
+
+    const fontsReady =
+      'fonts' in document
+        ? document.fonts.ready.catch(() => undefined)
+        : Promise.resolve();
 
     let cancelled = false;
 
     const printWhenReady = async () => {
-      if ('fonts' in document) {
-        await document.fonts.ready.catch(() => undefined);
+      await fontsReady;
+
+      while (!cancelled && !initializedRef.current) {
+        await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
       }
+      if (cancelled || hasPrintedRef.current || !initializedRef.current) return;
+
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-      if (cancelled) return;
+      if (cancelled || hasPrintedRef.current) return;
+
+      hasPrintedRef.current = true;
       window.print();
     };
 

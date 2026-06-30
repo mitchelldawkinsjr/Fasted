@@ -3,15 +3,16 @@ import { JournalTypeBadge } from './JournalTypePicker';
 import { MoodBadge } from './MoodPicker';
 import { formatDisplayDate } from '../lib/dateUtils';
 import { VERSE_OF_THE_DAY_LABEL, isDailyReflectionEntry } from '../lib/journalTags';
-import type { JournalExportModel } from '../lib/journalExport/types';
+import type { JournalExportModel } from '../lib/journalExport/buildModel';
 import type { JournalEntry } from '../types';
 
+const printFieldValue = 'print-field-value';
 const PRINT_ENTRY_BODY_CLASSES = {
   fields: 'print-entry-fields',
   section: 'print-field',
   label: 'print-field-label',
-  value: 'print-field-value',
-  empty: 'print-field-value',
+  value: printFieldValue,
+  empty: printFieldValue,
 };
 
 function PrintCoverPage({ model }: { model: JournalExportModel }) {
