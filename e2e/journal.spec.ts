@@ -468,6 +468,12 @@ test('waits for print fonts before opening the print dialog', async ({ page }) =
       configurable: true,
       value: { ready: fontsReady },
     });
+    if (document.fonts.ready !== fontsReady) {
+      Object.defineProperty(document.fonts, 'ready', {
+        configurable: true,
+        value: fontsReady,
+      });
+    }
     window.print = () => {
       testWindow.__printCalls = (testWindow.__printCalls ?? 0) + 1;
     };
