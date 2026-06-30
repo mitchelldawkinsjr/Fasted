@@ -6,7 +6,7 @@ import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
 import { getGroupCommitments, getMyCovenant, listMyGroups } from '../lib/groups';
 import { formatError, messages } from '../lib/messages';
-import { getGroupCheckIn, getJournalEntryByDate, saveCheckIn, saveGroupCheckIn } from '../lib/storage';
+import { getGroupCheckIn, getJournalEntryByDate, saveCheckInWithGroupCheckIns } from '../lib/storage';
 import { getCurrentStreak } from '../lib/streaks';
 import { toast } from '../lib/toast';
 import type { Badge, CheckIn, CommitmentDefinition, CommitmentResult, GroupRecord } from '../types';
@@ -27,6 +27,7 @@ type GroupCommitmentContext = {
   group: GroupRecord;
   commitments: CommitmentDefinition[];
   existingResults?: CommitmentResult[];
+  hasExistingCheckIn: boolean;
 };
 
 export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
@@ -73,6 +74,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
             group,
             commitments,
             existingResults: existingGroupCheckIn?.results,
+            hasExistingCheckIn: !!existingGroupCheckIn,
           });
         }
 
@@ -110,16 +112,21 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
     };
 
     try {
-      saveCheckIn(checkIn);
-
-      for (const ctx of groupContexts) {
+      const groupCheckIns = groupContexts.flatMap((ctx) => {
         const results = groupResults[ctx.group.id] ?? [];
-        saveGroupCheckIn(ctx.group.id, {
-          date,
-          results,
-          completedAt: new Date().toISOString(),
-        });
-      }
+        if (results.length === 0 && !ctx.hasExistingCheckIn) return [];
+
+        return [{
+          groupId: ctx.group.id,
+          checkIn: {
+            date,
+            results,
+            completedAt: new Date().toISOString(),
+          },
+        }];
+      });
+
+      saveCheckInWithGroupCheckIns(checkIn, groupCheckIns);
     } catch (err) {
       toast.error(formatError(err, messages.errors.saveCheckIn));
       setSaving(false);

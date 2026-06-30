@@ -27,10 +27,6 @@ export function mealSectionHasImages(images: MealSectionImages): boolean {
   return Object.values(images).some((section) => section && section.length > 0);
 }
 
-export function countMealImages(images: MealSectionImages): number {
-  return Object.values(images).reduce((total, section) => total + (section?.length ?? 0), 0);
-}
-
 export function appendMealImages(
   current: string[],
   files: FileList | File[],

@@ -200,15 +200,15 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
     try {
       saveJournalEntry(saved);
+      const imagesToSave: MealSectionImages = {};
       if (entryType === 'food') {
-        const imagesToSave: MealSectionImages = {};
         for (const { key } of FOOD_JOURNAL_FIELDS) {
           if (mealImages[key].length > 0) {
             imagesToSave[key] = mealImages[key];
           }
         }
-        saveMealImages(saved.id, imagesToSave);
       }
+      saveMealImages(saved.id, imagesToSave);
       toast.success(entry ? messages.save.journalUpdated : messages.save.journal);
       onSave();
     } catch (err) {

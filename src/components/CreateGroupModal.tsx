@@ -46,6 +46,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
       onClose();
       setName('');
       setDisplayName('');
+      setCommitments(createCommitmentPreset('fasted-default'));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create group');
     } finally {
@@ -74,6 +75,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
       onClose();
       setName('');
       setDisplayName('');
+      setCommitments(createCommitmentPreset('fasted-default'));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create group');
       throw err;

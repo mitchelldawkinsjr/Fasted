@@ -21,7 +21,7 @@ type Props = {
   onTypeClick: (type: JournalEntryType) => void;
 };
 
-type FieldDef<T extends string> = { key: T; label: string };
+type FieldDef<T extends string> = { key: T; label: string; sectionName?: string };
 
 type JournalEntryBodyClasses = {
   fields: string;
@@ -139,10 +139,9 @@ export function JournalEntryBody({
         getValue={(key) => entry[key]}
         classes={classes}
         emptyMessage={emptyMessage}
-        renderExtra={(field) => {
-          const section = FOOD_JOURNAL_FIELDS.find((item) => item.key === field.key);
-          return renderMealImages(field.key, section?.sectionName ?? field.label);
-        }}
+        renderExtra={(field) =>
+          renderMealImages(field.key as FoodMealKey, field.sectionName ?? field.label)
+        }
       />
     );
   }
