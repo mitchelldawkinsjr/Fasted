@@ -196,10 +196,6 @@ export function getGroupCheckIn(groupId: string, date: string): GroupCheckIn | u
   return getProgress().groupCheckIns?.[groupId]?.find((c) => c.date === date);
 }
 
-export function getGroupCheckIns(groupId: string): GroupCheckIn[] {
-  return getProgress().groupCheckIns?.[groupId] ?? [];
-}
-
 export function createJournalEntryId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();

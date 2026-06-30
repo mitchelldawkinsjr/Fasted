@@ -163,7 +163,7 @@ export type Badge = {
   phaseId?: number;
 };
 
-export type CommitmentShape = 'yes_no' | 'duration' | 'count' | 'text_note';
+export type CommitmentShape = 'yes_no' | 'duration' | 'text_note';
 
 export type CommitmentDefinition = {
   id: string;
@@ -185,8 +185,6 @@ export type GroupCheckIn = {
   completedAt: string;
 };
 
-export type GroupCheckInRecord = GroupCheckIn;
-
 export type UserProgress = {
   checkIns: CheckIn[];
   /** Consecutive check-in days after the most recent successful check-in. */
@@ -197,7 +195,7 @@ export type UserProgress = {
   activeJourneyId: string;
   journeys: Journey[];
   /** Daily group commitment honor results keyed by group id. */
-  groupCheckIns?: Record<string, GroupCheckInRecord[]>;
+  groupCheckIns?: Record<string, GroupCheckIn[]>;
   /** ISO timestamp — used to reconcile local vs cloud copies when signed in. */
   updatedAt?: string;
 };
@@ -257,13 +255,6 @@ export type PrayerRequest = {
   created_at: string;
 };
 
-export type GroupCheckinStats = {
-  group_id: string;
-  member_count: number;
-  total_checkins: number;
-  avg_checkins_per_member: number | null;
-};
-
 export type MemberCommitmentStatus = {
   commitmentId: string;
   label: string;
@@ -275,20 +266,12 @@ export type MemberProgressSummary = {
   user_id: string;
   display_name: string | null;
   check_in_count: number;
-  journal_count: number;
   last_check_in: string | null;
   today_commitments?: MemberCommitmentStatus[];
   streak?: number;
   completion_rate?: number;
   days_missed?: number;
   has_covenant?: boolean;
-};
-
-export type GroupCommitmentRecord = {
-  id: string;
-  group_id: string;
-  commitments: CommitmentDefinition[];
-  created_at: string;
 };
 
 export type MemberCovenant = {
@@ -307,5 +290,4 @@ export type CreateGroupInput = {
   customJourney?: Pick<Journey, 'name' | 'startDate' | 'phases'>;
   displayName?: string;
   commitments?: CommitmentDefinition[];
-  leaderSignature?: string;
 };

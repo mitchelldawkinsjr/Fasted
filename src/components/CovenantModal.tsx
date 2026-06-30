@@ -3,6 +3,7 @@ import type { CommitmentDefinition, MemberCovenant } from '../types';
 import { formatDisplayDate } from '../lib/dateUtils';
 import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
+import { CommitmentList } from './CommitmentList';
 
 type Props = {
   groupName: string;
@@ -28,6 +29,7 @@ export function CovenantModal({
 
   const signed = Boolean(existing);
   const viewOnly = readOnly || signed;
+  const displayedCommitments = viewOnly && existing ? existing.commitments_snapshot : commitments;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,24 +80,7 @@ export function CovenantModal({
             )}
           </p>
 
-          <ul className="space-y-2 rounded-xl border border-outline-variant/30 bg-surface-container-low p-4">
-            {commitments.map((commitment) => (
-              <li key={commitment.id} className="flex items-start gap-2 text-body-md text-on-surface">
-                <Icon name="check_circle" className="mt-0.5 shrink-0 text-secondary" size={18} />
-                <span>
-                  {commitment.label}
-                  {commitment.shape === 'duration' && commitment.target != null && (
-                    <span className="text-on-surface-variant"> ({commitment.target} min)</span>
-                  )}
-                  {commitment.description && (
-                    <span className="block text-label-caps text-on-surface-variant">
-                      {commitment.description}
-                    </span>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <CommitmentList commitments={displayedCommitments} />
 
           {viewOnly && existing && (
             <div className="rounded-xl border border-secondary/30 bg-secondary-container/20 p-4">

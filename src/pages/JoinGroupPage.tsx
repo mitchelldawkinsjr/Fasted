@@ -15,6 +15,13 @@ import { toast } from '../lib/toast';
 
 type Step = 'preview' | 'covenant';
 
+function commitmentsMatch(
+  left: CommitmentDefinition[],
+  right: CommitmentDefinition[],
+): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 export function JoinGroupPage() {
   const { code = '' } = useParams();
   const navigate = useNavigate();
@@ -41,14 +48,20 @@ export function JoinGroupPage() {
     setBusy(true);
     try {
       const joinedGroupId = await joinGroupByCode(code, displayName);
-      const existingCovenant = await getMyCovenant(joinedGroupId);
-      if (existingCovenant) {
+      const [existingCovenant, groupCommitments] = await Promise.all([
+        getMyCovenant(joinedGroupId),
+        getGroupCommitments(joinedGroupId),
+      ]);
+
+      if (
+        existingCovenant &&
+        commitmentsMatch(existingCovenant.commitments_snapshot, groupCommitments)
+      ) {
         toast.success('Joined group');
         navigate(`/groups/${joinedGroupId}`);
         return;
       }
 
-      const groupCommitments = await getGroupCommitments(joinedGroupId);
       setGroupId(joinedGroupId);
       setCommitments(groupCommitments);
       setStep('covenant');

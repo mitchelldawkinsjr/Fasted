@@ -10,7 +10,7 @@ import {
 import type {
   CommitmentDefinition,
   CreateGroupInput,
-  GroupCheckinStats,
+  GroupCheckIn,
   GroupMembership,
   GroupRecord,
   MemberCovenant,
@@ -19,7 +19,6 @@ import type {
   SharedJournalEntry,
 } from '../types';
 import {
-  GROUP_CHECKIN_STATS_VIEW,
   GROUP_COMMITMENTS_TABLE,
   GROUP_MEMBERSHIPS_TABLE,
   GROUPS_TABLE,
@@ -29,6 +28,7 @@ import {
   SHARED_JOURNAL_TABLE,
   getSupabase,
 } from './supabase';
+import { getLocalDateString } from './dateUtils';
 
 function randomInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -161,14 +161,11 @@ export async function createGroup(input: CreateGroupInput): Promise<GroupRecord>
       });
       if (commitmentError) throw commitmentError;
 
-      const leaderSignature =
-        input.leaderSignature?.trim() || input.displayName?.trim() || 'Group Leader';
-
       const { error: covenantError } = await client.from(MEMBER_COVENANTS_TABLE).insert({
         group_id: group.id,
         user_id: userId,
         commitments_snapshot: commitments,
-        signature: leaderSignature,
+        signature: input.displayName?.trim() || 'Group Leader',
       });
       if (covenantError) throw covenantError;
 
@@ -218,17 +215,6 @@ export async function leaveGroup(groupId: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function getGroupCheckinStats(groupId: string): Promise<GroupCheckinStats | null> {
-  const { data, error } = await getSupabase()
-    .from(GROUP_CHECKIN_STATS_VIEW)
-    .select('*')
-    .eq('group_id', groupId)
-    .maybeSingle();
-
-  if (error) throw error;
-  return (data as GroupCheckinStats | null) ?? null;
-}
-
 export async function getGroupCommitments(groupId: string): Promise<CommitmentDefinition[]> {
   const { data, error } = await getSupabase()
     .from(GROUP_COMMITMENTS_TABLE)
@@ -273,12 +259,13 @@ export async function signMemberCovenant(
 
   const { data, error } = await getSupabase()
     .from(MEMBER_COVENANTS_TABLE)
-    .insert({
+    .upsert({
       group_id: groupId,
       user_id: userId,
       commitments_snapshot: commitments,
       signature: signature.trim(),
-    })
+      signed_at: new Date().toISOString(),
+    }, { onConflict: 'group_id,user_id' })
     .select('*')
     .single();
 
@@ -288,8 +275,7 @@ export async function signMemberCovenant(
 
 type LeaderMemberProgressRow = {
   user_id: string;
-  group_check_ins: Record<string, import('../types').GroupCheckInRecord[]>;
-  check_in_streak: number;
+  group_check_ins: GroupCheckIn[] | Record<string, GroupCheckIn[]>;
 };
 
 async function getLeaderMemberProgress(groupId: string): Promise<Map<string, LeaderMemberProgressRow>> {
@@ -304,6 +290,15 @@ async function getLeaderMemberProgress(groupId: string): Promise<Map<string, Lea
     map.set(row.user_id, row);
   }
   return map;
+}
+
+function getGroupRecordsFromProgress(
+  groupCheckIns: LeaderMemberProgressRow['group_check_ins'] | undefined,
+  groupId: string,
+): GroupCheckIn[] {
+  if (!groupCheckIns) return [];
+  if (Array.isArray(groupCheckIns)) return groupCheckIns;
+  return groupCheckIns[groupId] ?? [];
 }
 
 export async function getMemberProgressSummaries(
@@ -321,12 +316,12 @@ export async function getMemberProgressSummaries(
   if (memberships.length === 0) return [];
 
   const covenantByUser = new Map(covenantRows.map((c) => [c.user_id, c]));
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getLocalDateString();
   const journeyStart = journeyStartDate ?? today;
 
   return memberships.map((membership) => {
     const progressRow = leaderProgress.get(membership.user_id);
-    const groupRecords = progressRow?.group_check_ins?.[groupId] ?? [];
+    const groupRecords = getGroupRecordsFromProgress(progressRow?.group_check_ins, groupId);
     const todayRecord = getGroupCheckInForDate(groupRecords, today);
     const lastRecord =
       groupRecords.length > 0 ? groupRecords[groupRecords.length - 1] : null;
@@ -340,7 +335,6 @@ export async function getMemberProgressSummaries(
       check_in_count: groupRecords.filter((r) =>
         allCommitmentsHonored(commitments, r.results),
       ).length,
-      journal_count: 0,
       last_check_in: lastRecord?.date ?? null,
       today_commitments:
         privacy === 'named'

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { CovenantModal } from '../components/CovenantModal';
+import { CommitmentList } from '../components/CommitmentList';
 import { Icon } from '../components/Icon';
 import { LoadingButton } from '../components/LoadingButton';
 import { RequireAuth } from '../components/RequireAuth';
@@ -167,7 +168,7 @@ export function GroupDetailPage() {
       {showCovenantModal && covenant && (
         <CovenantModal
           groupName={group.name}
-          commitments={commitments}
+          commitments={covenant.commitments_snapshot}
           existing={covenant}
           readOnly
           onClose={() => setShowCovenantModal(false)}
@@ -225,14 +226,11 @@ export function GroupDetailPage() {
             <div className="border-b border-surface-variant px-gutter py-4">
               <h3 className="label-caps text-secondary">Daily commitments</h3>
             </div>
-            <ul className="space-y-2 p-gutter">
-              {commitments.map((commitment) => (
-                <li key={commitment.id} className="flex items-start gap-2 text-body-md text-on-surface">
-                  <Icon name="check_circle" className="mt-0.5 shrink-0 text-secondary" size={18} />
-                  <span>{commitment.label}</span>
-                </li>
-              ))}
-            </ul>
+            <CommitmentList
+              commitments={commitments}
+              className="space-y-2 p-gutter"
+              showDetails={false}
+            />
           </section>
         )}
 

@@ -1,14 +1,14 @@
 import confetti from 'canvas-confetti';
 import { useEffect, useState } from 'react';
 import { useActiveJourney } from '../hooks/useActiveJourney';
-import { useGroupCommitmentsForCheckIn } from '../hooks/useGroupCommitmentsForCheckIn';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
+import { getGroupCommitments, getMyCovenant, listMyGroups } from '../lib/groups';
 import { formatError, messages } from '../lib/messages';
-import { getJournalEntryByDate, saveCheckIn, saveGroupCheckIn } from '../lib/storage';
+import { getGroupCheckIn, getJournalEntryByDate, saveCheckIn, saveGroupCheckIn } from '../lib/storage';
 import { getCurrentStreak } from '../lib/streaks';
 import { toast } from '../lib/toast';
-import type { Badge, CheckIn, CommitmentResult } from '../types';
+import type { Badge, CheckIn, CommitmentDefinition, CommitmentResult, GroupRecord } from '../types';
 import { BadgeSprite } from './BadgeSprite';
 import { GroupCommitmentRows } from './GroupCommitmentRows';
 import { Icon } from './Icon';
@@ -20,6 +20,12 @@ type Props = {
   existing?: CheckIn;
   onClose: () => void;
   onComplete: (badges: Badge[]) => void;
+};
+
+type GroupCommitmentContext = {
+  group: GroupRecord;
+  commitments: CommitmentDefinition[];
+  existingResults?: CommitmentResult[];
 };
 
 export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
@@ -37,13 +43,47 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const { getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
   const currentStreak = getCurrentStreak(date);
-  const { groups: groupContexts } = useGroupCommitmentsForCheckIn(date);
+  const [groupContexts, setGroupContexts] = useState<GroupCommitmentContext[]>([]);
   const [groupResults, setGroupResults] = useState<Record<string, CommitmentResult[]>>({});
 
   useEffect(() => {
     if (getJournalEntryByDate(date)) {
       setJournaled(true);
     }
+  }, [date]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const myGroups = await listMyGroups();
+        const contexts: GroupCommitmentContext[] = [];
+
+        for (const group of myGroups) {
+          const covenant = await getMyCovenant(group.id);
+          if (!covenant) continue;
+
+          const commitments = await getGroupCommitments(group.id);
+          if (commitments.length === 0) continue;
+
+          const existingGroupCheckIn = getGroupCheckIn(group.id, date);
+          contexts.push({
+            group,
+            commitments,
+            existingResults: existingGroupCheckIn?.results,
+          });
+        }
+
+        if (!cancelled) setGroupContexts(contexts);
+      } catch {
+        if (!cancelled) setGroupContexts([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [date]);
 
   useEffect(() => {

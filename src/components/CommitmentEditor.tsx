@@ -14,7 +14,6 @@ type Props = {
 const SHAPES: { value: CommitmentShape; label: string }[] = [
   { value: 'yes_no', label: 'Yes / No' },
   { value: 'duration', label: 'Minutes' },
-  { value: 'count', label: 'Count' },
   { value: 'text_note', label: 'Short note' },
 ];
 
@@ -103,7 +102,7 @@ export function CommitmentEditor({ commitments, onChange }: Props) {
                   </option>
                 ))}
               </select>
-              {(commitment.shape === 'duration' || commitment.shape === 'count') && (
+              {commitment.shape === 'duration' && (
                 <input
                   type="number"
                   min={1}

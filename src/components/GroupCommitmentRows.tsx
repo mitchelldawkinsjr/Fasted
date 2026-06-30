@@ -45,8 +45,7 @@ export function GroupCommitmentRows({ commitments, results, onChange }: Props) {
           );
         }
 
-        if (commitment.shape === 'duration' || commitment.shape === 'count') {
-          const unit = commitment.shape === 'duration' ? 'min' : '';
+        if (commitment.shape === 'duration') {
           return (
             <label key={commitment.id} className="block rounded-xl border border-outline-variant/30 bg-surface-container-low p-3">
               <span className="mb-1 block text-body-md text-on-surface">
@@ -55,7 +54,7 @@ export function GroupCommitmentRows({ commitments, results, onChange }: Props) {
                   <span className="text-on-surface-variant">
                     {' '}
                     (target: {commitment.target}
-                    {unit ? ` ${unit}` : ''})
+                    {' min'})
                   </span>
                 )}
               </span>

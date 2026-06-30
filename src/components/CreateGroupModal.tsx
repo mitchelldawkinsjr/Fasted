@@ -41,7 +41,6 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
         journeyType: 'built-in',
         displayName: displayName.trim() || undefined,
         commitments,
-        leaderSignature: displayName.trim() || undefined,
       });
       onCreated(group.id);
       onClose();
@@ -69,7 +68,6 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
         },
         displayName: displayName.trim() || undefined,
         commitments,
-        leaderSignature: displayName.trim() || undefined,
       });
       setBuilderOpen(false);
       onCreated(group.id);
