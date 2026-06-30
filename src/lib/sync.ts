@@ -376,6 +376,8 @@ export async function updateUserProfile(name: string): Promise<void> {
 }
 
 export async function signInWithOAuth(provider: 'google' | 'facebook'): Promise<void> {
+  rememberGuestMigration(hasLocalProgress(getProgress()) ? getProgress() : undefined);
+
   const { error } = await authWithRetry(() =>
     getSupabase().auth.signInWithOAuth({
       provider,

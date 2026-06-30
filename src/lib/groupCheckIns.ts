@@ -6,6 +6,21 @@ import type {
 } from '../types';
 import { addLocalDays, daysBetween, getLocalDateString } from './dateUtils';
 
+export function commitmentValueMet(
+  definition: CommitmentDefinition,
+  value: CommitmentResult['value'] | undefined,
+): boolean {
+  if (definition.shape === 'duration') {
+    const minutes = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(minutes)) return false;
+    return definition.target == null || minutes >= definition.target;
+  }
+  if (definition.shape === 'text_note') {
+    return typeof value === 'string' && value.trim().length > 0;
+  }
+  return false;
+}
+
 export function computeCommitmentHonored(
   definition: CommitmentDefinition,
   result: Pick<CommitmentResult, 'honored' | 'value'> | undefined,
@@ -13,15 +28,7 @@ export function computeCommitmentHonored(
   if (definition.shape === 'yes_no') {
     return Boolean(result?.honored);
   }
-  if (definition.shape === 'duration') {
-    const minutes = typeof result?.value === 'number' ? result.value : Number(result?.value);
-    if (!Number.isFinite(minutes)) return false;
-    return definition.target == null || minutes >= definition.target;
-  }
-  if (definition.shape === 'text_note') {
-    return typeof result?.value === 'string' && result.value.trim().length > 0;
-  }
-  return Boolean(result?.honored);
+  return commitmentValueMet(definition, result?.value);
 }
 
 export function isCommitmentHonored(
@@ -29,7 +36,8 @@ export function isCommitmentHonored(
   result: CommitmentResult | undefined,
 ): boolean {
   if (!result?.honored) return false;
-  return computeCommitmentHonored(definition, result);
+  if (definition.shape === 'yes_no') return true;
+  return commitmentValueMet(definition, result.value);
 }
 
 export function allCommitmentsHonored(

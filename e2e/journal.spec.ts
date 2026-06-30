@@ -232,6 +232,34 @@ test('saves a food entry with meal fields', async ({ page }) => {
   expect(stored.journalEntries[0].lunch).toBe('Grilled chicken salad');
 });
 
+test('saves meal photos with a food entry', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Food');
+  await page.getByLabel('What did you eat for breakfast?').fill('Eggs and toast');
+  await page.getByLabel('What did you eat as a snack?').fill('Apple slices');
+
+  const fileInput = page.locator('input[type="file"]').first();
+  await fileInput.setInputFiles('e2e/fixtures/meal-photo.png');
+
+  await expect(page.getByRole('img', { name: /breakfast photo 1/i })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+  await expect(page.getByText('Reflection saved.')).toBeVisible();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  const entryId = stored.journalEntries[0].id;
+  expect(stored.mealImages[entryId].breakfast).toHaveLength(1);
+  expect(stored.mealImages[entryId].breakfast[0]).toMatch(/^data:image\//);
+
+  await page.getByRole('button', { name: /View reflection from/i }).click();
+  await expect(page.getByRole('img', { name: /breakfast photo 1/i })).toBeVisible();
+  await expect(page.getByText('Eggs and toast')).toBeVisible();
+});
+
 test('saves a fitness entry', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Fitness');

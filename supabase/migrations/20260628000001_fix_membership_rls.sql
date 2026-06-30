@@ -5,6 +5,9 @@ drop policy if exists "members read memberships in their groups" on group_member
 drop policy if exists "users join groups" on group_memberships;
 drop policy if exists "users leave own membership" on group_memberships;
 drop policy if exists "leaders manage memberships" on group_memberships;
+drop policy if exists "membership access" on group_memberships;
+drop policy if exists "members leave group" on group_memberships;
+drop policy if exists "leaders update memberships" on group_memberships;
 
 create policy "membership access"
   on group_memberships for all

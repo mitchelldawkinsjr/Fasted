@@ -9,7 +9,6 @@ import { SafetyNote } from '../components/SafetyNote';
 import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
 import { confirmAction } from '../lib/confirm';
-import { openJournalPrintExport } from '../lib/journalPrintExport';
 import { formatError, messages } from '../lib/messages';
 import {
   exportJournal,
@@ -180,7 +179,15 @@ export function SettingsPage() {
           <button
             type="button"
             disabled={progress.journalEntries.length === 0}
-            onClick={() => openJournalPrintExport()}
+            onClick={() => {
+              const printWindow = window.open('/journal/print', '_blank');
+              if (!printWindow) {
+                toast.warning(messages.export.journalPdfBlocked);
+                return;
+              }
+              printWindow.opener = null;
+              toast.info(messages.export.journalPdf);
+            }}
             className="group flex w-full items-center justify-between p-gutter transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
           >
             <div className="flex items-center gap-4">

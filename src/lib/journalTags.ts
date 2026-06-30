@@ -52,13 +52,14 @@ export const DAILY_REFLECTION_FIELDS = [
 }>;
 
 export const FOOD_JOURNAL_FIELDS = [
-  { key: 'breakfast', label: 'What did you eat for breakfast?' },
-  { key: 'lunch', label: 'What did you eat for lunch?' },
-  { key: 'dinner', label: 'What did you eat for dinner?' },
-  { key: 'snack', label: 'What did you eat as a snack?' },
+  { key: 'breakfast', label: 'What did you eat for breakfast?', sectionName: 'Breakfast' },
+  { key: 'lunch', label: 'What did you eat for lunch?', sectionName: 'Lunch' },
+  { key: 'dinner', label: 'What did you eat for dinner?', sectionName: 'Dinner' },
+  { key: 'snack', label: 'What did you eat as a snack?', sectionName: 'Snack' },
 ] as const satisfies ReadonlyArray<{
   key: keyof Omit<FoodJournalEntry, 'id' | 'date' | 'updatedAt' | 'type'>;
   label: string;
+  sectionName: string;
 }>;
 
 export const FITNESS_JOURNAL_LABEL = 'How did you move your body today?';

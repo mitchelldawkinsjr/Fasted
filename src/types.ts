@@ -127,6 +127,13 @@ export type ContentSimpleJournalEntry = JournalEntryBase & {
   content: string;
 };
 
+export type FoodMealKey = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+/** Up to four Base64 data URLs per meal section on a food journal entry. */
+export type MealSectionImages = Partial<Record<FoodMealKey, string[]>>;
+
+export const MAX_MEAL_IMAGES_PER_SECTION = 4;
+
 export type FoodJournalEntry = JournalEntryBase & {
   type: 'food';
   breakfast: string;
@@ -190,6 +197,8 @@ export type UserProgress = {
   /** Consecutive check-in days after the most recent successful check-in. */
   checkInStreak: number;
   journalEntries: JournalEntry[];
+  /** Meal photos keyed by journal entry id, then meal section. */
+  mealImages: Record<string, MealSectionImages>;
   badges: Badge[];
   settings: AppSettings;
   activeJourneyId: string;
