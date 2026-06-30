@@ -16,7 +16,6 @@ export function buildJournalExportModel(progress?: UserProgress): JournalExportM
       dates.length > 0
         ? { start: dates[0], end: dates[dates.length - 1] }
         : null,
-    entryCount: entries.length,
     exportDate: formatDisplayDate(getLocalDateString()),
     entries,
   };

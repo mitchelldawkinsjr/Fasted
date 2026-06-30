@@ -10,7 +10,6 @@ import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
 import { confirmAction } from '../lib/confirm';
 import { formatError, messages } from '../lib/messages';
-import { exportJournalPdf } from '../lib/journalExport';
 import {
   exportJournal,
   exportJournalMarkdown,
@@ -181,11 +180,11 @@ export function SettingsPage() {
             type="button"
             disabled={progress.journalEntries.length === 0}
             onClick={() => {
-              if (progress.journalEntries.length === 0) {
-                toast.info(messages.export.journalPdfEmpty);
+              const printWindow = window.open('/journal/print', '_blank', 'noopener,noreferrer');
+              if (!printWindow) {
+                toast.warning(messages.export.journalPdfBlocked);
                 return;
               }
-              exportJournalPdf();
               toast.info(messages.export.journalPdf);
             }}
             className="group flex w-full items-center justify-between p-gutter transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"

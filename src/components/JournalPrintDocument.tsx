@@ -1,99 +1,18 @@
-import type { ReactNode } from 'react';
-import { DAY_MOOD_OPTIONS } from '../lib/dayMood';
+import { JournalEntryBody } from './JournalViewer';
+import { JournalTypeBadge } from './JournalTypePicker';
+import { MoodBadge } from './MoodPicker';
 import { formatDisplayDate } from '../lib/dateUtils';
-import {
-  DAILY_REFLECTION_FIELDS,
-  FOOD_JOURNAL_FIELDS,
-  FITNESS_JOURNAL_LABEL,
-  JOURNAL_ENTRY_TYPE_LABELS,
-  VERSE_OF_THE_DAY_LABEL,
-  getSimpleContentLabel,
-  isDailyReflectionEntry,
-  isSingleContentJournalEntry,
-} from '../lib/journalTags';
+import { VERSE_OF_THE_DAY_LABEL, isDailyReflectionEntry } from '../lib/journalTags';
 import type { JournalExportModel } from '../lib/journalExport/types';
-import type { DayMood, JournalEntry } from '../types';
+import type { JournalEntry } from '../types';
 
-type FieldDef<T extends string> = { key: T; label: string };
-
-function PrintFieldList<T extends string>({
-  fields,
-  getValue,
-  renderHeading,
-}: {
-  fields: ReadonlyArray<FieldDef<T>>;
-  getValue: (key: T) => string;
-  renderHeading?: (field: FieldDef<T>) => ReactNode;
-}) {
-  const filledFields = fields.filter((field) => getValue(field.key).trim());
-  if (filledFields.length === 0) return null;
-
-  return (
-    <div className="print-entry-fields">
-      {filledFields.map((field) => (
-        <section key={field.key} className="print-field">
-          {renderHeading ? (
-            renderHeading(field)
-          ) : (
-            <h3 className="print-field-label">{field.label}</h3>
-          )}
-          <p className="print-field-value">{getValue(field.key)}</p>
-        </section>
-      ))}
-    </div>
-  );
-}
-
-function PrintMoodBadge({ mood }: { mood: DayMood }) {
-  const option = DAY_MOOD_OPTIONS.find((item) => item.value === mood) ?? DAY_MOOD_OPTIONS[2];
-
-  return (
-    <span className="print-meta-chip">
-      <span className="print-mood-dot" style={{ backgroundColor: option.color }} aria-hidden />
-      {option.label}
-    </span>
-  );
-}
-
-function PrintTypeBadge({ type }: { type: JournalEntry['type'] }) {
-  const label = `#${JOURNAL_ENTRY_TYPE_LABELS[type].toUpperCase().replace(/\s+/g, ' ')}`;
-  return <span className="print-meta-chip">{label}</span>;
-}
-
-function PrintEntryBody({ entry }: { entry: JournalEntry }) {
-  if (isDailyReflectionEntry(entry)) {
-    return (
-      <PrintFieldList
-        fields={DAILY_REFLECTION_FIELDS}
-        getValue={(key) => entry[key]}
-        renderHeading={(field) =>
-          field.key === 'prayerFocus' ? (
-            <h3 className="print-field-label">{VERSE_OF_THE_DAY_LABEL}</h3>
-          ) : (
-            <h3 className="print-field-label">{field.label}</h3>
-          )
-        }
-      />
-    );
-  }
-
-  if (entry.type === 'food') {
-    return <PrintFieldList fields={FOOD_JOURNAL_FIELDS} getValue={(key) => entry[key]} />;
-  }
-
-  if (isSingleContentJournalEntry(entry) && entry.content.trim()) {
-    const label =
-      entry.type === 'fitness' ? FITNESS_JOURNAL_LABEL : getSimpleContentLabel(entry.type);
-    return (
-      <section className="print-field">
-        <h3 className="print-field-label">{label}</h3>
-        <p className="print-field-value">{entry.content}</p>
-      </section>
-    );
-  }
-
-  return null;
-}
+const PRINT_ENTRY_BODY_CLASSES = {
+  fields: 'print-entry-fields',
+  section: 'print-field',
+  label: 'print-field-label',
+  value: 'print-field-value',
+  empty: 'print-field-value',
+};
 
 function PrintCoverPage({ model }: { model: JournalExportModel }) {
   const dateRangeLabel =
@@ -111,7 +30,7 @@ function PrintCoverPage({ model }: { model: JournalExportModel }) {
         <div className="print-cover-stats">
           <p>
             <span className="print-cover-stat-label">Entries</span>
-            <span className="print-cover-stat-value">{model.entryCount}</span>
+            <span className="print-cover-stat-value">{model.entries.length}</span>
           </p>
           <p>
             <span className="print-cover-stat-label">Exported</span>
@@ -129,13 +48,20 @@ function PrintEntryPage({ entry }: { entry: JournalEntry }) {
       <header className="print-entry-header">
         <p className="print-entry-date">{formatDisplayDate(entry.date)}</p>
         <div className="print-entry-meta">
-          <PrintTypeBadge type={entry.type} />
+          <JournalTypeBadge type={entry.type} className="print-meta-chip" />
           {isDailyReflectionEntry(entry) && entry.dayMood && (
-            <PrintMoodBadge mood={entry.dayMood} />
+            <MoodBadge mood={entry.dayMood} className="print-meta-chip" />
           )}
         </div>
       </header>
-      <PrintEntryBody entry={entry} />
+      <JournalEntryBody
+        entry={entry}
+        classes={PRINT_ENTRY_BODY_CLASSES}
+        emptyMessage={null}
+        renderVerseHeading={() => (
+          <h3 className="print-field-label">{VERSE_OF_THE_DAY_LABEL}</h3>
+        )}
+      />
     </article>
   );
 }
@@ -305,13 +231,6 @@ export function JournalPrintDocument({ model }: Props) {
           color: #42493c;
         }
 
-        .print-mood-dot {
-          width: 0.5rem;
-          height: 0.5rem;
-          border-radius: 9999px;
-          flex-shrink: 0;
-        }
-
         .print-entry-fields {
           display: flex;
           flex-direction: column;
@@ -352,7 +271,6 @@ export function JournalPrintDocument({ model }: Props) {
       ))}
       <footer className="print-footer">
         <span>Exported from Fasted</span>
-        <span />
       </footer>
     </div>
   );

@@ -21,7 +21,6 @@ import {
   journalTypePillClass,
 } from '../lib/journalTags';
 import { messages } from '../lib/messages';
-import { exportJournalPdf } from '../lib/journalExport';
 import { deleteJournalEntry } from '../lib/storage';
 import { toast } from '../lib/toast';
 import type { JournalEntry, JournalEntryType } from '../types';
@@ -103,7 +102,11 @@ export function JournalPage() {
       toast.info(messages.export.journalPdfEmpty);
       return;
     }
-    exportJournalPdf();
+    const printWindow = window.open('/journal/print', '_blank', 'noopener,noreferrer');
+    if (!printWindow) {
+      toast.warning(messages.export.journalPdfBlocked);
+      return;
+    }
     toast.info(messages.export.journalPdf);
   };
 

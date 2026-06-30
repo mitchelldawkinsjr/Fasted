@@ -1,3 +1,2 @@
 export { buildJournalExportModel } from './buildModel';
-export { canExportJournalPdf, exportJournalPdf } from './printJournal';
-export type { JournalExportDateRange, JournalExportModel } from './types';
+export type { JournalExportModel } from './types';

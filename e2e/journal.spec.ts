@@ -426,6 +426,83 @@ test('opens print document when exporting journal as PDF', async ({ page }) => {
   await expect(popup.getByText('Fasted', { exact: true })).toBeVisible();
   await expect(popup.getByText('Export cover verse')).toBeVisible();
   await expect(popup.getByText('Export victory note')).toBeVisible();
+  await popup.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+  await expect(popup.getByText('Fasted', { exact: true })).toBeVisible();
+  await popup.close();
+});
+
+test('shows a blocked popup message when PDF export cannot open', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByLabel('Verse of the Day').fill('Blocked popup verse');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.evaluate(() => {
+    window.open = () => null;
+  });
+  await page.getByRole('button', { name: 'Export journal as PDF' }).click();
+
+  await expect(page.getByText(messages.export.journalPdfBlocked)).toBeVisible();
+  await expect(page.getByText(messages.export.journalPdf)).toHaveCount(0);
+});
+
+test('waits for print fonts before opening the print dialog', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Prayer');
+  await page.getByLabel('Prayer').fill('Fonts should load before printing');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.context().addInitScript(() => {
+    const testWindow = window as Window & typeof globalThis & {
+      __printCalls?: number;
+      __resolvePrintFonts?: () => void;
+    };
+    let resolveFonts: () => void = () => undefined;
+    const fontsReady = new Promise<void>((resolve) => {
+      resolveFonts = resolve;
+    });
+
+    testWindow.__printCalls = 0;
+    testWindow.__resolvePrintFonts = resolveFonts;
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: { ready: fontsReady },
+    });
+    window.print = () => {
+      testWindow.__printCalls = (testWindow.__printCalls ?? 0) + 1;
+    };
+  });
+
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Export journal as PDF' }).click(),
+  ]);
+
+  await popup.waitForLoadState('domcontentloaded');
+  await expect(popup.getByText('Fonts should load before printing')).toBeVisible();
+  await expect
+    .poll(() =>
+      popup.evaluate(() => {
+        const testWindow = window as Window & typeof globalThis & { __printCalls?: number };
+        return testWindow.__printCalls ?? 0;
+      }),
+    )
+    .toBe(0);
+
+  await popup.evaluate(() => {
+    const testWindow = window as Window & typeof globalThis & {
+      __resolvePrintFonts?: () => void;
+    };
+    testWindow.__resolvePrintFonts?.();
+  });
+  await expect
+    .poll(() =>
+      popup.evaluate(() => {
+        const testWindow = window as Window & typeof globalThis & { __printCalls?: number };
+        return testWindow.__printCalls ?? 0;
+      }),
+    )
+    .toBe(1);
   await popup.close();
 });
 
