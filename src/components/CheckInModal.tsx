@@ -104,7 +104,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
       aria-modal="true"
       aria-labelledby="checkin-title"
     >
-      <div className="w-full max-w-md animate-fade-in-up rounded-xl bg-surface-container-lowest p-stack-lg shadow-grace">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md animate-fade-in-up overflow-y-auto rounded-xl bg-surface-container-lowest p-stack-lg shadow-grace">
         {celebrating ? (
           <div className="animate-gentle-pulse py-6 text-center">
             <Icon name="celebration" className="mb-2 text-4xl text-secondary" />
