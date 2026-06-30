@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { CovenantModal } from '../components/CovenantModal';
 import { LoadingButton } from '../components/LoadingButton';
 import { RequireAuth } from '../components/RequireAuth';
-import { joinGroupByCode, previewGroupByCode } from '../lib/groups';
+import {
+  getGroupCommitments,
+  getMyCovenant,
+  joinGroupByCode,
+  previewGroupByCode,
+  signMemberCovenant,
+} from '../lib/groups';
+import type { CommitmentDefinition } from '../types';
 import { toast } from '../lib/toast';
+
+type Step = 'preview' | 'covenant';
 
 export function JoinGroupPage() {
   const { code = '' } = useParams();
@@ -14,6 +24,9 @@ export function JoinGroupPage() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [step, setStep] = useState<Step>('preview');
+  const [groupId, setGroupId] = useState<string | null>(null);
+  const [commitments, setCommitments] = useState<CommitmentDefinition[]>([]);
 
   useEffect(() => {
     if (!code) return;
@@ -24,18 +37,46 @@ export function JoinGroupPage() {
   }, [code]);
 
   const handleJoin = async () => {
-    if (!code) return;
+    if (!code || !preview) return;
     setBusy(true);
     try {
-      const groupId = await joinGroupByCode(code, displayName);
-      toast.success('Joined group');
-      navigate(`/groups/${groupId}`);
+      const joinedGroupId = await joinGroupByCode(code, displayName);
+      const existingCovenant = await getMyCovenant(joinedGroupId);
+      if (existingCovenant) {
+        toast.success('Joined group');
+        navigate(`/groups/${joinedGroupId}`);
+        return;
+      }
+
+      const groupCommitments = await getGroupCommitments(joinedGroupId);
+      setGroupId(joinedGroupId);
+      setCommitments(groupCommitments);
+      setStep('covenant');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not join group');
     } finally {
       setBusy(false);
     }
   };
+
+  const handleSignCovenant = async (signature: string) => {
+    if (!groupId) return;
+    await signMemberCovenant(groupId, signature);
+    toast.success('Covenant signed');
+    navigate(`/groups/${groupId}`);
+  };
+
+  if (step === 'covenant' && groupId && preview) {
+    return (
+      <RequireAuth>
+        <CovenantModal
+          groupName={preview.name}
+          commitments={commitments}
+          onSign={handleSignCovenant}
+        />
+      </RequireAuth>
+    );
+  }
 
   return (
     <RequireAuth>

@@ -49,7 +49,12 @@ export function LeaderDashboardPage() {
       setMemberCount(memberships.length);
 
       if (groupData) {
-        const summaries = await getMemberProgressSummaries(id, groupData.privacy);
+        const journey = groupJourneyToLocalJourney(groupData.journey);
+        const summaries = await getMemberProgressSummaries(
+          id,
+          groupData.privacy,
+          journey?.startDate ?? groupData.journey?.start_date,
+        );
         setMembers(summaries);
       }
     } catch (err) {
@@ -136,19 +141,51 @@ export function LeaderDashboardPage() {
                 </div>
                 <ul className="divide-y divide-surface-variant">
                   {members.map((member) => (
-                    <li key={member.user_id} className="flex items-center justify-between p-gutter">
-                      <div>
-                        <p className="text-body-md text-on-surface">
-                          {member.display_name ?? 'Member'}
-                        </p>
+                    <li key={member.user_id} className="space-y-3 p-gutter">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-body-md text-on-surface">
+                            {member.display_name ?? 'Member'}
+                          </p>
+                          <p className="text-label-caps text-on-surface-variant">
+                            Last honor: {member.last_check_in ?? '—'}
+                          </p>
+                        </div>
+                        <div className="text-right text-label-caps text-on-surface-variant">
+                          <p>Streak: {member.streak ?? 0} days</p>
+                          <p>Completion: {member.completion_rate ?? 0}%</p>
+                          <p>Days missed: {member.days_missed ?? 0}</p>
+                        </div>
+                      </div>
+
+                      {member.today_commitments && member.today_commitments.length > 0 && (
+                        <div className="rounded-xl bg-surface-container-low p-3">
+                          <p className="mb-2 label-caps text-secondary">Today&apos;s commitments</p>
+                          <ul className="space-y-1">
+                            {member.today_commitments.map((item) => (
+                              <li
+                                key={item.commitmentId}
+                                className="flex items-center justify-between text-body-md"
+                              >
+                                <span className="text-on-surface">{item.label}</span>
+                                <span
+                                  className={
+                                    item.honored ? 'text-secondary' : 'text-on-surface-variant'
+                                  }
+                                >
+                                  {item.honored ? '✓' : '—'}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {!member.has_covenant && (
                         <p className="text-label-caps text-on-surface-variant">
-                          Last check-in: {member.last_check_in ?? '—'}
+                          Covenant not signed yet
                         </p>
-                      </div>
-                      <div className="text-right text-label-caps text-on-surface-variant">
-                        <p>{member.check_in_count} check-ins</p>
-                        <p>{member.journal_count} journal</p>
-                      </div>
+                      )}
                     </li>
                   ))}
                 </ul>

@@ -2,6 +2,7 @@ import type {
   AppSettings,
   Badge,
   CheckIn,
+  GroupCheckIn,
   JournalEntry,
   Journey,
   UserProgress,
@@ -174,6 +175,29 @@ export function saveCheckIn(checkIn: CheckIn): void {
 
 export function getCheckIn(date: string): CheckIn | undefined {
   return getProgress().checkIns.find((c) => c.date === date);
+}
+
+export function saveGroupCheckIn(groupId: string, checkIn: GroupCheckIn): void {
+  const progress = getProgress();
+  const existing = progress.groupCheckIns?.[groupId] ?? [];
+  const filtered = existing.filter((c) => c.date !== checkIn.date);
+  const records = [...filtered, checkIn].sort((a, b) => a.date.localeCompare(b.date));
+
+  persist({
+    ...progress,
+    groupCheckIns: {
+      ...progress.groupCheckIns,
+      [groupId]: records,
+    },
+  });
+}
+
+export function getGroupCheckIn(groupId: string, date: string): GroupCheckIn | undefined {
+  return getProgress().groupCheckIns?.[groupId]?.find((c) => c.date === date);
+}
+
+export function getGroupCheckIns(groupId: string): GroupCheckIn[] {
+  return getProgress().groupCheckIns?.[groupId] ?? [];
 }
 
 export function createJournalEntryId(): string {

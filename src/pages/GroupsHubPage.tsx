@@ -5,32 +5,19 @@ import { Icon } from '../components/Icon';
 import { LoadingButton } from '../components/LoadingButton';
 import { RequireAuth } from '../components/RequireAuth';
 import { useGroups } from '../hooks/useGroups';
-import { joinGroupByCode } from '../lib/groups';
 import { formatDisplayDate } from '../lib/dateUtils';
 import { getJourneyPlanEnd } from '../lib/journey';
 import { groupJourneyToLocalJourney } from '../lib/groups';
-import { toast } from '../lib/toast';
 
 export function GroupsHubPage() {
   const { groups, loading, error, refresh } = useGroups();
   const [createOpen, setCreateOpen] = useState(false);
   const [joinCode, setJoinCode] = useState('');
-  const [joinBusy, setJoinBusy] = useState(false);
   const navigate = useNavigate();
 
-  const handleJoin = async () => {
+  const handleJoin = () => {
     if (!joinCode.trim()) return;
-    setJoinBusy(true);
-    try {
-      const groupId = await joinGroupByCode(joinCode);
-      toast.success('Joined group');
-      await refresh();
-      navigate(`/groups/${groupId}`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not join group');
-    } finally {
-      setJoinBusy(false);
-    }
+    navigate(`/join/${joinCode.trim()}`);
   };
 
   return (
@@ -63,10 +50,9 @@ export function GroupsHubPage() {
           />
           <LoadingButton
             type="button"
-            loading={joinBusy}
             disabled={!joinCode.trim()}
             className="w-full"
-            onClick={() => void handleJoin()}
+            onClick={handleJoin}
           >
             Join Group
           </LoadingButton>

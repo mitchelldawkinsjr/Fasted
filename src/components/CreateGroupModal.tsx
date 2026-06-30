@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import type { GroupPrivacy, Journey } from '../types';
+import type { CommitmentDefinition, GroupPrivacy, Journey } from '../types';
+import { createCommitmentPreset } from '../data/commitmentPresets';
 import { createGroup } from '../lib/groups';
+import { CommitmentEditor } from './CommitmentEditor';
 import { JourneyBuilder } from './JourneyBuilder';
 import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
@@ -19,6 +21,9 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
   const [busy, setBusy] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [commitments, setCommitments] = useState<CommitmentDefinition[]>(() =>
+    createCommitmentPreset('fasted-default'),
+  );
 
   if (!open) return null;
 
@@ -35,6 +40,8 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
         privacy,
         journeyType: 'built-in',
         displayName: displayName.trim() || undefined,
+        commitments,
+        leaderSignature: displayName.trim() || undefined,
       });
       onCreated(group.id);
       onClose();
@@ -61,6 +68,8 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
           phases: journey.phases,
         },
         displayName: displayName.trim() || undefined,
+        commitments,
+        leaderSignature: displayName.trim() || undefined,
       });
       setBuilderOpen(false);
       onCreated(group.id);
@@ -149,6 +158,8 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
                 <span className="text-body-md">Custom journey</span>
               </label>
             </fieldset>
+
+            <CommitmentEditor commitments={commitments} onChange={setCommitments} />
 
             {error && <p className="text-body-md text-error">{error}</p>}
 

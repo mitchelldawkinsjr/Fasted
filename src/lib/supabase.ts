@@ -33,3 +33,5 @@ export const GROUP_MEMBERSHIPS_TABLE = 'group_memberships';
 export const SHARED_JOURNAL_TABLE = 'shared_journal_entries';
 export const PRAYER_REQUESTS_TABLE = 'prayer_requests';
 export const GROUP_CHECKIN_STATS_VIEW = 'group_checkin_stats';
+export const GROUP_COMMITMENTS_TABLE = 'group_commitments';
+export const MEMBER_COVENANTS_TABLE = 'member_covenants';

@@ -1,21 +1,31 @@
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
+import { createCommitmentPreset } from '../data/commitmentPresets';
+import {
+  allCommitmentsHonored,
+  buildTodayCommitmentStatus,
+  computeGroupCheckInStreak,
+  computeGroupCompletionStats,
+  getGroupCheckInForDate,
+} from './groupCheckIns';
 import type {
+  CommitmentDefinition,
   CreateGroupInput,
   GroupCheckinStats,
   GroupMembership,
   GroupRecord,
+  MemberCovenant,
   MemberProgressSummary,
   PrayerRequest,
   SharedJournalEntry,
-  UserProgress,
 } from '../types';
 import {
   GROUP_CHECKIN_STATS_VIEW,
+  GROUP_COMMITMENTS_TABLE,
   GROUP_MEMBERSHIPS_TABLE,
   GROUPS_TABLE,
   JOURNEYS_TABLE,
+  MEMBER_COVENANTS_TABLE,
   PRAYER_REQUESTS_TABLE,
-  PROGRESS_TABLE,
   SHARED_JOURNAL_TABLE,
   getSupabase,
 } from './supabase';
@@ -140,6 +150,28 @@ export async function createGroup(input: CreateGroupInput): Promise<GroupRecord>
         display_name: input.displayName?.trim() || null,
       });
       if (memberError) throw memberError;
+
+      const commitments = input.commitments?.length
+        ? input.commitments
+        : createCommitmentPreset('fasted-default');
+
+      const { error: commitmentError } = await client.from(GROUP_COMMITMENTS_TABLE).insert({
+        group_id: group.id,
+        commitments,
+      });
+      if (commitmentError) throw commitmentError;
+
+      const leaderSignature =
+        input.leaderSignature?.trim() || input.displayName?.trim() || 'Group Leader';
+
+      const { error: covenantError } = await client.from(MEMBER_COVENANTS_TABLE).insert({
+        group_id: group.id,
+        user_id: userId,
+        commitments_snapshot: commitments,
+        signature: leaderSignature,
+      });
+      if (covenantError) throw covenantError;
+
       return group as GroupRecord;
     }
 
@@ -197,37 +229,127 @@ export async function getGroupCheckinStats(groupId: string): Promise<GroupChecki
   return (data as GroupCheckinStats | null) ?? null;
 }
 
-export async function getMemberProgressSummaries(
-  groupId: string,
-  privacy: 'anonymous' | 'named',
-): Promise<MemberProgressSummary[]> {
-  const memberships = await listGroupMemberships(groupId);
-  if (memberships.length === 0) return [];
-
-  const userIds = memberships.map((m) => m.user_id);
+export async function getGroupCommitments(groupId: string): Promise<CommitmentDefinition[]> {
   const { data, error } = await getSupabase()
-    .from(PROGRESS_TABLE)
-    .select('user_id, data')
-    .in('user_id', userIds);
+    .from(GROUP_COMMITMENTS_TABLE)
+    .select('commitments')
+    .eq('group_id', groupId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data?.commitments as CommitmentDefinition[] | undefined) ?? [];
+}
+
+export async function getMyCovenant(groupId: string): Promise<MemberCovenant | null> {
+  const userId = await getUserId();
+  const { data, error } = await getSupabase()
+    .from(MEMBER_COVENANTS_TABLE)
+    .select('*')
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as MemberCovenant | null) ?? null;
+}
+
+export async function listGroupCovenants(groupId: string): Promise<MemberCovenant[]> {
+  const { data, error } = await getSupabase()
+    .from(MEMBER_COVENANTS_TABLE)
+    .select('*')
+    .eq('group_id', groupId)
+    .order('signed_at', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as MemberCovenant[];
+}
+
+export async function signMemberCovenant(
+  groupId: string,
+  signature: string,
+): Promise<MemberCovenant> {
+  const userId = await getUserId();
+  const commitments = await getGroupCommitments(groupId);
+
+  const { data, error } = await getSupabase()
+    .from(MEMBER_COVENANTS_TABLE)
+    .insert({
+      group_id: groupId,
+      user_id: userId,
+      commitments_snapshot: commitments,
+      signature: signature.trim(),
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data as MemberCovenant;
+}
+
+type LeaderMemberProgressRow = {
+  user_id: string;
+  group_check_ins: Record<string, import('../types').GroupCheckInRecord[]>;
+  check_in_streak: number;
+};
+
+async function getLeaderMemberProgress(groupId: string): Promise<Map<string, LeaderMemberProgressRow>> {
+  const { data, error } = await getSupabase().rpc('get_leader_member_progress', {
+    p_group_id: groupId,
+  });
 
   if (error) throw error;
 
-  const progressByUser = new Map<string, UserProgress>();
-  for (const row of data ?? []) {
-    progressByUser.set(row.user_id, row.data as UserProgress);
+  const map = new Map<string, LeaderMemberProgressRow>();
+  for (const row of (data ?? []) as LeaderMemberProgressRow[]) {
+    map.set(row.user_id, row);
   }
+  return map;
+}
+
+export async function getMemberProgressSummaries(
+  groupId: string,
+  privacy: 'anonymous' | 'named',
+  journeyStartDate?: string | null,
+): Promise<MemberProgressSummary[]> {
+  const [memberships, commitments, covenantRows, leaderProgress] = await Promise.all([
+    listGroupMemberships(groupId),
+    getGroupCommitments(groupId),
+    listGroupCovenants(groupId),
+    getLeaderMemberProgress(groupId),
+  ]);
+
+  if (memberships.length === 0) return [];
+
+  const covenantByUser = new Map(covenantRows.map((c) => [c.user_id, c]));
+  const today = new Date().toISOString().slice(0, 10);
+  const journeyStart = journeyStartDate ?? today;
 
   return memberships.map((membership) => {
-    const progress = progressByUser.get(membership.user_id);
-    const checkIns = progress?.checkIns ?? [];
-    const lastCheckIn = checkIns.length > 0 ? checkIns[checkIns.length - 1].date : null;
+    const progressRow = leaderProgress.get(membership.user_id);
+    const groupRecords = progressRow?.group_check_ins?.[groupId] ?? [];
+    const todayRecord = getGroupCheckInForDate(groupRecords, today);
+    const lastRecord =
+      groupRecords.length > 0 ? groupRecords[groupRecords.length - 1] : null;
+
+    const streak = computeGroupCheckInStreak(groupRecords, commitments, today);
+    const stats = computeGroupCompletionStats(groupRecords, commitments, journeyStart, today);
 
     return {
       user_id: membership.user_id,
       display_name: privacy === 'named' ? membership.display_name : null,
-      check_in_count: checkIns.length,
-      journal_count: progress?.journalEntries?.length ?? 0,
-      last_check_in: lastCheckIn,
+      check_in_count: groupRecords.filter((r) =>
+        allCommitmentsHonored(commitments, r.results),
+      ).length,
+      journal_count: 0,
+      last_check_in: lastRecord?.date ?? null,
+      today_commitments:
+        privacy === 'named'
+          ? buildTodayCommitmentStatus(commitments, todayRecord?.results)
+          : undefined,
+      streak,
+      completion_rate: stats.completionRate,
+      days_missed: stats.daysMissed,
+      has_covenant: covenantByUser.has(membership.user_id),
     };
   });
 }
