@@ -5,6 +5,7 @@ import type {
   GroupCheckIn,
   JournalEntry,
   Journey,
+  MealSectionImages,
   UserProgress,
 } from '../types';
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
@@ -35,6 +36,7 @@ const DEFAULT_PROGRESS: UserProgress = {
   checkIns: [],
   checkInStreak: 0,
   journalEntries: [],
+  mealImages: {},
   badges: [],
   settings: DEFAULT_SETTINGS,
   activeJourneyId: FASTED_JOURNEY.id,
@@ -83,6 +85,7 @@ function loadRaw(): UserProgress {
       ...parsed,
       checkInStreak: parsed.checkInStreak ?? 0,
       journalEntries,
+      mealImages: parsed.mealImages ?? {},
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
       journeys,
       activeJourneyId,
@@ -143,6 +146,7 @@ export function persistFromCloud(data: UserProgress): void {
     ...data,
     checkInStreak: data.checkInStreak ?? 0,
     journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
+    mealImages: data.mealImages ?? {},
     settings: { ...DEFAULT_SETTINGS, ...data.settings },
     journeys,
     activeJourneyId,
@@ -163,13 +167,34 @@ export function getProgress(): UserProgress {
 }
 
 export function saveCheckIn(checkIn: CheckIn): void {
+  saveCheckInWithGroupCheckIns(checkIn, []);
+}
+
+export function saveCheckInWithGroupCheckIns(
+  checkIn: CheckIn,
+  groupCheckIns: ReadonlyArray<{ groupId: string; checkIn: GroupCheckIn }>,
+): void {
   const progress = getProgress();
   const filtered = progress.checkIns.filter((c) => c.date !== checkIn.date);
   const checkIns = [...filtered, checkIn].sort((a, b) => a.date.localeCompare(b.date));
+
+  let nextGroupCheckIns = progress.groupCheckIns ?? {};
+  for (const { groupId, checkIn: groupCheckIn } of groupCheckIns) {
+    const existing = nextGroupCheckIns[groupId] ?? [];
+    const filteredGroup = existing.filter((c) => c.date !== groupCheckIn.date);
+    nextGroupCheckIns = {
+      ...nextGroupCheckIns,
+      [groupId]: [...filteredGroup, groupCheckIn].sort((a, b) =>
+        a.date.localeCompare(b.date),
+      ),
+    };
+  }
+
   persist({
     ...progress,
     checkIns,
     checkInStreak: computeCheckInStreak(checkIns, checkIn.date),
+    groupCheckIns: nextGroupCheckIns,
   });
 }
 
@@ -219,9 +244,32 @@ export function saveJournalEntry(entry: JournalEntry): void {
 
 export function deleteJournalEntry(id: string): void {
   const progress = getProgress();
+  const { [id]: _removed, ...remainingMealImages } = progress.mealImages;
   persist({
     ...progress,
     journalEntries: progress.journalEntries.filter((e) => e.id !== id),
+    mealImages: remainingMealImages,
+  });
+}
+
+export function getMealImages(entryId: string): MealSectionImages {
+  return getProgress().mealImages[entryId] ?? {};
+}
+
+export function saveMealImages(entryId: string, images: MealSectionImages): void {
+  const progress = getProgress();
+  const hasImages = Object.values(images).some((section) => section && section.length > 0);
+  const nextMealImages = { ...progress.mealImages };
+
+  if (hasImages) {
+    nextMealImages[entryId] = images;
+  } else {
+    delete nextMealImages[entryId];
+  }
+
+  persist({
+    ...progress,
+    mealImages: nextMealImages,
   });
 }
 
@@ -272,13 +320,35 @@ export function resetProgress(): void {
   persist({ ...DEFAULT_PROGRESS });
 }
 
+type JournalBackup = {
+  journalEntries: JournalEntry[];
+  mealImages?: Record<string, MealSectionImages>;
+};
+
+function parseJournalBackup(json: string): JournalBackup {
+  const parsed = JSON.parse(json) as unknown;
+  if (Array.isArray(parsed)) {
+    return { journalEntries: normalizeJournalEntries(parsed) };
+  }
+  if (parsed && typeof parsed === 'object' && 'journalEntries' in parsed) {
+    const backup = parsed as { journalEntries?: unknown; mealImages?: Record<string, MealSectionImages> };
+    return {
+      journalEntries: normalizeJournalEntries(
+        Array.isArray(backup.journalEntries) ? backup.journalEntries : [],
+      ),
+      mealImages: backup.mealImages,
+    };
+  }
+  throw new Error('Invalid journal backup format.');
+}
+
 export function exportJournal(): string {
-  const { journalEntries } = getProgress();
-  return JSON.stringify(journalEntries, null, 2);
+  const { journalEntries, mealImages } = getProgress();
+  return JSON.stringify({ journalEntries, mealImages }, null, 2);
 }
 
 export function importJournalBackup(json: string): void {
-  const entries = normalizeJournalEntries(JSON.parse(json) as unknown[]);
+  const { journalEntries: entries, mealImages } = parseJournalBackup(json);
   const progress = getProgress();
   const byId = new Map(progress.journalEntries.map((e) => [e.id, e]));
   entries.forEach((e) => byId.set(e.id, e));
@@ -287,6 +357,7 @@ export function importJournalBackup(json: string): void {
     journalEntries: Array.from(byId.values()).sort((a, b) =>
       b.date.localeCompare(a.date),
     ),
+    mealImages: mealImages ? { ...progress.mealImages, ...mealImages } : progress.mealImages,
   });
 }
 

@@ -10,7 +10,8 @@ import {
   isDailyReflectionEntry,
   isSingleContentJournalEntry,
 } from '../lib/journalTags';
-import type { JournalEntry, JournalEntryType } from '../types';
+import { getMealImages } from '../lib/storage';
+import type { FoodMealKey, JournalEntry, JournalEntryType } from '../types';
 
 type Props = {
   entry: JournalEntry;
@@ -20,7 +21,7 @@ type Props = {
   onTypeClick: (type: JournalEntryType) => void;
 };
 
-type FieldDef<T extends string> = { key: T; label: string };
+type FieldDef<T extends string> = { key: T; label: string; sectionName?: string };
 
 type JournalEntryBodyClasses = {
   fields: string;
@@ -42,16 +43,20 @@ function FieldListBody<T extends string>({
   fields,
   getValue,
   renderHeading,
+  renderExtra,
   classes,
   emptyMessage,
 }: {
   fields: ReadonlyArray<FieldDef<T>>;
   getValue: (key: T) => string;
   renderHeading?: (field: FieldDef<T>) => ReactNode;
+  renderExtra?: (field: FieldDef<T>) => ReactNode;
   classes: JournalEntryBodyClasses;
   emptyMessage: ReactNode;
 }) {
-  const filledFields = fields.filter((field) => getValue(field.key).trim());
+  const filledFields = fields.filter(
+    (field) => getValue(field.key).trim() || renderExtra?.(field),
+  );
   if (filledFields.length === 0) {
     return emptyMessage ? <p className={classes.empty}>{emptyMessage}</p> : null;
   }
@@ -65,7 +70,10 @@ function FieldListBody<T extends string>({
           ) : (
             <h3 className={classes.label}>{field.label}</h3>
           )}
-          <p className={classes.value}>{getValue(field.key)}</p>
+          {getValue(field.key).trim() ? (
+            <p className={classes.value}>{getValue(field.key)}</p>
+          ) : null}
+          {renderExtra?.(field)}
         </section>
       ))}
     </div>
@@ -86,6 +94,25 @@ export function JournalEntryBody({
   renderVerseHeading = (item) => <VerseOfTheDayLabel date={item.date} as="heading" />,
 }: JournalEntryBodyProps) {
   const simpleContentLabel = getSimpleContentLabel(entry.type);
+  const mealImages = entry.type === 'food' ? getMealImages(entry.id) : {};
+
+  const renderMealImages = (key: FoodMealKey, sectionName: string) => {
+    const images = mealImages[key];
+    if (!images || images.length === 0) return null;
+
+    return (
+      <div className="mt-2 flex flex-wrap gap-2">
+        {images.map((src, index) => (
+          <img
+            key={`${key}-${index}`}
+            src={src}
+            alt={`${sectionName} photo ${index + 1}`}
+            className="h-24 w-24 rounded-lg border border-outline-variant object-cover"
+          />
+        ))}
+      </div>
+    );
+  };
 
   if (isDailyReflectionEntry(entry)) {
     return (
@@ -112,6 +139,9 @@ export function JournalEntryBody({
         getValue={(key) => entry[key]}
         classes={classes}
         emptyMessage={emptyMessage}
+        renderExtra={(field) =>
+          renderMealImages(field.key as FoodMealKey, field.sectionName ?? field.label)
+        }
       />
     );
   }
