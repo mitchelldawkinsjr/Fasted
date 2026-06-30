@@ -4,12 +4,14 @@ import { createPortal } from 'react-dom';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
+import { getGroupCommitments, getMyCovenant, listMyGroups } from '../lib/groups';
 import { formatError, messages } from '../lib/messages';
-import { getJournalEntryByDate, saveCheckIn } from '../lib/storage';
+import { getGroupCheckIn, getJournalEntryByDate, saveCheckIn, saveGroupCheckIn } from '../lib/storage';
 import { getCurrentStreak } from '../lib/streaks';
 import { toast } from '../lib/toast';
-import type { Badge, CheckIn } from '../types';
+import type { Badge, CheckIn, CommitmentDefinition, CommitmentResult, GroupRecord } from '../types';
 import { BadgeSprite } from './BadgeSprite';
+import { GroupCommitmentRows } from './GroupCommitmentRows';
 import { Icon } from './Icon';
 import { InfoBanner } from './InfoBanner';
 import { LoadingButton } from './LoadingButton';
@@ -19,6 +21,12 @@ type Props = {
   existing?: CheckIn;
   onClose: () => void;
   onComplete: (badges: Badge[]) => void;
+};
+
+type GroupCommitmentContext = {
+  group: GroupRecord;
+  commitments: CommitmentDefinition[];
+  existingResults?: CommitmentResult[];
 };
 
 export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
@@ -36,12 +44,56 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const { getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
   const currentStreak = getCurrentStreak(date);
+  const [groupContexts, setGroupContexts] = useState<GroupCommitmentContext[]>([]);
+  const [groupResults, setGroupResults] = useState<Record<string, CommitmentResult[]>>({});
 
   useEffect(() => {
     if (getJournalEntryByDate(date)) {
       setJournaled(true);
     }
   }, [date]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const myGroups = await listMyGroups();
+        const contexts: GroupCommitmentContext[] = [];
+
+        for (const group of myGroups) {
+          const covenant = await getMyCovenant(group.id);
+          if (!covenant) continue;
+
+          const commitments = await getGroupCommitments(group.id);
+          if (commitments.length === 0) continue;
+
+          const existingGroupCheckIn = getGroupCheckIn(group.id, date);
+          contexts.push({
+            group,
+            commitments,
+            existingResults: existingGroupCheckIn?.results,
+          });
+        }
+
+        if (!cancelled) setGroupContexts(contexts);
+      } catch {
+        if (!cancelled) setGroupContexts([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [date]);
+
+  useEffect(() => {
+    const initial: Record<string, CommitmentResult[]> = {};
+    for (const ctx of groupContexts) {
+      initial[ctx.group.id] = ctx.existingResults ?? [];
+    }
+    setGroupResults(initial);
+  }, [groupContexts]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +111,15 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
 
     try {
       saveCheckIn(checkIn);
+
+      for (const ctx of groupContexts) {
+        const results = groupResults[ctx.group.id] ?? [];
+        saveGroupCheckIn(ctx.group.id, {
+          date,
+          results,
+          completedAt: new Date().toISOString(),
+        });
+      }
     } catch (err) {
       toast.error(formatError(err, messages.errors.saveCheckIn));
       setSaving(false);
@@ -105,9 +166,9 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
       aria-modal="true"
       aria-labelledby="checkin-title"
     >
-      <div className="w-full max-w-md animate-fade-in-up rounded-xl bg-surface-container-lowest p-3 shadow-grace sm:p-stack-lg">
+      <div className="flex max-h-[90vh] w-full max-w-md animate-fade-in-up flex-col overflow-hidden rounded-xl bg-surface-container-lowest shadow-grace">
         {celebrating ? (
-          <div className="animate-gentle-pulse py-6 text-center">
+          <div className="animate-gentle-pulse p-3 py-6 text-center sm:p-stack-lg">
             <Icon name="celebration" className="mb-2 text-4xl text-secondary" />
             <p className="font-display text-headline-md text-primary">{message}</p>
             {savedStreak !== null && (
@@ -149,50 +210,71 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
             )}
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <h2 id="checkin-title" className="mb-2 font-display text-xl text-primary sm:mb-stack-md sm:text-headline-md">
-              Complete Today&apos;s Check-In
-            </h2>
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-stack-lg">
+              <h2 id="checkin-title" className="mb-2 font-display text-xl text-primary sm:mb-stack-md sm:text-headline-md">
+                Complete Today&apos;s Check-In
+              </h2>
 
-            {phase && (
-              <InfoBanner variant="phase" icon="flag" className="mb-2 px-2 py-1 text-xs sm:mb-stack-md sm:px-3 sm:py-2 sm:text-body-md">
-                Phase {phase.id}: {phase.title}
-              </InfoBanner>
-            )}
+              {phase && (
+                <InfoBanner variant="phase" icon="flag" className="mb-2 px-2 py-1 text-xs sm:mb-stack-md sm:px-3 sm:py-2 sm:text-body-md">
+                  Phase {phase.id}: {phase.title}
+                </InfoBanner>
+              )}
 
-            <div className="mb-2 rounded-xl border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-center sm:mb-stack-md sm:px-4 sm:py-3">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-on-surface-variant sm:font-label sm:text-label-caps sm:tracking-widest">
-                Check-in streak
-              </span>
-              <p className="font-display text-xl text-primary sm:mt-1 sm:text-headline-md">
-                {currentStreak}{' '}
-                <span className="text-xs font-normal text-on-surface-variant sm:text-body-md">
-                  consecutive {currentStreak === 1 ? 'day' : 'days'}
+              <div className="mb-2 rounded-xl border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-center sm:mb-stack-md sm:px-4 sm:py-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-on-surface-variant sm:font-label sm:text-label-caps sm:tracking-widest">
+                  Check-in streak
                 </span>
-              </p>
+                <p className="font-display text-xl text-primary sm:mt-1 sm:text-headline-md">
+                  {currentStreak}{' '}
+                  <span className="text-xs font-normal text-on-surface-variant sm:text-body-md">
+                    consecutive {currentStreak === 1 ? 'day' : 'days'}
+                  </span>
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:block sm:space-y-3">
+                <CheckRow label="Did you follow today's fasting plan?" checked={followedPlan} onChange={setFollowedPlan} />
+                <CheckRow label="Did you pray over today's focus?" checked={prayedFocus} onChange={setPrayedFocus} />
+                <CheckRow label="Did you read today's scripture?" checked={readScripture} onChange={setReadScripture} />
+                <CheckRow label="Did you journal today?" checked={journaled} onChange={setJournaled} />
+
+                <label className="col-span-2 block">
+                  <span className="mb-1 block text-sm font-medium text-on-surface sm:text-body-md">
+                    What is one win from today?
+                  </span>
+                  <textarea
+                    value={win}
+                    onChange={(e) => setWin(e.target.value)}
+                    rows={1}
+                    className="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-1.5 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary sm:py-2"
+                    placeholder="Even a small victory counts..."
+                  />
+                </label>
+              </div>
+
+              {groupContexts.length > 0 && (
+                <div className="mt-2 space-y-4 sm:mt-stack-md">
+                  {groupContexts.map((ctx) => (
+                    <section key={ctx.group.id}>
+                      <h3 className="mb-2 label-caps text-secondary">
+                        Group commitments · {ctx.group.name}
+                      </h3>
+                      <GroupCommitmentRows
+                        commitments={ctx.commitments}
+                        results={groupResults[ctx.group.id] ?? []}
+                        onChange={(results) =>
+                          setGroupResults((prev) => ({ ...prev, [ctx.group.id]: results }))
+                        }
+                      />
+                    </section>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:block sm:space-y-3">
-              <CheckRow label="Did you follow today's fasting plan?" checked={followedPlan} onChange={setFollowedPlan} />
-              <CheckRow label="Did you pray over today's focus?" checked={prayedFocus} onChange={setPrayedFocus} />
-              <CheckRow label="Did you read today's scripture?" checked={readScripture} onChange={setReadScripture} />
-              <CheckRow label="Did you journal today?" checked={journaled} onChange={setJournaled} />
-
-              <label className="col-span-2 block">
-                <span className="mb-1 block text-sm font-medium text-on-surface sm:text-body-md">
-                  What is one win from today?
-                </span>
-                <textarea
-                  value={win}
-                  onChange={(e) => setWin(e.target.value)}
-                  rows={1}
-                  className="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-1.5 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary sm:py-2"
-                  placeholder="Even a small victory counts..."
-                />
-              </label>
-            </div>
-
-            <div className="mt-2 flex gap-2 sm:mt-stack-md sm:gap-3">
+            <div className="flex shrink-0 gap-2 border-t border-surface-variant p-3 pt-4 sm:gap-3 sm:p-stack-lg">
               <LoadingButton type="button" onClick={onClose} variant="secondary" className="flex-1">
                 Cancel
               </LoadingButton>

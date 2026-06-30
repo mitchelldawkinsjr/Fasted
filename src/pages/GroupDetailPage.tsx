@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { CovenantModal } from '../components/CovenantModal';
+import { CommitmentList } from '../components/CommitmentList';
 import { Icon } from '../components/Icon';
 import { LoadingButton } from '../components/LoadingButton';
 import { RequireAuth } from '../components/RequireAuth';
@@ -8,16 +10,19 @@ import { formatDisplayDate } from '../lib/dateUtils';
 import {
   createPrayerRequest,
   getGroup,
+  getGroupCommitments,
+  getMyCovenant,
   getMyMembership,
   groupJourneyToLocalJourney,
   leaveGroup,
   listPrayerRequests,
   listSharedJournalEntries,
   shareJournalEntry,
+  signMemberCovenant,
 } from '../lib/groups';
 import { getJourneyPlanEnd } from '../lib/journey';
 import { getProgress } from '../lib/storage';
-import type { GroupRecord, PrayerRequest, SharedJournalEntry } from '../types';
+import type { CommitmentDefinition, GroupRecord, MemberCovenant, PrayerRequest, SharedJournalEntry } from '../types';
 import { toast } from '../lib/toast';
 import { confirmAction } from '../lib/confirm';
 
@@ -33,21 +38,31 @@ export function GroupDetailPage() {
   const [prayerAnonymous, setPrayerAnonymous] = useState(true);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [covenant, setCovenant] = useState<MemberCovenant | null>(null);
+  const [commitments, setCommitments] = useState<CommitmentDefinition[]>([]);
+  const [showCovenantModal, setShowCovenantModal] = useState(false);
+  const [showSignGate, setShowSignGate] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const [groupData, membership, journal, prayerList] = await Promise.all([
+      const [groupData, membership, journal, prayerList, groupCommitments, myCovenant] =
+        await Promise.all([
         getGroup(id),
         getMyMembership(id),
         listSharedJournalEntries(id),
         listPrayerRequests(id),
+        getGroupCommitments(id),
+        getMyCovenant(id),
       ]);
       setGroup(groupData);
       setIsLeader(membership?.role === 'leader');
       setSharedEntries(journal);
       setPrayers(prayerList);
+      setCommitments(groupCommitments);
+      setCovenant(myCovenant);
+      setShowSignGate(membership?.role === 'member' && !myCovenant);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to load group');
     } finally {
@@ -132,8 +147,33 @@ export function GroupDetailPage() {
     );
   }
 
+  if (showSignGate) {
+    return (
+      <RequireAuth>
+        <CovenantModal
+          groupName={group.name}
+          commitments={commitments}
+          onSign={async (signature) => {
+            await signMemberCovenant(group.id, signature);
+            setShowSignGate(false);
+            await refresh();
+          }}
+        />
+      </RequireAuth>
+    );
+  }
+
   return (
     <RequireAuth>
+      {showCovenantModal && covenant && (
+        <CovenantModal
+          groupName={group.name}
+          commitments={covenant.commitments_snapshot}
+          existing={covenant}
+          readOnly
+          onClose={() => setShowCovenantModal(false)}
+        />
+      )}
       <div className="space-y-stack-lg animate-fade-in-up">
         <Link to="/groups" className="inline-flex items-center gap-1 text-body-md text-secondary">
           <Icon name="arrow_back" size={18} />
@@ -165,6 +205,33 @@ export function GroupDetailPage() {
             </span>
             <Icon name="chevron_right" />
           </Link>
+        )}
+
+        {covenant && (
+          <button
+            type="button"
+            className="stitch-card flex w-full items-center justify-between p-gutter text-left"
+            onClick={() => setShowCovenantModal(true)}
+          >
+            <span className="flex items-center gap-3 text-body-md">
+              <Icon name="draw" />
+              View signed covenant
+            </span>
+            <Icon name="chevron_right" />
+          </button>
+        )}
+
+        {commitments.length > 0 && (
+          <section className="stitch-card overflow-hidden">
+            <div className="border-b border-surface-variant px-gutter py-4">
+              <h3 className="label-caps text-secondary">Daily commitments</h3>
+            </div>
+            <CommitmentList
+              commitments={commitments}
+              className="space-y-2 p-gutter"
+              showDetails={false}
+            />
+          </section>
         )}
 
         <section className="stitch-card overflow-hidden">
