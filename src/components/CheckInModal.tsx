@@ -1,5 +1,6 @@
 import confetti from 'canvas-confetti';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
@@ -97,7 +98,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
     }, earned.length > 0 ? 2800 : 1800);
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4 sm:items-center"
       role="dialog"
@@ -207,7 +208,8 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
