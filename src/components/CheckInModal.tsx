@@ -104,7 +104,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
       aria-modal="true"
       aria-labelledby="checkin-title"
     >
-      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md animate-fade-in-up overflow-y-auto rounded-xl bg-surface-container-lowest p-stack-lg shadow-grace">
+      <div className="w-full max-w-md animate-fade-in-up rounded-xl bg-surface-container-lowest p-3 shadow-grace sm:p-stack-lg">
         {celebrating ? (
           <div className="animate-gentle-pulse py-6 text-center">
             <Icon name="celebration" className="mb-2 text-4xl text-secondary" />
@@ -149,47 +149,49 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <h2 id="checkin-title" className="mb-stack-md font-display text-headline-md text-primary">
+            <h2 id="checkin-title" className="mb-2 font-display text-xl text-primary sm:mb-stack-md sm:text-headline-md">
               Complete Today&apos;s Check-In
             </h2>
 
             {phase && (
-              <InfoBanner variant="phase" icon="flag" className="mb-stack-md">
+              <InfoBanner variant="phase" icon="flag" className="mb-2 px-2 py-1 text-xs sm:mb-stack-md sm:px-3 sm:py-2 sm:text-body-md">
                 Phase {phase.id}: {phase.title}
               </InfoBanner>
             )}
 
-            <div className="mb-stack-md rounded-xl border border-outline-variant/30 bg-surface-container-low px-4 py-3 text-center">
-              <span className="label-caps text-on-surface-variant">Check-in streak</span>
-              <p className="mt-1 font-display text-headline-md text-primary">
+            <div className="mb-2 rounded-xl border border-outline-variant/30 bg-surface-container-low px-3 py-2 text-center sm:mb-stack-md sm:px-4 sm:py-3">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-on-surface-variant sm:font-label sm:text-label-caps sm:tracking-widest">
+                Check-in streak
+              </span>
+              <p className="font-display text-xl text-primary sm:mt-1 sm:text-headline-md">
                 {currentStreak}{' '}
-                <span className="text-body-md font-normal text-on-surface-variant">
+                <span className="text-xs font-normal text-on-surface-variant sm:text-body-md">
                   consecutive {currentStreak === 1 ? 'day' : 'days'}
                 </span>
               </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 sm:block sm:space-y-3">
               <CheckRow label="Did you follow today's fasting plan?" checked={followedPlan} onChange={setFollowedPlan} />
               <CheckRow label="Did you pray over today's focus?" checked={prayedFocus} onChange={setPrayedFocus} />
               <CheckRow label="Did you read today's scripture?" checked={readScripture} onChange={setReadScripture} />
               <CheckRow label="Did you journal today?" checked={journaled} onChange={setJournaled} />
 
-              <label className="block">
-                <span className="mb-1 block text-body-md font-medium text-on-surface">
+              <label className="col-span-2 block">
+                <span className="mb-1 block text-sm font-medium text-on-surface sm:text-body-md">
                   What is one win from today?
                 </span>
                 <textarea
                   value={win}
                   onChange={(e) => setWin(e.target.value)}
-                  rows={2}
-                  className="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+                  rows={1}
+                  className="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-1.5 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary sm:py-2"
                   placeholder="Even a small victory counts..."
                 />
               </label>
             </div>
 
-            <div className="mt-stack-md flex gap-3">
+            <div className="mt-2 flex gap-2 sm:mt-stack-md sm:gap-3">
               <LoadingButton type="button" onClick={onClose} variant="secondary" className="flex-1">
                 Cancel
               </LoadingButton>
@@ -219,14 +221,14 @@ function CheckRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low p-3 transition-colors hover:bg-surface-container-high">
+    <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-low p-2 transition-colors hover:bg-surface-container-high sm:items-center sm:gap-3 sm:p-3">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded accent-primary"
+        className="mt-0.5 h-4 w-4 shrink-0 rounded accent-primary sm:mt-0"
       />
-      <span className="text-body-md text-on-surface">{label}</span>
+      <span className="text-xs leading-snug text-on-surface sm:text-body-md">{label}</span>
     </label>
   );
 }
