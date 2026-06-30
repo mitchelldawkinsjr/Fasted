@@ -18,7 +18,7 @@ import {
 } from '../lib/journalTags';
 import { emptyMealSectionImages, mealSectionHasImages } from '../lib/mealImages';
 import { formatError, messages } from '../lib/messages';
-import { createJournalEntryId, getMealImages, saveJournalEntry, saveMealImages } from '../lib/storage';
+import { createJournalEntryId, getMealImages, saveJournalEntryWithMealImages } from '../lib/storage';
 import { toast } from '../lib/toast';
 import type {
   DailyReflectionEntry,
@@ -199,7 +199,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     }
 
     try {
-      saveJournalEntry(saved);
       const imagesToSave: MealSectionImages = {};
       if (entryType === 'food') {
         for (const { key } of FOOD_JOURNAL_FIELDS) {
@@ -208,7 +207,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           }
         }
       }
-      saveMealImages(saved.id, imagesToSave);
+      saveJournalEntryWithMealImages(saved, entryType === 'food' ? imagesToSave : undefined);
       toast.success(entry ? messages.save.journalUpdated : messages.save.journal);
       onSave();
     } catch (err) {

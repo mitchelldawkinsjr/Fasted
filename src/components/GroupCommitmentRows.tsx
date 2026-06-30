@@ -1,4 +1,5 @@
 import type { CommitmentDefinition, CommitmentResult } from '../types';
+import { commitmentValueMet } from '../lib/groupCheckIns';
 
 type Props = {
   commitments: CommitmentDefinition[];
@@ -64,10 +65,10 @@ export function GroupCommitmentRows({ commitments, results, onChange }: Props) {
                 value={typeof result.value === 'number' ? result.value : ''}
                 onChange={(e) => {
                   const value = e.target.value ? Number(e.target.value) : undefined;
-                  const honored =
-                    value != null &&
-                    (commitment.target == null || value >= commitment.target);
-                  updateResult(commitment.id, { value, honored });
+                  updateResult(commitment.id, {
+                    value,
+                    honored: commitmentValueMet(commitment, value),
+                  });
                 }}
                 className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md"
               />
@@ -85,7 +86,7 @@ export function GroupCommitmentRows({ commitments, results, onChange }: Props) {
                 const value = e.target.value;
                 updateResult(commitment.id, {
                   value,
-                  honored: value.trim().length > 0,
+                  honored: commitmentValueMet(commitment, value),
                 });
               }}
               className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md"

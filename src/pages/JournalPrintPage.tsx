@@ -1,20 +1,22 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { buildJournalExportModel } from '../lib/journalExport/buildModel';
+import { buildJournalExportModel, JournalPrintDocument } from '../components/JournalPrintDocument';
 import { useAuth } from '../hooks/useAuth';
 import { useProgress } from '../hooks/useProgress';
-import { JournalPrintDocument } from '../components/JournalPrintDocument';
 import { getStorageScope } from '../lib/storage';
 
 export function JournalPrintPage() {
   const { initialized, user } = useAuth();
   const progress = useProgress();
+  const storageScope = getStorageScope();
+  const scopeReady = initialized && storageScope === (user?.id ?? null);
   const model = useMemo(() => buildJournalExportModel(progress), [progress]);
   const entryCount = model.entries.length;
-  const hasPrintedRef = useRef(false);
-  const scopeReady = initialized && getStorageScope() === (user?.id ?? null);
+  const progressStamp = `${storageScope ?? 'guest'}:${progress.updatedAt ?? ''}:${progress.journalEntries.map((e) => e.id).join(',')}`;
+  const printedStampRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (entryCount === 0 || hasPrintedRef.current || !scopeReady) return;
+    if (entryCount === 0 || !scopeReady) return;
+    if (printedStampRef.current === progressStamp) return;
 
     const fontsReady =
       'fonts' in document
@@ -25,11 +27,12 @@ export function JournalPrintPage() {
 
     const printWhenReady = async () => {
       await fontsReady;
+      if (cancelled || printedStampRef.current === progressStamp) return;
 
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
-      if (cancelled || hasPrintedRef.current) return;
+      if (cancelled || printedStampRef.current === progressStamp) return;
 
-      hasPrintedRef.current = true;
+      printedStampRef.current = progressStamp;
       window.print();
     };
 
@@ -38,7 +41,7 @@ export function JournalPrintPage() {
     return () => {
       cancelled = true;
     };
-  }, [entryCount, scopeReady]);
+  }, [entryCount, progressStamp, scopeReady]);
 
   if (entryCount === 0) {
     return (

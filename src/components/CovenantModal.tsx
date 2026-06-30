@@ -9,7 +9,6 @@ type Props = {
   groupName: string;
   commitments: CommitmentDefinition[];
   existing?: MemberCovenant | null;
-  readOnly?: boolean;
   onSign?: (signature: string) => Promise<void>;
   onClose?: () => void;
 };
@@ -18,7 +17,6 @@ export function CovenantModal({
   groupName,
   commitments,
   existing,
-  readOnly = false,
   onSign,
   onClose,
 }: Props) {
@@ -27,8 +25,7 @@ export function CovenantModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const signed = Boolean(existing);
-  const viewOnly = readOnly || signed;
+  const viewOnly = Boolean(existing);
   const displayedCommitments = viewOnly && existing ? existing.commitments_snapshot : commitments;
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -222,23 +222,36 @@ export function getGroupCheckIn(groupId: string, date: string): GroupCheckIn | u
 }
 
 export function createJournalEntryId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-
-  return `journal-${Date.now().toString(36)}-${Math.random()
-    .toString(36)
-    .slice(2, 10)}`;
+  return crypto.randomUUID();
 }
 
 export function saveJournalEntry(entry: JournalEntry): void {
+  saveJournalEntryWithMealImages(entry);
+}
+
+export function saveJournalEntryWithMealImages(
+  entry: JournalEntry,
+  images?: MealSectionImages,
+): void {
   const progress = getProgress();
   const filtered = progress.journalEntries.filter((e) => e.id !== entry.id);
+  const nextMealImages = { ...progress.mealImages };
+
+  if (images) {
+    const hasImages = Object.values(images).some((section) => section && section.length > 0);
+    if (hasImages) {
+      nextMealImages[entry.id] = images;
+    } else {
+      delete nextMealImages[entry.id];
+    }
+  }
+
   persist({
     ...progress,
     journalEntries: [...filtered, normalizeJournalEntry(entry)].sort((a, b) =>
       b.date.localeCompare(a.date),
     ),
+    mealImages: nextMealImages,
   });
 }
 

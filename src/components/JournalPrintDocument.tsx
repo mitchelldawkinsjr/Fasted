@@ -1,10 +1,33 @@
 import { JournalEntryBody } from './JournalViewer';
 import { JournalTypeBadge } from './JournalTypePicker';
 import { MoodBadge } from './MoodPicker';
-import { formatDisplayDate } from '../lib/dateUtils';
+import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
+import { getActiveJourney } from '../lib/journey';
 import { VERSE_OF_THE_DAY_LABEL, isDailyReflectionEntry } from '../lib/journalTags';
-import type { JournalExportModel } from '../lib/journalExport/buildModel';
-import type { JournalEntry } from '../types';
+import type { JournalEntry, UserProgress } from '../types';
+
+export type JournalExportModel = {
+  journeyName: string | null;
+  dateRange: { start: string; end: string } | null;
+  exportDate: string;
+  entries: JournalEntry[];
+};
+
+export function buildJournalExportModel(progress: UserProgress): JournalExportModel {
+  const journey = getActiveJourney(progress);
+  const entries = [...progress.journalEntries].sort((a, b) => a.date.localeCompare(b.date));
+  const dates = entries.map((entry) => entry.date);
+
+  return {
+    journeyName: journey.isDefault ? null : journey.name,
+    dateRange:
+      dates.length > 0
+        ? { start: dates[0], end: dates[dates.length - 1] }
+        : null,
+    exportDate: formatDisplayDate(getLocalDateString()),
+    entries,
+  };
+}
 
 const printFieldValue = 'print-field-value';
 const PRINT_ENTRY_BODY_CLASSES = {
