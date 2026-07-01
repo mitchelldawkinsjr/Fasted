@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { expectDateInputContained } from './fixtures/overflow';
+import { AUDIT_VIEWPORTS } from './fixtures/viewports';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
 const INSTALL_TOAST_KEY = 'fasted-calendar-install-toast-dismissed';
@@ -101,6 +103,55 @@ test.describe('custom journey builder', () => {
     await expect(page.getByTestId('today-instructions-list')).toContainText(
       'Pray for three families by name.',
     );
+  });
+
+  test('journey builder date input fits within modal on mobile and desktop', async ({ page }) => {
+    const journey = {
+      id: 'custom-journey-date-fit',
+      name: 'Date Fit Journey',
+      startDate: '2026-06-13',
+      phases: [
+        {
+          order: 0,
+          startDate: '2026-06-13',
+          endDate: '2026-12-19',
+          content: {
+            title: 'Phase 1',
+            schedulePattern: { kind: 'normal-eating' },
+            allowed: ['Water'],
+            avoid: [],
+            beverages: ['Water'],
+            dailyReadings: ['Psalm 1'],
+            prayerFocus: ['Test'],
+          },
+        },
+      ],
+    };
+
+    for (const viewport of AUDIT_VIEWPORTS.filter(
+      (v) => v.name === 'iphone-13' || v.name === 'laptop',
+    )) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await page.goto('/settings');
+      await page.getByRole('button', { name: /Create custom journey/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expectDateInputContained(page, { label: 'Start date' });
+      await page.goto('/settings');
+
+      await seedProgress(page, {
+        activeJourneyId: journey.id,
+        journeys: [journey],
+        checkIns: [],
+        journalEntries: [],
+        badges: [],
+        settings: { reminderTime: '07:00', theme: 'light', scriptureNote: '' },
+      });
+      await page.reload();
+      await page.getByRole('button', { name: /Edit active journey/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expectDateInputContained(page, { label: 'Edit from date' });
+      await page.goto('/settings');
+    }
   });
 
   test('edits an in-progress template-based journey without duplicating the current phase', async ({ page }) => {

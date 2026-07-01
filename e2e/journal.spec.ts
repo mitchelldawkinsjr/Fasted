@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { expectDateInputContained } from './fixtures/overflow';
+import { AUDIT_VIEWPORTS } from './fixtures/viewports';
 import { messages } from '../src/lib/messages';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
@@ -99,6 +101,17 @@ test('date stays within plan bounds on save', async ({ page }) => {
   expect(stored.journalEntries[0].date >= '2026-06-13').toBe(true);
   expect(stored.journalEntries[0].date <= '2026-12-19').toBe(true);
   expect(stored.journalEntries[0].type).toBe('gratitude');
+});
+
+test('date input fits within card on mobile and desktop', async ({ page }) => {
+  for (const viewport of AUDIT_VIEWPORTS.filter(
+    (v) => v.name === 'iphone-13' || v.name === 'laptop',
+  )) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto('/journal');
+    await page.getByRole('button', { name: '+ New' }).click();
+    await expectDateInputContained(page, { label: 'Date' });
+  }
 });
 
 test('morning reflection tag links to filtered journal', async ({ page }) => {
