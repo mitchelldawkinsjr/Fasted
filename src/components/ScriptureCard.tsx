@@ -1,4 +1,4 @@
-import { getPhaseById } from '../data/fastingPlan';
+import { useActiveJourney } from '../hooks/useActiveJourney';
 import { scriptureReferenceToBibleComUrl } from '../lib/bibleComUrl';
 import { Icon } from './Icon';
 
@@ -24,7 +24,8 @@ function ScriptureReferenceLink({ reference }: { reference: string }) {
 }
 
 export function ScriptureCard({ phaseId, references }: Props) {
-  const phase = getPhaseById(phaseId);
+  const { phases } = useActiveJourney();
+  const phase = phases.find((p) => p.id === phaseId);
   if (!phase) return null;
 
   return (

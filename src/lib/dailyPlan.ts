@@ -1,12 +1,12 @@
-import { getEncouragementForDay } from '../data/encouragements';
+import { getCustomPhaseEncouragement, getEncouragementForDay } from '../data/encouragements';
 import type {
   DailyFastPlan,
   FastPhaseTemplate,
   FastType,
   Journey,
 } from '../types';
-import { getDayOfWeek, getWeekIndexInPhase, resolveJourney } from './dateUtils';
-import { getPhaseContextForDate } from './journey';
+import { daysBetween, getDayOfWeek, getWeekIndexInPhase, resolveJourney } from './dateUtils';
+import { getPhaseContextForDate, isCustomJourneyPhase } from './journey';
 
 /** Food/drink rules from the phase infographic (see public/assets/phases/). */
 function appendFoodRules(
@@ -52,6 +52,15 @@ function interpretPattern(
   const day = getDayOfWeek(date);
 
   switch (pattern.kind) {
+    case 'normal-eating': {
+      const instructions = [
+        'Normal eating day—keep meals simple, nourishing, and prayerful.',
+        'Use this phase to build consistency in scripture, prayer, and reflection.',
+      ];
+      appendFoodRules(template, false, instructions);
+      return { isFastDay: false, fastType: 'normal-eating', instructions };
+    }
+
     case 'weekday-fast': {
       if (pattern.fastDays.includes(day)) {
         const instructions =
@@ -201,7 +210,7 @@ export function getDailyPlan(date: string, journey?: Journey): DailyFastPlan | n
   const ctx = getPhaseContextForDate(date, active);
   if (!ctx) return null;
 
-  const { template, startDate, legacyId } = ctx;
+  const { template, startDate, legacyId, phaseId } = ctx;
   const { isFastDay, fastType, instructions } = interpretPattern(date, startDate, template);
 
   let scriptureReferences = [template.scriptureReference];
@@ -213,19 +222,42 @@ export function getDailyPlan(date: string, journey?: Journey): DailyFastPlan | n
   }
 
   const finalInstructions = [...instructions];
-  if (template.safetyNote && template.schedulePattern.kind === 'rotating-weekly') {
+  if (ctx.isCustom && isCustomJourneyPhase(ctx.phase)) {
+    finalInstructions.push(...(ctx.phase.content.dayInstructions?.always ?? []));
+    finalInstructions.push(
+      ...(isFastDay
+        ? ctx.phase.content.dayInstructions?.fast ?? []
+        : ctx.phase.content.dayInstructions?.nonFast ?? []),
+    );
+  }
+
+  if (
+    template.safetyNote &&
+    (template.schedulePattern.kind === 'rotating-weekly' || ctx.isCustom)
+  ) {
     finalInstructions.push(template.safetyNote);
   }
 
+  const encouragement =
+    ctx.isCustom && isCustomJourneyPhase(ctx.phase)
+      ? getCustomPhaseEncouragement(
+          date,
+          ctx.phase.content,
+          daysBetween(startDate, date) - 1,
+          isFastDay,
+          fastType,
+        )
+      : getEncouragementForDay(date, legacyId ?? phaseId, isFastDay, fastType);
+
   return {
     date,
-    phaseId: legacyId,
+    phaseId,
     isFastDay,
     fastType,
     instructions: finalInstructions,
     scriptureReferences,
     prayerPoints: template.prayerFocus,
-    encouragement: getEncouragementForDay(date, legacyId, isFastDay, fastType),
+    encouragement,
     checkInPrompts: [
       'Did you follow today’s fasting plan?',
       'Did you pray over today’s focus?',

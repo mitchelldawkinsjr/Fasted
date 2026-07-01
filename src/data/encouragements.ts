@@ -1,4 +1,4 @@
-import type { FastType } from '../types';
+import type { CustomPhaseContent, FastType } from '../types';
 
 type DayKind = 'fast' | 'prep' | 'extended-prayer';
 
@@ -272,6 +272,29 @@ export function getEncouragementForDay(
         : GENERIC_ENCOURAGEMENTS;
 
   return messages[dateHash(date) % messages.length];
+}
+
+export function getCustomPhaseEncouragement(
+  date: string,
+  content: CustomPhaseContent,
+  dayIndex: number,
+  isFastDay: boolean,
+  fastType: FastType,
+): string {
+  const prayerFocus = content.prayerFocus.length ? content.prayerFocus : ['today’s focus'];
+  const focus = prayerFocus[dateHash(date, dayIndex) % prayerFocus.length];
+  const dayLabel = dayIndex + 1;
+  const title = content.title || 'this phase';
+
+  if (isFastDay) {
+    return `Day ${dayLabel} of ${title}: let today’s fast make room to pray over ${focus.toLowerCase()}.`;
+  }
+
+  if (fastType === 'extended-prayer') {
+    return `Day ${dayLabel} of ${title}: set aside unhurried prayer for ${focus.toLowerCase()} today.`;
+  }
+
+  return `Day ${dayLabel} of ${title}: stay attentive to God as you pray over ${focus.toLowerCase()}.`;
 }
 
 export const CHECK_IN_CELEBRATIONS = [

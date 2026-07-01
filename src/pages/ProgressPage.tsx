@@ -19,7 +19,7 @@ export function ProgressPage() {
   const phasePercent = currentPhase
     ? getPhaseCompletionPercent(currentPhase.startDate, currentPhase.endDate)
     : 0;
-  const nextReward = currentPhase
+  const nextReward = currentPhase && !currentPhase.isCustom
     ? getNextReward(currentPhase.id, currentPhase.startDate, currentPhase.endDate, today)
     : null;
 
@@ -82,7 +82,7 @@ export function ProgressPage() {
             )}
           </section>
 
-          <PhaseMilestonesCard phaseId={currentPhase.id} today={today} />
+          {!currentPhase.isCustom && <PhaseMilestonesCard phaseId={currentPhase.id} today={today} />}
         </>
       )}
 

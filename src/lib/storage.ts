@@ -9,7 +9,7 @@ import type {
   UserProgress,
 } from '../types';
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
-import { normalizeJourneys } from './journey';
+import { normalizeJourney, normalizeJourneys } from './journey';
 import { getDayMoodLabel } from './dayMood';
 import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
@@ -305,11 +305,12 @@ export function saveSettings(settings: Partial<AppSettings>): void {
 
 export function saveJourney(journey: Journey): void {
   const progress = getProgress();
+  const normalizedJourney = normalizeJourney(journey);
   const existing = progress.journeys.findIndex((j) => j.id === journey.id);
   const journeys =
     existing >= 0
-      ? progress.journeys.map((j, i) => (i === existing ? journey : j))
-      : [...progress.journeys, journey];
+      ? progress.journeys.map((j, i) => (i === existing ? normalizedJourney : j))
+      : [...progress.journeys, normalizedJourney];
   persist({ ...progress, journeys });
 }
 

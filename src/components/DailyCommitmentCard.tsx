@@ -15,7 +15,7 @@ export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
   const { getPhaseForDate } = useActiveJourney();
   const streak = getCurrentStreak(date);
   const phase = getPhaseForDate(date);
-  const nextReward = phase
+  const nextReward = phase && !phase.isCustom
     ? getNextReward(phase.id, phase.startDate, phase.endDate, date)
     : null;
 
@@ -69,7 +69,7 @@ export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
                 {phase.title} · {getPhaseDates(phase.startDate, phase.endDate).length} days
               </span>
             </div>
-            <PhaseMilestonesCard phaseId={phase.id} today={date} compact />
+            {!phase.isCustom && <PhaseMilestonesCard phaseId={phase.id} today={date} compact />}
           </>
         )}
 
