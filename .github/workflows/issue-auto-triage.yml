@@ -61,6 +61,7 @@ jobs:
       contents: read
     outputs:
       dispatch_implement: ${{ steps.spec.outputs.dispatch_implement }}
+      dispatch_implement_after_arch: ${{ steps.arch.outputs.dispatch_implement }}
 
     steps:
       - name: Checkout
@@ -91,24 +92,32 @@ jobs:
             echo "dispatch_implement=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Dispatch architecture agent for complex issues
+      - name: Generate architecture review for complex issues
+        id: arch
         if: steps.spec.outputs.dispatch_implement != 'true'
         env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
-          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
           set -euo pipefail
           LABELS=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json labels -q '[.labels[].name] | join(",")')
           if echo "$LABELS" | grep -q 'needs-architecture'; then
-            npm ci
-            node scripts/dispatch-architecture-agent.mjs
+            chmod +x scripts/generate-architecture-review.sh
+            RESULT=$(scripts/generate-architecture-review.sh | tail -1)
+            if [ "$RESULT" = "dispatch_implement=true" ]; then
+              echo "dispatch_implement=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "dispatch_implement=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "dispatch_implement=false" >> "$GITHUB_OUTPUT"
           fi
 
   dispatch-implement:
     needs: generate-spec
-    if: needs.generate-spec.outputs.dispatch_implement == 'true'
+    if: needs.generate-spec.outputs.dispatch_implement == 'true' || needs.generate-spec.outputs.dispatch_implement_after_arch == 'true'
     runs-on: ubuntu-latest
     permissions:
       issues: write
