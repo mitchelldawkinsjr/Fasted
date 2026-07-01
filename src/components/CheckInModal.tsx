@@ -32,7 +32,6 @@ type GroupCommitmentContext = {
 
 const PLAIN_CELEBRATION_MS = 3200;
 const CONTINUE_READY_MS = 1200;
-const MILESTONE_FALLBACK_MS = 30_000;
 
 export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const [followedPlan, setFollowedPlan] = useState(existing?.followedPlan ?? false);
@@ -52,16 +51,14 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const currentStreak = getCurrentStreak(date);
   const [groupContexts, setGroupContexts] = useState<GroupCommitmentContext[]>([]);
   const [groupResults, setGroupResults] = useState<Record<string, CommitmentResult[]>>({});
-  const earnedBadgesRef = useRef(earnedBadges);
   const onCompleteRef = useRef(onComplete);
   const onCloseRef = useRef(onClose);
 
-  earnedBadgesRef.current = earnedBadges;
   onCompleteRef.current = onComplete;
   onCloseRef.current = onClose;
 
   const dismissCelebration = () => {
-    onCompleteRef.current(earnedBadgesRef.current);
+    onCompleteRef.current(earnedBadges);
     onCloseRef.current();
   };
 
@@ -114,10 +111,6 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
     setGroupResults(initial);
   }, [groupContexts]);
 
-  const finishCelebration = () => {
-    dismissCelebration();
-  };
-
   useEffect(() => {
     if (!celebrating) {
       setContinueReady(false);
@@ -131,11 +124,9 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
 
     setContinueReady(false);
     const readyTimer = window.setTimeout(() => setContinueReady(true), CONTINUE_READY_MS);
-    const fallbackTimer = window.setTimeout(dismissCelebration, MILESTONE_FALLBACK_MS);
 
     return () => {
       window.clearTimeout(readyTimer);
-      window.clearTimeout(fallbackTimer);
     };
   }, [celebrating, earnedBadges.length]);
 
@@ -264,7 +255,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
               >
                 <LoadingButton
                   type="button"
-                  onClick={finishCelebration}
+                  onClick={dismissCelebration}
                   disabled={!continueReady}
                   className="w-full"
                 >
