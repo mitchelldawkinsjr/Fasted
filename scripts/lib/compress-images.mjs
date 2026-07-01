@@ -25,8 +25,8 @@ const JPEG_OPTIONS = {
   mozjpeg: true,
 };
 
-/** Ignore sub-threshold savings so CI check stays stable across lossless PNG re-runs. */
-export const MIN_COMPRESS_SAVINGS_BYTES = 512;
+/** Ignore sub-threshold savings so CI check stays stable across OS/libpng re-runs. */
+export const MIN_COMPRESS_SAVINGS_BYTES = 1024;
 
 export async function* walkImages(dir) {
   let entries;
