@@ -43,6 +43,31 @@ function buildDanielFastInstructions(template: FastPhaseTemplate): string[] {
   return instructions;
 }
 
+function genericFastInstructions(fastType: FastType): string[] {
+  switch (fastType) {
+    case 'sunrise-to-sunset-with-coffee-tea':
+      return [
+        'Sunrise-to-sunset fast today—water, coffee, and unsweetened tea allowed.',
+        'Spend extra time in prayer and scripture.',
+      ];
+    case 'twenty-four-hour-water':
+      return [
+        '24-hour water fast today.',
+        'Water only—hydrate steadily.',
+        'Break your fast gently when the 24 hours end.',
+      ];
+    case 'daniel-fast':
+      return ['Follow the Daniel Fast eating pattern today.'];
+    case 'extended-prayer':
+      return ['Extended prayer time today.', 'Set aside extra time for worship, intercession, and listening.'];
+    case 'normal-eating':
+      return ['Normal eating day—keep meals simple, nourishing, and prayerful.'];
+    case 'sunrise-to-sunset-water':
+    default:
+      return ['Sunrise-to-sunset fast today—water only.', 'Hydrate well before and after the fast.'];
+  }
+}
+
 function interpretPattern(
   date: string,
   phaseStart: string,
@@ -84,7 +109,7 @@ function interpretPattern(
                       'This week: give food or resources to someone in need.',
                       'Encourage one person and perform one act of service.',
                     ]
-                  : ['Sunrise-to-sunset fast today—water only.', 'Hydrate well before and after the fast.'];
+                  : genericFastInstructions(pattern.fastType);
 
         appendFoodRules(template, true, instructions);
         return { isFastDay: true, fastType: pattern.fastType, instructions };

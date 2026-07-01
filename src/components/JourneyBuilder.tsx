@@ -23,7 +23,7 @@ type Props = {
   initialJourney?: Journey | null;
 };
 
-type SchedulePreset = 'normal' | 'weekly' | 'daniel' | 'prayer' | 'rotating';
+type SchedulePreset = 'normal' | 'weekly' | 'daniel' | 'prayer';
 
 type PhaseDraft = {
   id: string;
@@ -122,15 +122,6 @@ function schedulePatternFromDraft(draft: PhaseDraft): SchedulePattern {
         fastType: draft.fastType,
         prayerDays: draft.prayerDays,
       };
-    case 'rotating':
-      return {
-        kind: 'rotating-weekly',
-        weeks: [
-          { weekIndex: 0, dayOfWeek: draft.fastDays[0] ?? 0, fastType: 'twenty-four-hour-water' },
-          { weekIndex: 1, dayOfWeek: draft.fastDays[0] ?? 0, fastType: 'twenty-four-hour-water' },
-          { weekIndex: 2, dayOfWeek: draft.fastDays[1] ?? 3, fastType: draft.fastType },
-        ],
-      };
     case 'weekly':
     default:
       return {
@@ -172,9 +163,7 @@ function draftFromContent(content: CustomPhaseContent, durationDays: number): Ph
         ? 'daniel'
         : pattern.kind === 'weekday-with-prayer'
           ? 'prayer'
-          : pattern.kind === 'rotating-weekly'
-            ? 'rotating'
-            : 'weekly';
+          : 'weekly';
 
   return {
     ...defaultPhaseDraft(),
@@ -187,7 +176,7 @@ function draftFromContent(content: CustomPhaseContent, durationDays: number): Ph
       pattern.kind === 'weekday-fast' || pattern.kind === 'weekday-with-prayer'
         ? pattern.fastDays
         : pattern.kind === 'rotating-weekly'
-          ? pattern.weeks.map((week) => week.dayOfWeek)
+          ? [...new Set(pattern.weeks.map((week) => week.dayOfWeek))]
           : [3],
     fastType:
       pattern.kind === 'weekday-fast' || pattern.kind === 'weekday-with-prayer'
@@ -210,6 +199,22 @@ function draftFromContent(content: CustomPhaseContent, durationDays: number): Ph
   };
 }
 
+function contentFromTemplate(template: NonNullable<ReturnType<typeof getTemplateById>>): CustomPhaseContent {
+  return {
+    title: template.title,
+    themeColor: template.themeColor,
+    schedulePattern: template.schedulePattern,
+    allowed: template.allowed,
+    avoid: template.avoid,
+    beverages: template.beverages,
+    dailyReadings: template.dailyReadings,
+    prayerFocus: template.prayerFocus,
+    scriptureReference: template.scriptureReference,
+    safetyNote: template.safetyNote,
+    scheduleSummary: template.scheduleSummary,
+  };
+}
+
 function draftFromTemplatePhase(phase: JourneyPhase, startDate: string, endDate: string): PhaseDraft | null {
   if (isCustomJourneyPhase(phase)) {
     const remainingStart = startDate > phase.startDate ? startDate : phase.startDate;
@@ -218,22 +223,7 @@ function draftFromTemplatePhase(phase: JourneyPhase, startDate: string, endDate:
 
   const template = getTemplateById(phase.templateId);
   if (!template) return null;
-  return draftFromContent(
-    {
-      title: template.title,
-      themeColor: template.themeColor,
-      schedulePattern: template.schedulePattern,
-      allowed: template.allowed,
-      avoid: template.avoid,
-      beverages: template.beverages,
-      dailyReadings: template.dailyReadings,
-      prayerFocus: template.prayerFocus,
-      scriptureReference: template.scriptureReference,
-      safetyNote: template.safetyNote,
-      scheduleSummary: template.scheduleSummary,
-    },
-    daysBetween(startDate, endDate),
-  );
+  return draftFromContent(contentFromTemplate(template), daysBetween(startDate, endDate));
 }
 
 function buildCustomPhases(startDate: string, drafts: PhaseDraft[], startingOrder = 0): JourneyPhase[] {
@@ -251,32 +241,38 @@ function buildCustomPhases(startDate: string, drafts: PhaseDraft[], startingOrde
   });
 }
 
-function mergeTodayForward(existing: Journey, draft: Journey, today: string): Journey {
+function mergeTodayForward(existing: Journey, draft: Journey, editStart: string): Journey {
   const existingWindows = getJourneyPhaseWindows(existing);
-  if (today <= existing.startDate || existingWindows.length === 0) return draft;
-  if (today > existingWindows[existingWindows.length - 1].endDate) return draft;
+  if (editStart <= existing.startDate || existingWindows.length === 0) return draft;
+  if (editStart > existingWindows[existingWindows.length - 1].endDate) return draft;
 
-  const yesterday = addLocalDays(today, -1);
+  const dayBeforeEdit = addLocalDays(editStart, -1);
   const kept: JourneyPhase[] = [];
-  let replacementStart = today;
+  let replacementStart = editStart;
 
   for (const window of existingWindows) {
-    if (window.endDate < today) {
+    if (window.endDate < editStart) {
       kept.push({ ...window.phase, order: kept.length });
       continue;
     }
 
-    if (window.startDate < today) {
+    if (window.startDate < editStart) {
       if (isCustomJourneyPhase(window.phase)) {
         kept.push({
           ...window.phase,
-          endDate: yesterday,
+          endDate: dayBeforeEdit,
           order: kept.length,
         });
-        replacementStart = today;
       } else {
-        kept.push({ ...window.phase, order: kept.length });
-        replacementStart = addLocalDays(window.endDate, 1);
+        const template = window.templateId ? getTemplateById(window.templateId) : null;
+        if (template) {
+          kept.push({
+            order: kept.length,
+            startDate: window.startDate,
+            endDate: dayBeforeEdit,
+            content: withGeneratedScheduleSummary(contentFromTemplate(template)),
+          });
+        }
       }
     }
     break;
@@ -419,7 +415,7 @@ export function JourneyBuilder({
   const handleConfirm = async () => {
     if (!draftJourney) return;
     const journeyToSave = initialJourney
-      ? mergeTodayForward(initialJourney, draftJourney, getLocalDateString())
+      ? mergeTodayForward(initialJourney, draftJourney, startDate)
       : draftJourney;
     setBusy(true);
     try {
@@ -498,10 +494,19 @@ export function JourneyBuilder({
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => {
+                    if (!initialJourney) setStartDate(e.target.value);
+                  }}
+                  readOnly={Boolean(initialJourney)}
+                  disabled={Boolean(initialJourney)}
                   className={inputClass}
                 />
               </label>
+              {initialJourney ? (
+                <p className="rounded-xl bg-secondary-container/40 p-3 text-body-sm text-on-secondary-container">
+                  Edits are applied from today forward so past check-ins and phase history stay intact.
+                </p>
+              ) : null}
               <p className="rounded-xl bg-secondary-container/40 p-3 text-body-sm text-on-secondary-container">
                 Custom phases are auto-chained with no gaps. Choose a duration for each phase and
                 Fasted will calculate the date ranges.
@@ -616,7 +621,6 @@ export function JourneyBuilder({
                       <option value="weekly">Weekly fast day(s)</option>
                       <option value="daniel">Daniel fast (whole phase)</option>
                       <option value="prayer">Fast + prayer days</option>
-                      <option value="rotating">Advanced / rotating</option>
                     </select>
                   </label>
 
@@ -639,8 +643,7 @@ export function JourneyBuilder({
                   )}
 
                   {(activePhase.schedulePreset === 'weekly' ||
-                    activePhase.schedulePreset === 'prayer' ||
-                    activePhase.schedulePreset === 'rotating') && (
+                    activePhase.schedulePreset === 'prayer') && (
                     <label className="block">
                       <span className="mb-1 block text-body-md text-on-surface">Fast type</span>
                       <select

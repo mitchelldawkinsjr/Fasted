@@ -259,11 +259,6 @@ export function normalizeJourney(journey: Journey): Journey {
   };
 }
 
-export function getPhaseTitle(phase: JourneyPhase): string {
-  if (isCustomJourneyPhase(phase)) return phase.content.title;
-  return getTemplateById(phase.templateId)?.title ?? 'Phase';
-}
-
 export { generateScheduleSummary };
 
 export function getAllJourneyDates(journey: Journey): string[] {
