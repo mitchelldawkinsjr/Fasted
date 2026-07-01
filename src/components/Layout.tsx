@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { AuthReturnRedirect } from './AuthReturnRedirect';
 import { AppHeader } from './AppHeader';
@@ -7,13 +8,14 @@ import { InstallPromptToast } from './InstallPromptToast';
 import { SyncToastWatcher } from './SyncToastWatcher';
 import { ToastHost } from './ToastHost';
 import { useActiveJourney } from '../hooks/useActiveJourney';
+import { useAuth } from '../hooks/useAuth';
+import { useGroups } from '../hooks/useGroups';
 
-const navItems = [
+const baseNavItems = [
   { to: '/', label: 'Today', icon: 'today' },
   { to: '/calendar', label: 'Calendar', icon: 'calendar_month' },
   { to: '/journal', label: 'Journal', icon: 'menu_book' },
   { to: '/progress', label: 'Progress', icon: 'query_stats' },
-  { to: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
 const DEFAULT_HEADER_TITLE = 'Fasted';
@@ -33,10 +35,26 @@ const pageTitles: Record<string, string> = {
 export function Layout() {
   const { pathname } = useLocation();
   const { journey } = useActiveJourney();
+  const { isLoggedIn, initialized: authInitialized } = useAuth();
+  const { groups, loading: groupsLoading, refresh: refreshGroups } = useGroups();
   const pageTitle = pageTitles[pathname] ?? DEFAULT_HEADER_TITLE;
   const journeyAwarePaths = new Set(['/', '/calendar', '/phases', '/progress']);
   const title =
     journeyAwarePaths.has(pathname) && !journey.isDefault ? journey.name : pageTitle;
+
+  useEffect(() => {
+    if (authInitialized && isLoggedIn) {
+      void refreshGroups();
+    }
+  }, [authInitialized, isLoggedIn, pathname, refreshGroups]);
+
+  const navItems = useMemo(() => {
+    const items = [...baseNavItems];
+    if (isLoggedIn && !groupsLoading && groups.length > 0) {
+      items.push({ to: '/groups', label: 'Groups', icon: 'groups' });
+    }
+    return items;
+  }, [groups, groupsLoading, isLoggedIn]);
 
   return (
     <div className="relative mx-auto min-h-screen max-w-lg pb-[calc(4.75rem+env(safe-area-inset-bottom))]">
