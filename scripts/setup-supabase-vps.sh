@@ -91,5 +91,5 @@ echo "ANON_KEY (for VITE_SUPABASE_ANON_KEY):"
 grep '^ANON_KEY=' .env | cut -d= -f2-
 echo ""
 echo "Next steps:"
-echo "  1. Run SQL migrations from supabase/migrations/"
+echo "  1. Run SQL migrations: bash ${DEPLOY_DIR:-/opt/apps/fasted-calendar}/scripts/apply-supabase-migrations.sh"
 echo "  2. Update fasted-calendar .env with VITE_SUPABASE_URL=${API_URL} and VITE_SUPABASE_ANON_KEY"
