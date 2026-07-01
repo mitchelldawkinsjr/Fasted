@@ -437,6 +437,13 @@ test('disables PDF export when journal is empty', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Export journal as PDF' })).toBeDisabled();
 });
 
+test.describe('journal PDF export', () => {
+  test.beforeEach(async ({ context }) => {
+    await context.addInitScript(() => {
+      window.print = () => undefined;
+    });
+  });
+
 test('opens print document when exporting journal as PDF', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
@@ -451,12 +458,35 @@ test('opens print document when exporting journal as PDF', async ({ page }) => {
 
   await expect(page.getByText(messages.export.journalPdf)).toBeVisible();
   await popup.waitForLoadState('domcontentloaded');
+  await expect(popup).toHaveURL(/\/journal\/print\?return=%2Fjournal/);
+  await expect(popup.getByRole('button', { name: 'Go back' })).toBeVisible();
   await expect(popup.getByText('Fasted', { exact: true })).toBeVisible();
   await expect(popup.getByText('Export cover verse')).toBeVisible();
   await expect(popup.getByText('Export victory note')).toBeVisible();
-  await popup.evaluate(() => window.dispatchEvent(new Event('afterprint')));
-  await expect(popup.getByText('Fasted', { exact: true })).toBeVisible();
-  await popup.close();
+  await Promise.all([
+    popup.waitForEvent('close'),
+    popup.evaluate(() => window.dispatchEvent(new Event('afterprint'))),
+  ]);
+});
+
+test('print page back button closes browser PDF export popup', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByLabel('Verse of the Day').fill('Popup back verse');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Export journal as PDF' }).click(),
+  ]);
+
+  await popup.waitForLoadState('domcontentloaded');
+  await expect(popup).toHaveURL(/\/journal\/print\?return=%2Fjournal/);
+  await expect(popup.getByRole('button', { name: 'Go back' })).toBeVisible();
+  await Promise.all([
+    popup.waitForEvent('close'),
+    popup.getByRole('button', { name: 'Go back' }).click(),
+  ]);
 });
 
 test('shows a blocked popup message when PDF export cannot open', async ({ page }) => {
@@ -492,16 +522,13 @@ test('waits for print fonts before opening the print dialog', async ({ page }) =
 
     testWindow.__printCalls = 0;
     testWindow.__resolvePrintFonts = resolveFonts;
-    Object.defineProperty(document, 'fonts', {
+    // Patch the prototype so the mock survives popup navigation from about:blank.
+    Object.defineProperty(Document.prototype, 'fonts', {
       configurable: true,
-      value: { ready: fontsReady },
+      get() {
+        return { ready: fontsReady };
+      },
     });
-    if (document.fonts.ready !== fontsReady) {
-      Object.defineProperty(document.fonts, 'ready', {
-        configurable: true,
-        value: fontsReady,
-      });
-    }
     window.print = () => {
       testWindow.__printCalls = (testWindow.__printCalls ?? 0) + 1;
     };
@@ -513,6 +540,8 @@ test('waits for print fonts before opening the print dialog', async ({ page }) =
   ]);
 
   await popup.waitForLoadState('domcontentloaded');
+  await expect(popup).toHaveURL(/\/journal\/print\?return=%2Fjournal/);
+  await expect(popup.getByRole('button', { name: 'Go back' })).toBeVisible();
   await expect(popup.getByText('Fonts should load before printing')).toBeVisible();
   await expect
     .poll(() =>
@@ -555,6 +584,65 @@ test('settings PDF export opens print document', async ({ page }) => {
 
   await expect(page.getByText(messages.export.journalPdf)).toBeVisible();
   await popup.waitForLoadState('domcontentloaded');
+  await expect(popup).toHaveURL(/\/journal\/print\?return=%2Fsettings/);
+  await expect(popup.getByRole('button', { name: 'Go back' })).toBeVisible();
   await expect(popup.getByText('Settings export prayer')).toBeVisible();
   await popup.close();
+});
+
+test('print page back button returns to journal in a same-tab browser view', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByLabel('Verse of the Day').fill('Back link verse');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.addInitScript(() => {
+    window.print = () => undefined;
+  });
+  await page.goto('/journal/print?return=%2Fjournal');
+
+  await expect(page.getByRole('button', { name: 'Go back' })).toBeVisible();
+  await page.getByRole('button', { name: 'Go back' }).click();
+  await expect(page).toHaveURL('/journal');
+});
+
+test('PDF export auto-returns in-app when installed PWA afterprint fires synchronously', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByLabel('Verse of the Day').fill('PWA export verse');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await page.evaluate(() => {
+    const testWindow = window as Window & typeof globalThis & { __printCalls?: number };
+    testWindow.__printCalls = 0;
+    window.print = () => {
+      testWindow.__printCalls = (testWindow.__printCalls ?? 0) + 1;
+      window.dispatchEvent(new Event('afterprint'));
+    };
+    window.matchMedia = (query: string) =>
+      ({
+        matches: query === '(display-mode: standalone)',
+        media: query,
+        onchange: null,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        dispatchEvent: () => false,
+      }) as MediaQueryList;
+  });
+
+  await page.getByRole('button', { name: 'Export journal as PDF' }).click();
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const testWindow = window as Window & typeof globalThis & { __printCalls?: number };
+        return testWindow.__printCalls ?? 0;
+      }),
+    )
+    .toBe(1);
+  await expect(page).toHaveURL('/journal');
+});
+
 });

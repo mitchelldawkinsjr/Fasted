@@ -1,10 +1,24 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { buildJournalExportModel, JournalPrintDocument } from '../components/JournalPrintDocument';
+import { Icon } from '../components/Icon';
 import { useAuth } from '../hooks/useAuth';
 import { useProgress } from '../hooks/useProgress';
+import {
+  type JournalPrintReturnTo,
+  leavePrintView,
+  withSuppressedPrintFooter,
+} from '../lib/journalPrintExport';
 import { getStorageScope } from '../lib/storage';
 
+const BACK_NAV_CLASS =
+  'inline-flex items-center gap-1 text-body-md font-medium text-primary transition-opacity hover:opacity-80';
+
 export function JournalPrintPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnParam = searchParams.get('return');
+  const returnTo: JournalPrintReturnTo = returnParam === '/settings' ? '/settings' : '/journal';
   const { initialized, user } = useAuth();
   const progress = useProgress();
   const storageScope = getStorageScope();
@@ -13,6 +27,15 @@ export function JournalPrintPage() {
   const entryCount = model.entries.length;
   const progressStamp = `${storageScope ?? 'guest'}:${progress.updatedAt ?? ''}:${progress.journalEntries.map((e) => e.id).join(',')}`;
   const printedStampRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      leavePrintView(navigate, returnTo);
+    };
+
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => window.removeEventListener('afterprint', handleAfterPrint);
+  }, [navigate, returnTo]);
 
   useEffect(() => {
     if (entryCount === 0 || !scopeReady) return;
@@ -33,7 +56,7 @@ export function JournalPrintPage() {
       if (cancelled || printedStampRef.current === progressStamp) return;
 
       printedStampRef.current = progressStamp;
-      window.print();
+      withSuppressedPrintFooter(() => window.print());
     };
 
     void printWhenReady();
@@ -43,13 +66,32 @@ export function JournalPrintPage() {
     };
   }, [entryCount, progressStamp, scopeReady]);
 
+  const backControl = (
+    <button
+      type="button"
+      onClick={() => leavePrintView(navigate, returnTo)}
+      className={BACK_NAV_CLASS}
+      aria-label="Go back"
+    >
+      <Icon name="arrow_back" size={20} />
+    </button>
+  );
+
   if (entryCount === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface-container-lowest p-gutter text-body-md text-on-surface-variant">
-        No journal entries to export.
+      <div className="flex min-h-screen flex-col bg-surface-container-lowest p-gutter">
+        <div className="mb-stack-md print:hidden">{backControl}</div>
+        <div className="flex flex-1 items-center justify-center text-body-md text-on-surface-variant">
+          No journal entries to export.
+        </div>
       </div>
     );
   }
 
-  return <JournalPrintDocument model={model} />;
+  return (
+    <div className="bg-surface-container-lowest">
+      <div className="print:hidden px-gutter pb-stack-md pt-gutter">{backControl}</div>
+      <JournalPrintDocument model={model} />
+    </div>
+  );
 }
