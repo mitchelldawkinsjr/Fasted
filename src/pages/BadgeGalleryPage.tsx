@@ -4,6 +4,7 @@ import { BadgeSprite } from '../components/BadgeSprite';
 import { Icon } from '../components/Icon';
 import { GLOBAL_BADGES, getPhaseMilestonesForPhase } from '../data/phaseAchievements';
 import type { PhaseMilestoneDef } from '../data/phaseAchievements';
+import { getMilestonePhaseId } from '../data/fastingPlan';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 
 // ─── Tier metadata ────────────────────────────────────────────────────────────
@@ -293,7 +294,7 @@ export function BadgeGalleryPage() {
 
   const totalCount =
     GLOBAL_BADGES.length +
-    phases.reduce((sum, p) => sum + getPhaseMilestonesForPhase(p.id).length, 0);
+    phases.reduce((sum, p) => sum + getPhaseMilestonesForPhase(getMilestonePhaseId(p)).length, 0);
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up pb-stack-lg">
@@ -361,7 +362,7 @@ export function BadgeGalleryPage() {
           title={phase.title}
           scriptureRef={phase.scriptureReference}
           themeColor={phase.themeColor}
-          milestones={getPhaseMilestonesForPhase(phase.id)}
+          milestones={getPhaseMilestonesForPhase(getMilestonePhaseId(phase))}
           showLocked={showLocked}
         />
       ))}

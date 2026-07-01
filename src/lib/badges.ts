@@ -63,7 +63,7 @@ function getEarnedBadgeMap(): Map<string, Badge> {
 }
 
 function getPhaseByLegacyId(phaseId: number) {
-  return getPhases().find((p) => p.id === phaseId);
+  return getPhases().find((p) => (p.legacyId ?? p.id) === phaseId);
 }
 
 function getGlobalBadgeProgress(def: GlobalBadgeDef, today: string): number {
@@ -241,7 +241,8 @@ export function getFastDaysCompleted(): number {
 export function getPhasesCompletedCount(_today: string): number {
   const earned = getEarnedBadgeMap();
   return getPhases().filter((phase) => {
-    const milestones = PHASE_MILESTONES.filter((m) => m.phaseId === phase.id);
+    const milestonePhaseId = phase.legacyId ?? phase.id;
+    const milestones = PHASE_MILESTONES.filter((m) => m.phaseId === milestonePhaseId);
     const finalMilestone = milestones[milestones.length - 1];
     if (!finalMilestone) return false;
     return (

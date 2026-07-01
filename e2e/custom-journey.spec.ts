@@ -261,4 +261,34 @@ test.describe('custom journey builder', () => {
     await expect(instructions).toContainText('Beverages: water, black coffee, unsweetened tea.');
     await expect(instructions).not.toContainText('Sunrise-to-sunset fast today—water only.');
   });
+
+  test('check-in modal shows journey-relative phase label for template-based custom journeys', async ({
+    page,
+  }) => {
+    const today = todayString();
+    const journey = {
+      id: 'template-custom-phase-one',
+      name: 'Seek God Fast',
+      startDate: today,
+      phases: [{ order: 0, templateId: 'davids-fast' }],
+    };
+
+    await seedProgress(page, {
+      activeJourneyId: journey.id,
+      journeys: [journey],
+      checkIns: [],
+      journalEntries: [],
+      mealImages: {},
+      badges: [],
+      settings: { reminderTime: '07:00', theme: 'light', scriptureNote: '' },
+    });
+
+    await page.goto(`/?date=${today}`);
+    await expect(page.getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
+
+    await page.getByRole('button', { name: 'Check-in for Today' }).click();
+    const modal = page.getByRole('dialog');
+    await expect(modal.getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
+    await expect(modal.getByText('Phase 2:')).not.toBeVisible();
+  });
 });

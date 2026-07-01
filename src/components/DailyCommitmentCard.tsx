@@ -1,3 +1,4 @@
+import { getMilestonePhaseId } from '../data/fastingPlan';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getNextReward } from '../lib/badges';
 import { getPhaseDates } from '../lib/phaseProgress';
@@ -16,7 +17,12 @@ export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
   const streak = getCurrentStreak(date);
   const phase = getPhaseForDate(date);
   const nextReward = phase && !phase.isCustom
-    ? getNextReward(phase.id, phase.startDate, phase.endDate, date)
+    ? getNextReward(
+        getMilestonePhaseId(phase),
+        phase.startDate,
+        phase.endDate,
+        date,
+      )
     : null;
 
   return (
@@ -69,7 +75,13 @@ export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
                 {phase.title} · {getPhaseDates(phase.startDate, phase.endDate).length} days
               </span>
             </div>
-            {!phase.isCustom && <PhaseMilestonesCard phaseId={phase.id} today={date} compact />}
+            {!phase.isCustom && (
+              <PhaseMilestonesCard
+                phaseId={getMilestonePhaseId(phase)}
+                today={date}
+                compact
+              />
+            )}
           </>
         )}
 

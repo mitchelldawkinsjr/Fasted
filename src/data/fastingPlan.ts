@@ -8,8 +8,12 @@ export function getPhases(journey?: Journey): FastPhase[] {
   return getPhasesForJourney(resolveJourney(journey));
 }
 
+export function getMilestonePhaseId(phase: FastPhase): number {
+  return phase.legacyId ?? phase.id;
+}
+
 export function getPhaseById(id: number, journey?: Journey): FastPhase | undefined {
-  return getPhases(journey).find((p) => p.id === id);
+  return getPhases(journey).find((p) => p.id === id || p.legacyId === id);
 }
 
 export function getPhaseForDate(date: string, journey?: Journey): FastPhase | undefined {
