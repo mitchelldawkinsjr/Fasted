@@ -21,3 +21,14 @@ labels:
   readyLocal: ready-local
   reviewLocal: review-local
   prOpenedLocal: pr-opened-local
+  needsArchitecture: needs-architecture
+  architectureReviewed: architecture-reviewed
+  testsVerified: tests-verified
+  docsUpdated: docs-updated
+  noAgent: no-agent
+  agentManual: agent-manual
+  autoFixAttempted: auto-fix-attempted
+automation:
+  autoSpecOnOpen: true
+  autoReadyAfterSpec: true
+  autoFixOnFindings: true

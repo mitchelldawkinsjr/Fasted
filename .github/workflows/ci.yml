@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify agent context files are composed
+        run: npm run agent:compose -- --check
+
       - name: Verify screenshot artifacts are compressed
         run: npm run compress:artifacts:check
 
@@ -43,7 +46,7 @@ jobs:
       - name: Run Playwright e2e tests
         env:
           CI: true
-        run: npx playwright test e2e/journal.spec.ts e2e/check-in-streak.spec.ts
+        run: npm run test:e2e
 
       - name: Run accessibility checks
         env:
@@ -76,11 +79,20 @@ jobs:
             a11y-audit/report-*.json
             a11y-audit/report-*.md
 
-      - name: Run overflow audit (advisory)
+      - name: Run mobile overflow audit
         continue-on-error: true
         env:
           CI: true
-        run: npx playwright test e2e/overflow-audit.spec.ts
+        run: npm run test:audit
+
+      - name: Upload overflow audit artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overflow-audit
+          path: |
+            e2e/overflow-screenshots/
+            playwright-report/
 
   docker-build:
     name: docker-build

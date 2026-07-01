@@ -1,0 +1,40 @@
+name: Issue Auto-Ready
+
+# After architecture review completes, queue implementation automatically
+# unless the issue requires manual approval (agent-manual / no-agent).
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  queue-implement:
+    if: github.event.label.name == 'architecture-reviewed'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Add ready label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          LABELS=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json labels -q '[.labels[].name] | join(",")')
+
+          if echo "$LABELS" | grep -qE 'no-agent|agent-manual'; then
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "Architecture review complete. Add \`ready\` when you want implementation to start."
+            exit 0
+          fi
+
+          if echo "$LABELS" | grep -qE 'agent-working|pr-opened|ready'; then
+            echo "Already queued or in progress."
+            exit 0
+          fi
+
+          gh label create ready --description "Trigger Cursor cloud agent implementation" --color "FBCA04" 2>/dev/null || true
+          gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label ready
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "🏗️ Architecture reviewed — \`ready\` applied automatically. Implementation agent starting."

@@ -1,0 +1,64 @@
+name: Visual regression
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  visual:
+    name: visual-snapshots
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run visual regression tests
+        env:
+          CI: true
+        run: npm run test:visual
+
+      - name: Run full overflow audit
+        continue-on-error: true
+        env:
+          CI: true
+        run: npm run test:audit
+
+      - name: Upload overflow audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: overflow-audit
+          path: |
+            e2e/overflow-screenshots/
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-playwright-report
+          path: |
+            playwright-report/
+            test-results/
+
+      - name: Upload snapshot diff artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-snapshot-diffs
+          path: test-results/**/*

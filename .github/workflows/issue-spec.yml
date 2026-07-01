@@ -42,7 +42,7 @@ jobs:
           Issue body:
           ${ISSUE_BODY:-(no body)}
 
-          Generate a GitHub comment with Acceptance Criteria, Potential Fix Directions, and Notes from Issue / Images for this issue. Follow the output format and rules in your system context exactly.
+          Generate a GitHub comment with Acceptance Criteria, Task Breakdown, Potential Fix Directions, and Notes from Issue / Images for this issue. Follow the output format and rules in your system context exactly. The Task Breakdown must use checkbox syntax and list only tasks relevant to this issue.
           PROMPT_EOF
           )
 
@@ -83,3 +83,36 @@ jobs:
 
           gh label create spec-added --description "AI-generated acceptance criteria posted" --color "0E8A16" 2>/dev/null || true
           gh issue edit "$ISSUE_NUMBER" --remove-label "needs-spec" --add-label "spec-added"
+
+      - name: Auto-queue implementation or architecture review
+        if: vars.AGENT_AUTO_READY_ENABLED != 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          LABELS=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json labels -q '[.labels[].name] | join(",")')
+          BODY=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json body,comments -q '[.body] + [.comments[].body] | join("\n")')
+
+          if echo "$LABELS" | grep -qE 'no-agent|agent-manual'; then
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "Spec ready. Add \`ready\` when you want the implementation agent to start."
+            exit 0
+          fi
+
+          if echo "$LABELS" | grep -qE 'agent-working|pr-opened|ready|needs-architecture'; then
+            echo "Already queued or in architecture review."
+            exit 0
+          fi
+
+          gh label create needs-architecture --description "Request architecture review before implementation" --color "C5DEF5" 2>/dev/null || true
+          gh label create ready --description "Trigger Cursor cloud agent implementation" --color "FBCA04" 2>/dev/null || true
+
+          if echo "$BODY" | grep -qiE 'supabase/migrations|```sql|new route|new page|/groups/|RLS polic|storage bucket|schema change'; then
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label needs-architecture
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "🏗️ **Complex change detected** — \`needs-architecture\` applied. Architecture agent will review; implementation queues automatically after \`architecture-reviewed\`."
+          else
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label ready
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "✅ Spec complete — \`ready\` applied automatically. Implementation agent starting."
+          fi

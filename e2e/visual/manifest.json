@@ -1,0 +1,38 @@
+{
+  "description": "Visual regression manifest for agents and nightly CI. Each entry is captured by e2e/visual/*.spec.ts.",
+  "viewports": {
+    "visual-mobile": { "width": 390, "height": 844, "device": "iPhone 13" },
+    "visual-tablet": { "width": 768, "height": 1024, "device": "iPad Mini" },
+    "visual-desktop": { "width": 1440, "height": 900, "device": "Desktop Chrome" }
+  },
+  "routes": [
+    { "path": "/", "label": "Today", "states": ["empty", "rich"] },
+    { "path": "/calendar", "label": "Calendar", "states": ["empty", "rich"] },
+    { "path": "/journal", "label": "Journal", "states": ["empty", "rich"] },
+    { "path": "/progress", "label": "Progress", "states": ["empty", "rich"] },
+    { "path": "/progress/mood", "label": "MoodVisualizer", "states": ["empty", "rich"] },
+    { "path": "/progress/badges", "label": "Badges", "states": ["empty", "rich"] },
+    { "path": "/phases", "label": "Phases", "states": ["empty", "rich"] },
+    { "path": "/settings", "label": "Settings", "states": ["empty", "rich"] }
+  ],
+  "modals": [
+    { "name": "CheckInModal", "state": "streakReady", "trigger": "Check-in for Today button on /" },
+    { "name": "JournalEditor", "state": "worstCase", "trigger": "+ New on /journal" },
+    { "name": "JournalViewer", "state": "worstCase", "trigger": "View reflection on /journal" }
+  ],
+  "commands": {
+    "prE2e": "npm run test:e2e",
+    "mobileAudit": "npm run test:audit",
+    "mobileOverlay": "npx playwright test e2e/overlay-scroll.spec.ts --project=mobile",
+    "visual": "npm run test:visual",
+    "updateSnapshots": "npm run test:visual:update",
+    "compressArtifacts": "npm run compress:artifacts"
+  },
+  "imagePolicy": "Run npm run compress:artifacts before committing PNG/JPEG under artifacts/, docs/, or e2e/visual/. Visual baselines use viewport (not full-page) PNGs.",
+  "overlayChecks": [
+    "Bottom nav hidden while aria-modal dialog is open",
+    "Journal Save Entry visible in viewport without scroll (iphone-se)",
+    "Journal mood picker not covered by nav at scroll position 0",
+    "Check-in modal actions in viewport without nav overlap"
+  ]
+}

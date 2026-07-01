@@ -258,7 +258,12 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     'w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md grace-shadow focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-stack-md" noValidate>
+    <form
+      onSubmit={handleSubmit}
+      className="flex min-h-0 flex-1 flex-col gap-stack-md"
+      noValidate
+    >
+      <div className="min-h-0 flex-1 space-y-stack-md overflow-y-auto overscroll-contain pb-2">
       <section className="stitch-card space-y-stack-md overflow-hidden p-stack-md">
         <label className="block min-w-0 overflow-hidden">
           <span className="mb-1 block text-body-md font-medium text-on-surface">Date</span>
@@ -340,8 +345,9 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           />
         </label>
       )}
+      </div>
 
-      <div className="flex gap-3">
+      <div className="flex shrink-0 gap-3 border-t border-outline-variant/30 bg-linen pt-3">
         {onCancel && (
           <LoadingButton type="button" onClick={onCancel} variant="secondary" className="flex-1">
             Cancel

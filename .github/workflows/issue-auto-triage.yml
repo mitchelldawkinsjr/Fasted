@@ -1,0 +1,44 @@
+name: Issue Auto-Triage
+
+# Auto-start the agent pipeline on new issues unless opted out.
+# Opt out: add label `no-agent`, or put `[no-agent]` in the issue body/title.
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  auto-needs-spec:
+    if: vars.AGENT_AUTO_SPEC_ENABLED != 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Apply needs-spec unless opted out
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          TITLE: ${{ github.event.issue.title }}
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+
+          if echo "$TITLE $BODY" | grep -qi '\[no-agent\]'; then
+            echo "Opted out via [no-agent] in title/body."
+            exit 0
+          fi
+
+          LABELS=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json labels -q '[.labels[].name] | join(",")')
+          if echo "$LABELS" | grep -q 'no-agent'; then
+            echo "Opted out via no-agent label."
+            exit 0
+          fi
+
+          gh label create needs-spec --description "Request AI-generated acceptance criteria" --color "FEF2C0" 2>/dev/null || true
+          gh label create no-agent --description "Skip automated agent pipeline" --color "666666" 2>/dev/null || true
+          gh label create agent-manual --description "Require manual ready label before implement" --color "C2E0C6" 2>/dev/null || true
+
+          gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label needs-spec
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "🤖 **Agent pipeline started** — spec generation queued. Add \`no-agent\` or \`agent-manual\` to opt out of auto-implement."

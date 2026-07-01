@@ -1,0 +1,97 @@
+{
+  "agentGuide": ".github/AGENT.md",
+  "rulesDir": ".github/agent-rules",
+  "overridesDir": ".github/agent-overrides",
+  "outputs": {
+    ".github/ai-spec-context.md": {
+      "title": "# Fasted Calendar — Repo Context for Issue Spec Generation",
+      "includeAgentGuide": true,
+      "rules": ["product-rules", "architecture-rules"],
+      "tail": "spec-tail.md"
+    },
+    ".github/ai-implement-context.md": {
+      "title": "# Fasted Calendar — Implementation Agent Context",
+      "includeAgentGuide": true,
+      "rules": ["architecture-rules", "ui-rules", "testing-rules", "documentation-rules", "commit-rules"],
+      "tail": "implement-tail.md"
+    },
+    ".github/ai-bugbot-context.md": {
+      "title": "# Fasted Calendar — Bugbot PR Review",
+      "includeAgentGuide": false,
+      "rules": ["architecture-rules", "testing-rules"],
+      "tail": "bugbot-tail.md"
+    },
+    ".github/ai-ponytail-review-context.md": {
+      "title": "# Fasted Calendar — Ponytail PR Review",
+      "includeAgentGuide": false,
+      "rules": ["architecture-rules"],
+      "tail": "ponytail-review-tail.md"
+    },
+    ".github/ai-agent-review-context.md": {
+      "title": "# Fasted Calendar — PR Review (Local Automation)",
+      "includeAgentGuide": true,
+      "rules": [],
+      "tail": "agent-review-tail.md"
+    },
+    ".github/ai-agent-fix-context.md": {
+      "title": "# Fasted Calendar — PR Agent Fix",
+      "includeAgentGuide": true,
+      "rules": ["architecture-rules", "testing-rules", "commit-rules"],
+      "tail": "agent-fix-tail.md"
+    },
+    ".github/ai-ponytail-audit-context.md": {
+      "title": "# Fasted Calendar — Ponytail Repo Audit",
+      "includeAgentGuide": false,
+      "rules": ["architecture-rules"],
+      "tail": "ponytail-audit-tail.md"
+    },
+    ".github/agent-context/architecture-context.md": {
+      "title": "# Fasted Calendar — Architecture Agent",
+      "includeAgentGuide": true,
+      "rules": ["product-rules", "architecture-rules"],
+      "tail": "architecture-tail.md"
+    },
+    ".github/agent-context/test-context.md": {
+      "title": "# Fasted Calendar — Testing Agent",
+      "includeAgentGuide": true,
+      "rules": ["testing-rules"],
+      "tail": "test-tail.md"
+    },
+    ".github/agent-context/ui-context.md": {
+      "title": "# Fasted Calendar — UI Review Agent",
+      "includeAgentGuide": true,
+      "rules": ["ui-rules", "testing-rules"],
+      "tail": "ui-tail.md"
+    },
+    ".github/agent-context/a11y-context.md": {
+      "title": "# Fasted Calendar — Accessibility Agent",
+      "includeAgentGuide": true,
+      "rules": ["accessibility-rules", "ui-rules"],
+      "tail": "a11y-tail.md"
+    },
+    ".github/agent-context/security-context.md": {
+      "title": "# Fasted Calendar — Security Agent",
+      "includeAgentGuide": true,
+      "rules": ["security-rules", "architecture-rules"],
+      "tail": "security-tail.md"
+    },
+    ".github/agent-context/docs-context.md": {
+      "title": "# Fasted Calendar — Documentation Agent",
+      "includeAgentGuide": true,
+      "rules": ["documentation-rules", "product-rules"],
+      "tail": "docs-tail.md"
+    },
+    ".github/agent-context/deploy-context.md": {
+      "title": "# Fasted Calendar — Deployment Agent",
+      "includeAgentGuide": true,
+      "rules": ["architecture-rules", "testing-rules"],
+      "tail": "deploy-tail.md"
+    },
+    ".github/agent-context/plan-context.md": {
+      "title": "# Fasted Calendar — Planning Agent",
+      "includeAgentGuide": true,
+      "rules": ["product-rules", "architecture-rules", "testing-rules"],
+      "tail": "spec-tail.md"
+    }
+  }
+}

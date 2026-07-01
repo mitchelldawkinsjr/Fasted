@@ -213,8 +213,8 @@ export function JournalPage() {
 
   if (editing) {
     return (
-      <div className="animate-fade-in-up">
-        <h2 className="mb-stack-md font-display text-headline-lg-mobile text-primary">
+      <div className="flex h-[calc(100dvh-72px-4.75rem-env(safe-area-inset-bottom))] flex-col animate-fade-in-up">
+        <h2 className="mb-stack-md shrink-0 font-display text-headline-lg-mobile text-primary">
           {editing === 'new' ? 'New Reflection' : 'Edit Entry'}
         </h2>
         <JournalEditor
