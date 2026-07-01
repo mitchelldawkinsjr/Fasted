@@ -28,28 +28,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-
-          LABELS=$(gh issue view "$ISSUE_NUMBER" --json labels -q '[.labels[].name] | join(",")')
-
+          LABELS=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json labels -q '[.labels[].name] | join(",")')
           if ! echo "$LABELS" | grep -q 'spec-added'; then
-            echo "::error::Issue must have the spec-added label before ready. Apply needs-spec first and wait for the spec comment."
+            echo "::error::Issue must have the spec-added label before ready."
             exit 1
           fi
-
           if echo "$LABELS" | grep -qE 'agent-working|pr-opened'; then
             echo "::notice::Issue already dispatched or completed. Skipping."
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
           fi
-
-          gh label create ready --description "Trigger Cursor cloud agent implementation" --color "FBCA04" 2>/dev/null || true
-          gh label create agent-working --description "Cursor cloud agent implementing" --color "FBBA04" 2>/dev/null || true
-          gh label create pr-opened --description "Implementation PR opened" --color "1D76DB" 2>/dev/null || true
-          gh label create agent-failed --description "Cloud agent failed to implement" --color "D93F0B" 2>/dev/null || true
-
-          gh issue edit "$ISSUE_NUMBER" --add-label agent-working --remove-label ready
 
       - name: Setup Node
         if: steps.guards.outputs.skip != 'true'
@@ -69,16 +59,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
-        run: node scripts/dispatch-cursor-agent.mjs
-
-      - name: Recover issue labels on dispatch failure
-        if: failure() && steps.guards.outputs.skip != 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          gh issue edit "$ISSUE_NUMBER" \
-            --remove-label agent-working \
-            --add-label agent-failed \
-            --add-label ready 2>/dev/null || true
-          gh issue comment "$ISSUE_NUMBER" --body "Cursor cloud agent dispatch failed. Check the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) and re-add \`ready\` after fixing."
+          chmod +x scripts/run-issue-implement.sh
+          scripts/run-issue-implement.sh || {
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
+              --remove-label agent-working \
+              --add-label agent-failed \
+              --add-label ready 2>/dev/null || true
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "Cursor cloud agent dispatch failed. Check the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) and re-add \`ready\` after fixing."
+            exit 1
+          }

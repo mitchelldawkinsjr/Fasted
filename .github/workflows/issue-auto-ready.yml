@@ -1,7 +1,7 @@
 name: Issue Auto-Ready
 
-# After architecture review completes, queue implementation automatically
-# unless the issue requires manual approval (agent-manual / no-agent).
+# After architecture review completes, queue implementation in the same workflow.
+# Bot-added labels do not trigger downstream workflows (GITHUB_TOKEN restriction).
 
 on:
   issues:
@@ -13,13 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
+      contents: read
 
     steps:
-      - name: Add ready label
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add ready label and dispatch implement
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
         run: |
           set -euo pipefail
 
@@ -30,11 +35,32 @@ jobs:
             exit 0
           fi
 
-          if echo "$LABELS" | grep -qE 'agent-working|pr-opened|ready'; then
-            echo "Already queued or in progress."
+          if echo "$LABELS" | grep -qE 'agent-working|pr-opened'; then
+            echo "Already in progress."
             exit 0
           fi
 
-          gh label create ready --description "Trigger Cursor cloud agent implementation" --color "FBCA04" 2>/dev/null || true
-          gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label ready
-          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "🏗️ Architecture reviewed — \`ready\` applied automatically. Implementation agent starting."
+          if ! echo "$LABELS" | grep -q 'ready'; then
+            gh label create ready --description "Trigger Cursor cloud agent implementation" --color "FBCA04" 2>/dev/null || true
+            gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label ready
+            gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "🏗️ Architecture reviewed — implementation agent starting."
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Dispatch Cursor cloud agent
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          chmod +x scripts/run-issue-implement.sh
+          scripts/run-issue-implement.sh
