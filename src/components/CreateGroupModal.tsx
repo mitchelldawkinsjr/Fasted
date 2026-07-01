@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CommitmentDefinition, GroupPrivacy, Journey } from '../types';
 import { createCommitmentPreset } from '../data/commitmentPresets';
+import { formatGroupError } from '../lib/authErrors';
 import { createGroup } from '../lib/groups';
 import { CommitmentEditor } from './CommitmentEditor';
 import { JourneyBuilder } from './JourneyBuilder';
@@ -48,7 +49,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
       setDisplayName('');
       setCommitments(createCommitmentPreset('fasted-default'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create group');
+      setError(formatGroupError(err));
     } finally {
       setBusy(false);
     }
@@ -77,7 +78,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
       setDisplayName('');
       setCommitments(createCommitmentPreset('fasted-default'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create group');
+      setError(formatGroupError(err));
       throw err;
     } finally {
       setBusy(false);

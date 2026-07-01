@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GroupRecord } from '../types';
+import { formatGroupError } from '../lib/authErrors';
 import { listMyGroups } from '../lib/groups';
 import { isSyncConfigured } from '../lib/supabase';
 
@@ -29,7 +30,7 @@ export function useGroups() {
     } catch (err) {
       if (requestId !== requestIdRef.current) return;
 
-      setError(err instanceof Error ? err.message : 'Failed to load groups');
+      setError(formatGroupError(err, 'Failed to load groups'));
     } finally {
       if (requestId === requestIdRef.current) {
         setLoading(false);

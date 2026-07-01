@@ -4,6 +4,9 @@ const NETWORK_FAILED =
   'Could not reach the server. Check your connection and try again.';
 const INVALID_CREDENTIALS = 'Incorrect email or password. Please try again.';
 const AUTH_FAILED = 'Sign in failed. Check your email and password.';
+const GROUP_SCHEMA_UNAVAILABLE =
+  'Group features are temporarily unavailable. The server database needs an update — please try again later or contact support.';
+const GROUP_CREATE_FAILED = 'Could not create group. Please try again.';
 
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message.trim();
@@ -11,6 +14,23 @@ function getErrorMessage(err: unknown): string {
     return String((err as { message: unknown }).message).trim();
   }
   return '';
+}
+
+function getErrorCode(err: unknown): string | null {
+  if (typeof err !== 'object' || err === null || !('code' in err)) return null;
+  const code = (err as { code: unknown }).code;
+  return typeof code === 'string' ? code : null;
+}
+
+function isMissingSchemaError(err: unknown): boolean {
+  const code = getErrorCode(err);
+  if (code === 'PGRST205' || code === '42P01') return true;
+
+  const message = getErrorMessage(err).toLowerCase();
+  return (
+    message.includes('could not find the table') ||
+    (message.includes('relation') && message.includes('does not exist'))
+  );
 }
 
 export function isNetworkError(err: unknown): boolean {
@@ -38,6 +58,17 @@ function isInvalidCredentialsError(err: unknown): boolean {
     message.includes('invalid login credentials') ||
     message.includes('invalid email or password')
   );
+}
+
+export function formatGroupError(err: unknown, fallback = GROUP_CREATE_FAILED): string {
+  if (isMissingSchemaError(err)) {
+    return GROUP_SCHEMA_UNAVAILABLE;
+  }
+
+  const message = getErrorMessage(err);
+  if (message) return message;
+
+  return fallback;
 }
 
 export function formatAuthError(err: unknown, fallback = AUTH_FAILED): string {
