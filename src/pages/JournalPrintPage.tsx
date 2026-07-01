@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { buildJournalExportModel, JournalPrintDocument } from '../components/JournalPrintDocument';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../hooks/useAuth';
 import { useProgress } from '../hooks/useProgress';
 import {
+  type JournalPrintReturnTo,
   leavePrintView,
-  parseJournalPrintReturnTo,
-  restoreBrowserPrintFooter,
-  suppressBrowserPrintFooter,
+  withSuppressedPrintFooter,
 } from '../lib/journalPrintExport';
 import { getStorageScope } from '../lib/storage';
 
@@ -17,10 +16,9 @@ const BACK_NAV_CLASS =
 
 export function JournalPrintPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const returnTo = parseJournalPrintReturnTo(searchParams.get('return'));
-  const routerPath = `${location.pathname}${location.search}`;
+  const returnParam = searchParams.get('return');
+  const returnTo: JournalPrintReturnTo = returnParam === '/settings' ? '/settings' : '/journal';
   const { initialized, user } = useAuth();
   const progress = useProgress();
   const storageScope = getStorageScope();
@@ -58,12 +56,7 @@ export function JournalPrintPage() {
       if (cancelled || printedStampRef.current === progressStamp) return;
 
       printedStampRef.current = progressStamp;
-      const snapshot = suppressBrowserPrintFooter();
-      try {
-        window.print();
-      } finally {
-        restoreBrowserPrintFooter(snapshot, navigate, routerPath);
-      }
+      withSuppressedPrintFooter(() => window.print());
     };
 
     void printWhenReady();
@@ -71,18 +64,23 @@ export function JournalPrintPage() {
     return () => {
       cancelled = true;
     };
-  }, [entryCount, navigate, progressStamp, routerPath, scopeReady]);
+  }, [entryCount, progressStamp, scopeReady]);
+
+  const backControl = (
+    <button
+      type="button"
+      onClick={() => leavePrintView(navigate, returnTo)}
+      className={BACK_NAV_CLASS}
+      aria-label="Go back"
+    >
+      <Icon name="arrow_back" size={20} />
+    </button>
+  );
 
   if (entryCount === 0) {
     return (
       <div className="flex min-h-screen flex-col bg-surface-container-lowest p-gutter">
-        <Link
-          to={returnTo}
-          className={`mb-stack-md ${BACK_NAV_CLASS} print:hidden`}
-          aria-label="Go back"
-        >
-          <Icon name="arrow_back" size={20} />
-        </Link>
+        <div className="mb-stack-md print:hidden">{backControl}</div>
         <div className="flex flex-1 items-center justify-center text-body-md text-on-surface-variant">
           No journal entries to export.
         </div>
@@ -92,11 +90,7 @@ export function JournalPrintPage() {
 
   return (
     <div className="bg-surface-container-lowest">
-      <div className="print:hidden px-gutter pb-stack-md pt-gutter">
-        <Link to={returnTo} className={BACK_NAV_CLASS} aria-label="Go back">
-          <Icon name="arrow_back" size={20} />
-        </Link>
-      </div>
+      <div className="print:hidden px-gutter pb-stack-md pt-gutter">{backControl}</div>
       <JournalPrintDocument model={model} />
     </div>
   );

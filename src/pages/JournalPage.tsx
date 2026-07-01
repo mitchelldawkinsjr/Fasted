@@ -104,8 +104,7 @@ export function JournalPage() {
       toast.info(messages.export.journalPdfEmpty);
       return;
     }
-    const result = openJournalPrintView(navigate, '/journal');
-    if (result === 'blocked') {
+    if (!openJournalPrintView(navigate, '/journal')) {
       toast.warning(messages.export.journalPdfBlocked);
       return;
     }

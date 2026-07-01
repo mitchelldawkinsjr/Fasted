@@ -182,8 +182,7 @@ export function SettingsPage() {
             type="button"
             disabled={progress.journalEntries.length === 0}
             onClick={() => {
-              const result = openJournalPrintView(navigate, '/settings');
-              if (result === 'blocked') {
+              if (!openJournalPrintView(navigate, '/settings')) {
                 toast.warning(messages.export.journalPdfBlocked);
                 return;
               }
