@@ -16,7 +16,7 @@ test.describe('custom journey builder', () => {
     await page.getByRole('button', { name: /Create custom journey/i }).click();
 
     await page.getByLabel('Journey name').fill('Neighborhood Fast');
-    await page.getByLabel('Start date').fill('2026-07-06');
+    await page.getByRole('textbox', { name: 'Start date', exact: true }).fill('2026-07-06');
     await page.getByRole('button', { name: 'Next' }).click();
 
     await page.getByLabel('Phase title').fill('Neighborhood Intercession');
