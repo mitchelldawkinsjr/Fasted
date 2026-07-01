@@ -107,15 +107,15 @@ test.describe('custom journey builder', () => {
     const today = todayString();
     const journeyStart = addDays(today, -5);
     const dayBeforeEdit = addDays(today, -1);
-    const firstPhaseEnd = addDays(journeyStart, 27);
+    const firstPhaseEnd = addDays(journeyStart, 28);
     const secondPhaseStart = addDays(firstPhaseEnd, 1);
     const journey = {
       id: 'legacy-template-custom',
       name: 'Legacy Template Journey',
       startDate: journeyStart,
       phases: [
-        { order: 0, templateId: 'daniel-1-fast-pattern' },
-        { order: 1, templateId: 'davids-fast-seeking-god' },
+        { order: 0, templateId: 'daniel-1' },
+        { order: 1, templateId: 'davids-fast' },
       ],
     };
 
