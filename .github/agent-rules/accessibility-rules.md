@@ -2,9 +2,13 @@
 
 ## CI integration
 
-Accessibility checks run in `.github/workflows/ci.yml` (required) and `.github/workflows/a11y-audit.yml` (PR path filter, advisory).
+Accessibility checks run in `.github/workflows/ci.yml` on every PR and push to `main` (required gate, Issue #65).
+
+Optional manual rerun: `.github/workflows/a11y-audit.yml` (`workflow_dispatch` only — same axe + Playwright suite without full CI).
 
 Tools: `a11y-audit/` package with axe-core via Playwright.
+
+Failed CI/a11y runs upload JSON/MD reports as GitHub Actions artifacts for 3 days (`if: failure()` only).
 
 ## Expectations
 

@@ -303,6 +303,12 @@ Every PR must pass:
 
 Fix failures before opening or updating a PR.
 
+## CI artifacts
+
+Playwright/a11y/overflow debug files upload to GitHub Actions **only when a job fails**, with **3-day retention**. Download from the failed run's Artifacts section; green runs produce no artifacts.
+
+Manual a11y-only rerun: Actions → **Accessibility Audit** → Run workflow.
+
 ## Playwright projects (`playwright.config.ts`)
 
 | Project | Specs |

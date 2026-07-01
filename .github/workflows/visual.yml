@@ -40,10 +40,11 @@ jobs:
         run: npm run test:audit
 
       - name: Upload overflow audit artifacts
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: overflow-audit
+          name: overflow-audit-${{ github.run_id }}
+          retention-days: 3
           path: |
             e2e/overflow-screenshots/
 
@@ -51,7 +52,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: visual-playwright-report
+          name: visual-playwright-report-${{ github.run_id }}
+          retention-days: 3
           path: |
             playwright-report/
             test-results/
@@ -60,5 +62,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: visual-snapshot-diffs
+          name: visual-snapshot-diffs-${{ github.run_id }}
+          retention-days: 3
           path: test-results/**/*

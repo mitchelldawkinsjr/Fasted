@@ -1,12 +1,7 @@
 name: Accessibility Audit
 
+# Manual a11y-only rerun. Required PR gating lives in ci.yml (Issue #65).
 on:
-  pull_request:
-    paths:
-      - "src/**"
-      - "src/styles/**"
-      - "a11y-audit/**"
-      - ".github/workflows/a11y-audit.yml"
   workflow_dispatch:
 
 jobs:
@@ -62,10 +57,11 @@ jobs:
         run: npx playwright test
 
       - name: Upload audit reports
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: a11y-reports
+          name: a11y-reports-${{ github.run_id }}
+          retention-days: 3
           path: |
             a11y-audit/summary-*.json
             a11y-audit/report-*.json

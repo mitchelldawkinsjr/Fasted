@@ -70,10 +70,11 @@ jobs:
           exit 1
 
       - name: Upload accessibility reports
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: a11y-reports
+          name: a11y-reports-${{ github.run_id }}
+          retention-days: 3
           path: |
             a11y-audit/summary-*.json
             a11y-audit/report-*.json
@@ -89,7 +90,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: overflow-audit
+          name: overflow-audit-${{ github.run_id }}
+          retention-days: 3
           path: |
             e2e/overflow-screenshots/
             playwright-report/
