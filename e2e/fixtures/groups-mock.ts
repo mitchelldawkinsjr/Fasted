@@ -71,6 +71,14 @@ export async function seedAuthSession(page: Page) {
 }
 
 export async function mockGroupsApi(page: Page, options: GroupMockOptions = {}) {
+  const memberships = [...(options.myMemberships ?? [])];
+
+  const addMembership = (groupId: string) => {
+    if (!memberships.some((membership) => membership.group_id === groupId)) {
+      memberships.push({ group_id: groupId });
+    }
+  };
+
   await page.route(`${SUPABASE_URL}/**`, async (route) => {
     const request = route.request();
     const url = request.url();
@@ -100,10 +108,12 @@ export async function mockGroupsApi(page: Page, options: GroupMockOptions = {}) 
     }
 
     if (url.includes('/groups') && method === 'POST') {
+      addMembership(GROUP_ID);
       return json(route, GROUP);
     }
 
     if (url.includes('/group_memberships') && method === 'POST') {
+      addMembership(GROUP_ID);
       return json(route, {
         id: 'membership-leader',
         group_id: GROUP_ID,
@@ -142,7 +152,6 @@ export async function mockGroupsApi(page: Page, options: GroupMockOptions = {}) 
     }
 
     if (url.includes('/group_memberships') && url.includes(`user_id=eq.${USER_ID}`)) {
-      const memberships = options.myMemberships ?? [];
       return json(route, memberships);
     }
 

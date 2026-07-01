@@ -8,12 +8,12 @@ import { SyncToastWatcher } from './SyncToastWatcher';
 import { ToastHost } from './ToastHost';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 
-const navItems = [
+const baseNavItems = [
   { to: '/', label: 'Today', icon: 'today' },
   { to: '/calendar', label: 'Calendar', icon: 'calendar_month' },
   { to: '/journal', label: 'Journal', icon: 'menu_book' },
   { to: '/progress', label: 'Progress', icon: 'query_stats' },
-  { to: '/settings', label: 'Settings', icon: 'settings' },
+  { to: '/groups', label: 'Groups', icon: 'groups' },
 ];
 
 const DEFAULT_HEADER_TITLE = 'Fasted';
@@ -58,7 +58,7 @@ export function Layout() {
         aria-label="Main navigation"
       >
         <div className="mx-auto flex w-full max-w-lg">
-          {navItems.map((item) => (
+          {baseNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
