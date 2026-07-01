@@ -235,8 +235,12 @@ jobs:
       pull-requests: write
       contents: write
 
+    outputs:
+      has_findings: ${{ steps.finalize.outputs.has_findings }}
+
     steps:
       - name: Update issue review labels and mark PR ready
+        id: finalize
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ needs.resolve.outputs.issue_number }}
@@ -263,9 +267,57 @@ jobs:
               --remove-label review-running \
               --add-label review-findings
             gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "📋 Automated review **complete** — findings on [the PR](${PR_URL}). PR marked ready for review; see Bugbot + Ponytail comments before merging."
+            echo "has_findings=true" >> "$GITHUB_OUTPUT"
           else
             gh issue edit "$ISSUE_NUMBER" --repo "$REPO" \
               --remove-label review-running \
               --add-label review-clean
             gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "✅ Automated review **complete** — no Bugbot bugs and lean Ponytail diff on [the PR](${PR_URL}). PR marked ready for your merge decision."
+            echo "has_findings=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Checkout
+        if: steps.finalize.outputs.has_findings == 'true' && vars.AGENT_AUTO_FIX_ENABLED != 'false'
+        uses: actions/checkout@v4
+
+      - name: Auto-fix review findings
+        if: steps.finalize.outputs.has_findings == 'true' && vars.AGENT_AUTO_FIX_ENABLED != 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ needs.resolve.outputs.issue_number }}
+          PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          set -euo pipefail
+          LABELS=$(gh issue view "$ISSUE_NUMBER" --repo "$REPO" --json labels -q '[.labels[].name] | join(",")')
+          if echo "$LABELS" | grep -q 'auto-fix-attempted'; then
+            echo "Auto-fix already attempted."
+            exit 0
+          fi
+          gh label create auto-fix-attempted --description "One automatic /agent fix pass used" --color "E99695" 2>/dev/null || true
+          gh issue edit "$ISSUE_NUMBER" --repo "$REPO" --add-label auto-fix-attempted
+          npm ci
+          node scripts/dispatch-pr-cloud-fix.mjs
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "🔧 **Auto-fix agent dispatched** for PR #${PR_NUMBER} (one attempt)."
+
+      - name: Post documentation checklist
+        if: steps.finalize.outputs.has_findings == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ needs.resolve.outputs.issue_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$(cat <<EOF
+          ## Documentation Agent checklist
+
+          Review the linked PR for user-facing changes:
+
+          - [ ] README updated (if new feature)
+          - [ ] Release notes added (if release-worthy)
+          - [ ] \`.env.example\` updated (if new env vars)
+          - [ ] Issue screenshots verified (if UI changed)
+
+          _Advisory only — no label required._
+          EOF
+          )"

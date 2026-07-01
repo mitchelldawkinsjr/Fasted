@@ -351,6 +351,7 @@ Triggered by `needs-architecture` label on an issue.
 2. Survey relevant `src/` directories for existing patterns
 3. Post **one** issue comment with architecture notes
 4. Add label `architecture-reviewed`, remove `needs-architecture`
+5. If verdict is **ready for implementation**, continue in the **same session** and implement per `.github/ai-implement-context.md` (bot-added labels do not trigger follow-up workflows)
 
 ---
 
