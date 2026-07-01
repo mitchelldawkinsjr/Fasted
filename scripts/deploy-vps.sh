@@ -41,6 +41,13 @@ ssh "$REMOTE" "
     \"\$API_URL\" \"\$ANON_KEY\" '${APP_PORT}' > .env
   echo \".env written (VITE_SUPABASE_URL=\$API_URL)\"
 
+  if docker ps --format '{{.Names}}' | grep -qx supabase-db; then
+    echo 'Applying pending Supabase migrations...'
+    DEPLOY_DIR='${DEPLOY_DIR}' bash scripts/apply-supabase-migrations.sh
+  else
+    echo 'Warning: supabase-db not running; skipping SQL migrations'
+  fi
+
   export VITE_SUPABASE_URL=\"\$API_URL\"
   export VITE_SUPABASE_ANON_KEY=\"\$ANON_KEY\"
   export DOCKER_NETWORK='${NETWORK}'

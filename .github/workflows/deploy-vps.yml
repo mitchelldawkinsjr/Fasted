@@ -8,6 +8,7 @@ on:
       - "public/**"
       - "assets/**"
       - "deploy/**"
+      - "supabase/migrations/**"
       - "scripts/**"
       - "docker/**"
       - "index.html"
