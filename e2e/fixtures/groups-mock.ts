@@ -58,7 +58,6 @@ function json(route: Route, body: unknown, status = 200) {
 type GroupMockOptions = {
   myMemberships?: Array<{ group_id: string }>;
   missingGroupCommitments?: boolean;
-  onGroupCreated?: () => void;
 };
 
 export async function seedAuthSession(page: Page) {
@@ -72,8 +71,6 @@ export async function seedAuthSession(page: Page) {
 }
 
 export async function mockGroupsApi(page: Page, options: GroupMockOptions = {}) {
-  let createdGroup = false;
-
   await page.route(`${SUPABASE_URL}/**`, async (route) => {
     const request = route.request();
     const url = request.url();
@@ -103,8 +100,6 @@ export async function mockGroupsApi(page: Page, options: GroupMockOptions = {}) 
     }
 
     if (url.includes('/groups') && method === 'POST') {
-      createdGroup = true;
-      options.onGroupCreated?.();
       return json(route, GROUP);
     }
 
@@ -147,7 +142,7 @@ export async function mockGroupsApi(page: Page, options: GroupMockOptions = {}) 
     }
 
     if (url.includes('/group_memberships') && url.includes(`user_id=eq.${USER_ID}`)) {
-      const memberships = options.myMemberships ?? (createdGroup ? [{ group_id: GROUP_ID }] : []);
+      const memberships = options.myMemberships ?? [];
       return json(route, memberships);
     }
 

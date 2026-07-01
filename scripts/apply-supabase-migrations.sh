@@ -93,9 +93,12 @@ for file in "${migration_files[@]}"; do
   fi
 
   echo "Applying $version..."
-  docker exec -i "$DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 < "$file"
-  docker exec "$DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-    -c "INSERT INTO public.schema_migrations (version) VALUES ('${version//\'/\'\'}')"
+  {
+    echo "BEGIN;"
+    cat "$file"
+    echo "INSERT INTO public.schema_migrations (version) VALUES ('${version//\'/\'\'}');"
+    echo "COMMIT;"
+  } | docker exec -i "$DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1
   applied_count=$((applied_count + 1))
 done
 

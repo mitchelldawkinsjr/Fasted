@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GroupRecord } from '../types';
-import { formatGroupError } from '../lib/groupErrors';
+import { formatGroupError } from '../lib/authErrors';
 import { listMyGroups } from '../lib/groups';
 import { isSyncConfigured } from '../lib/supabase';
 

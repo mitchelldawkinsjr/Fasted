@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { CommitmentDefinition, GroupPrivacy, Journey } from '../types';
 import { createCommitmentPreset } from '../data/commitmentPresets';
-import { formatGroupError } from '../lib/groupErrors';
+import { formatGroupError } from '../lib/authErrors';
 import { createGroup } from '../lib/groups';
 import { CommitmentEditor } from './CommitmentEditor';
 import { JourneyBuilder } from './JourneyBuilder';
