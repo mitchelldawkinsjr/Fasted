@@ -74,12 +74,17 @@
   }
 
   .date-input {
-    @apply box-border min-w-0 max-w-full w-full;
+    @apply box-border block min-w-0 max-w-full w-full;
   }
 
   .date-input::-webkit-date-and-time-value {
     min-width: 0;
     text-align: left;
+  }
+
+  .date-input::-webkit-calendar-picker-indicator {
+    margin: 0;
+    padding: 0;
   }
 }
 

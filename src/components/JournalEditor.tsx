@@ -260,22 +260,24 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex min-h-0 flex-1 flex-col gap-stack-md"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-stack-md"
       noValidate
     >
-      <div className="min-h-0 flex-1 space-y-stack-md overflow-y-auto overscroll-contain pb-2">
+      <div className="min-h-0 min-w-0 flex-1 space-y-stack-md overflow-y-auto overscroll-contain pb-2">
       <section className="stitch-card space-y-stack-md overflow-hidden p-stack-md">
-        <label className="block min-w-0 overflow-hidden">
+        <label className="block min-w-0">
           <span className="mb-1 block text-body-md font-medium text-on-surface">Date</span>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(clampDateToPlan(e.target.value))}
-            min={planStart}
-            max={planEnd}
-            required
-            className={`date-input ${inputClass}`}
-          />
+          <div className="min-w-0 overflow-hidden rounded-xl">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(clampDateToPlan(e.target.value))}
+              min={planStart}
+              max={planEnd}
+              required
+              className={`date-input ${inputClass}`}
+            />
+          </div>
         </label>
 
         <JournalTypePicker

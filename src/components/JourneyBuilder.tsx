@@ -474,7 +474,7 @@ export function JourneyBuilder({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-gutter">
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-gutter">
           {step === 0 && (
             <div className="space-y-4">
               <label className="block">
@@ -487,20 +487,22 @@ export function JourneyBuilder({
                   className={inputClass}
                 />
               </label>
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-1 block text-body-md text-on-surface">
                   {initialJourney ? 'Edit from date' : 'Start date'}
                 </span>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => {
-                    if (!initialJourney) setStartDate(e.target.value);
-                  }}
-                  readOnly={Boolean(initialJourney)}
-                  disabled={Boolean(initialJourney)}
-                  className={inputClass}
-                />
+                <div className="min-w-0 overflow-hidden rounded-xl">
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      if (!initialJourney) setStartDate(e.target.value);
+                    }}
+                    readOnly={Boolean(initialJourney)}
+                    disabled={Boolean(initialJourney)}
+                    className={`date-input ${inputClass}`}
+                  />
+                </div>
               </label>
               {initialJourney ? (
                 <p className="rounded-xl bg-secondary-container/40 p-3 text-body-sm text-on-secondary-container">
