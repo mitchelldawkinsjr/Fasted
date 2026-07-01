@@ -219,6 +219,7 @@ export function getPhasesForJourney(journey: Journey): FastPhase[] {
     return [
       {
         id: window.phaseId,
+        legacyId: window.legacyId,
         templateId: window.templateId,
         title: template.title,
         startDate: window.startDate,

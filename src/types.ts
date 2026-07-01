@@ -86,6 +86,8 @@ export type Journey = {
 /** Date-bound phase view (computed from a journey). */
 export type FastPhase = {
   id: number;
+  /** Template legacy id for milestone/badge matching when id is journey-relative. */
+  legacyId?: number;
   templateId?: string;
   title: string;
   startDate: string;

@@ -1,19 +1,18 @@
-import { getActiveJourney, getPhasesForJourney } from '../lib/journey';
+import { getPhases, getPhaseForDate } from '../data/fastingPlan';
+import { getActiveJourney } from '../lib/journey';
 import { getPlanEnd, getPlanStart } from '../lib/dateUtils';
 import { useProgress } from './useProgress';
 
 export function useActiveJourney() {
   const progress = useProgress();
   const journey = getActiveJourney(progress);
-  const phases = getPhasesForJourney(journey);
 
   return {
     progress,
     journey,
-    phases,
+    phases: getPhases(journey),
     planStart: getPlanStart(journey),
     planEnd: getPlanEnd(journey),
-    getPhaseForDate: (date: string) =>
-      phases.find((phase) => date >= phase.startDate && date <= phase.endDate),
+    getPhaseForDate: (date: string) => getPhaseForDate(date, journey),
   };
 }

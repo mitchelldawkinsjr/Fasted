@@ -3,6 +3,7 @@ import { BadgeWall } from '../components/BadgeWall';
 import { InfoBanner } from '../components/InfoBanner';
 import { PhaseMilestonesCard } from '../components/PhaseMilestonesCard';
 import { StreakWidget } from '../components/StreakWidget';
+import { getMilestonePhaseId } from '../data/fastingPlan';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { useProgress } from '../hooks/useProgress';
 import { getFastDaysCompleted, getNextReward } from '../lib/badges';
@@ -20,7 +21,12 @@ export function ProgressPage() {
     ? getPhaseCompletionPercent(currentPhase.startDate, currentPhase.endDate)
     : 0;
   const nextReward = currentPhase && !currentPhase.isCustom
-    ? getNextReward(currentPhase.id, currentPhase.startDate, currentPhase.endDate, today)
+    ? getNextReward(
+        getMilestonePhaseId(currentPhase),
+        currentPhase.startDate,
+        currentPhase.endDate,
+        today,
+      )
     : null;
 
   return (
@@ -82,7 +88,12 @@ export function ProgressPage() {
             )}
           </section>
 
-          {!currentPhase.isCustom && <PhaseMilestonesCard phaseId={currentPhase.id} today={today} />}
+          {!currentPhase.isCustom && (
+            <PhaseMilestonesCard
+              phaseId={getMilestonePhaseId(currentPhase)}
+              today={today}
+            />
+          )}
         </>
       )}
 

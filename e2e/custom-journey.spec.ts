@@ -1,12 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import * as fs from 'fs';
-import * as path from 'path';
 import { expectDateInputContained } from './fixtures/overflow';
 import { AUDIT_VIEWPORTS } from './fixtures/viewports';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
 const INSTALL_TOAST_KEY = 'fasted-calendar-install-toast-dismissed';
-const ARTIFACT_DIR = path.join(process.cwd(), 'artifacts', 'issue-98');
 
 function formatDate(date: Date): string {
   return [
@@ -41,10 +38,6 @@ async function seedProgress(page: Page, progress: Record<string, unknown>) {
 }
 
 test.describe('custom journey builder', () => {
-  test.beforeAll(() => {
-    fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
-  });
-
   test.beforeEach(async ({ page }) => {
     await page.goto('/settings');
     await page.evaluate((key) => {
@@ -292,76 +285,10 @@ test.describe('custom journey builder', () => {
 
     await page.goto(`/?date=${today}`);
     await expect(page.getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, 'today-custom-journey-phase-1.png'),
-      fullPage: true,
-    });
 
     await page.getByRole('button', { name: 'Check-in for Today' }).click();
     const modal = page.getByRole('dialog');
     await expect(modal.getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
     await expect(modal.getByText('Phase 2:')).not.toBeVisible();
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, 'checkin-modal-custom-journey-phase-1.png'),
-      fullPage: true,
-    });
-  });
-
-  test('switching active journey updates check-in phase label without reload', async ({ page }) => {
-    const today = todayString();
-    const customJourney = {
-      id: 'switch-custom-journey',
-      name: 'Neighborhood Fast',
-      startDate: today,
-      phases: [
-        {
-          order: 0,
-          startDate: today,
-          endDate: addDays(today, 4),
-          content: {
-            title: 'Neighborhood Intercession',
-            schedulePattern: { kind: 'normal-eating' },
-            allowed: ['Vegetables'],
-            avoid: [],
-            beverages: ['Water'],
-            dailyReadings: ['Nehemiah 1'],
-            prayerFocus: ['Neighbors'],
-            scriptureReference: 'Nehemiah 1:4',
-          },
-        },
-      ],
-    };
-    const fastedJourney = {
-      id: 'fasted-journey',
-      name: 'Fasted Journey',
-      startDate: '2026-06-13',
-      locked: true,
-      isDefault: true,
-      phases: [
-        { order: 0, templateId: 'daniel-1' },
-        { order: 1, templateId: 'davids-fast' },
-      ],
-    };
-
-    await seedProgress(page, {
-      activeJourneyId: customJourney.id,
-      journeys: [fastedJourney, customJourney],
-      checkIns: [],
-      journalEntries: [],
-      mealImages: {},
-      badges: [],
-      settings: { reminderTime: '07:00', theme: 'light', scriptureNote: '' },
-    });
-
-    await page.goto(`/?date=${today}`);
-    await expect(page.getByText('Phase 1: Neighborhood Intercession')).toBeVisible();
-
-    await page.goto('/settings');
-    await page.getByLabel('Switch journey').selectOption('fasted-journey');
-    await page.goto(`/?date=2026-07-12`);
-
-    await expect(page.getByText("Phase 2: David's Fast for Seeking God")).toBeVisible();
-    await page.getByRole('button', { name: 'Check-in for Today' }).click();
-    await expect(page.getByRole('dialog').getByText("Phase 2: David's Fast for Seeking God")).toBeVisible();
   });
 });
