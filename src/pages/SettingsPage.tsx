@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { CloudSyncSection } from '../components/CloudSyncSection';
 import { GroupsSettingsSection } from '../components/GroupsSettingsSection';
 import { JourneySettingsSection } from '../components/JourneySettingsSection';
@@ -9,6 +9,7 @@ import { SafetyNote } from '../components/SafetyNote';
 import { Icon } from '../components/Icon';
 import { useProgress } from '../hooks/useProgress';
 import { confirmAction } from '../lib/confirm';
+import { openJournalPrintView } from '../lib/journalPrintExport';
 import { formatError, messages } from '../lib/messages';
 import {
   exportJournal,
@@ -26,6 +27,7 @@ type SettingsLocationState = {
 };
 
 export function SettingsPage() {
+  const navigate = useNavigate();
   const location = useLocation();
   const authPromptHandled = useRef(false);
   const progress = useProgress();
@@ -180,12 +182,11 @@ export function SettingsPage() {
             type="button"
             disabled={progress.journalEntries.length === 0}
             onClick={() => {
-              const printWindow = window.open('/journal/print', '_blank');
-              if (!printWindow) {
+              const result = openJournalPrintView(navigate, '/settings');
+              if (result === 'blocked') {
                 toast.warning(messages.export.journalPdfBlocked);
                 return;
               }
-              printWindow.opener = null;
               toast.info(messages.export.journalPdf);
             }}
             className="group flex w-full items-center justify-between p-gutter transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"

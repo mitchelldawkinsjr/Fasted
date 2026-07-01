@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { EmptyState } from '../components/EmptyState';
 import { JournalEditor } from '../components/JournalEditor';
 import { JournalViewer } from '../components/JournalViewer';
@@ -20,6 +20,7 @@ import {
   journalEntryMatchesSearch,
   journalTypePillClass,
 } from '../lib/journalTags';
+import { openJournalPrintView } from '../lib/journalPrintExport';
 import { messages } from '../lib/messages';
 import { deleteJournalEntry } from '../lib/storage';
 import { toast } from '../lib/toast';
@@ -60,6 +61,7 @@ function clearJournalSearchParams(searchParams: URLSearchParams): URLSearchParam
 }
 
 export function JournalPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const progress = useProgress();
   const [search, setSearch] = useState('');
@@ -102,12 +104,11 @@ export function JournalPage() {
       toast.info(messages.export.journalPdfEmpty);
       return;
     }
-    const printWindow = window.open('/journal/print', '_blank');
-    if (!printWindow) {
+    const result = openJournalPrintView(navigate, '/journal');
+    if (result === 'blocked') {
       toast.warning(messages.export.journalPdfBlocked);
       return;
     }
-    printWindow.opener = null;
     toast.info(messages.export.journalPdf);
   };
 
