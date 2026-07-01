@@ -25,6 +25,45 @@ CREATE TABLE IF NOT EXISTS public.schema_migrations (
 );
 SQL
 
+# VPS databases created before schema_migrations existed may already have tables applied manually.
+migration_count="$(
+  docker exec "$DB_CONTAINER" psql -U postgres -d postgres -tAc \
+    "SELECT COUNT(*) FROM public.schema_migrations"
+)"
+
+if [ "$migration_count" = "0" ]; then
+  user_progress_exists="$(
+    docker exec "$DB_CONTAINER" psql -U postgres -d postgres -tAc \
+      "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_progress')"
+  )"
+  groups_exist="$(
+    docker exec "$DB_CONTAINER" psql -U postgres -d postgres -tAc \
+      "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'groups')"
+  )"
+  group_commitments_exist="$(
+    docker exec "$DB_CONTAINER" psql -U postgres -d postgres -tAc \
+      "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'group_commitments')"
+  )"
+
+  mark_applied() {
+    local version="$1"
+    echo "Legacy DB: marking $version as already applied"
+    docker exec "$DB_CONTAINER" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+      -c "INSERT INTO public.schema_migrations (version) VALUES ('${version//\'/\'\'}') ON CONFLICT DO NOTHING"
+  }
+
+  if [ "$user_progress_exists" = "t" ]; then
+    mark_applied "20260627000000_initial.sql"
+  fi
+  if [ "$groups_exist" = "t" ]; then
+    mark_applied "20260628000000_groups.sql"
+    mark_applied "20260628000001_fix_membership_rls.sql"
+  fi
+  if [ "$group_commitments_exist" = "t" ]; then
+    mark_applied "20260630000000_group_commitments.sql"
+  fi
+fi
+
 shopt -s nullglob
 migration_files=("$MIGRATIONS_DIR"/*.sql)
 shopt -u nullglob
