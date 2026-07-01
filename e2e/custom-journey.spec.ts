@@ -28,8 +28,12 @@ test.describe('custom journey builder', () => {
     await page.getByLabel('Daily readings').fill('Nehemiah 1');
     await page.getByLabel('Scripture reference').fill('Nehemiah 1:4');
     await page.getByText('Optional instruction overrides').click();
-    await page.getByLabel('Instructions every day').fill('Invite one neighbor into prayer.');
-    await page.getByLabel('Fast day instructions').fill('Pray for three families by name.');
+    await page.getByRole('textbox', { name: 'Instructions every day', exact: true }).fill(
+      'Invite one neighbor into prayer.',
+    );
+    await page.getByRole('textbox', { name: 'Fast day instructions', exact: true }).fill(
+      'Pray for three families by name.',
+    );
 
     await page.getByRole('button', { name: 'Review' }).click();
     await expect(page.getByText('Neighborhood Intercession')).toBeVisible();
