@@ -1,32 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { GroupRecord } from '../types';
-import { formatGroupError } from '../lib/authErrors';
-import { listMyGroups } from '../lib/groups';
+import { useLocation } from 'react-router-dom';
+import { hasMyGroupMemberships } from '../lib/groups';
 import { isSyncConfigured } from '../lib/supabase';
 import { useAuth } from './useAuth';
 
-export function useGroups() {
+export function useHasGroupMemberships() {
+  const { pathname } = useLocation();
   const { user, isLoggedIn, initialized: authInitialized } = useAuth();
   const userId = user?.id;
-  const [groups, setGroups] = useState<GroupRecord[]>([]);
+  const [hasMemberships, setHasMemberships] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
   const scopedUserIdRef = useRef<string | undefined>();
+  const prevPathnameRef = useRef(pathname);
 
   const refresh = useCallback(
     async (background = false) => {
       if (!authInitialized || !isLoggedIn || !userId) {
-        setGroups([]);
+        setHasMemberships(false);
         setLoading(false);
-        setError(null);
         return;
       }
 
       if (!isSyncConfigured()) {
-        setGroups([]);
+        setHasMemberships(false);
         setLoading(false);
-        setError(null);
         return;
       }
 
@@ -36,15 +34,14 @@ export function useGroups() {
       }
 
       try {
-        const next = await listMyGroups();
+        const next = await hasMyGroupMemberships();
         if (requestId !== requestIdRef.current) return;
-
-        setGroups(next);
-        setError(null);
-      } catch (err) {
+        setHasMemberships(next);
+      } catch {
         if (requestId !== requestIdRef.current) return;
-
-        setError(formatGroupError(err, 'Failed to load groups'));
+        if (!background) {
+          setHasMemberships(false);
+        }
       } finally {
         if (requestId === requestIdRef.current) {
           setLoading(false);
@@ -60,21 +57,23 @@ export function useGroups() {
     if (!isLoggedIn || !userId) {
       requestIdRef.current++;
       scopedUserIdRef.current = undefined;
-      setGroups([]);
+      prevPathnameRef.current = pathname;
+      setHasMemberships(false);
       setLoading(false);
-      setError(null);
       return;
     }
 
     const userChanged = scopedUserIdRef.current !== userId;
+    const pathnameChanged = prevPathnameRef.current !== pathname;
     scopedUserIdRef.current = userId;
+    prevPathnameRef.current = pathname;
 
     if (userChanged) {
-      setGroups([]);
+      setHasMemberships(false);
     }
 
-    void refresh(false);
-  }, [authInitialized, isLoggedIn, userId, refresh]);
+    void refresh(!userChanged && pathnameChanged);
+  }, [authInitialized, isLoggedIn, userId, pathname, refresh]);
 
-  return { groups, loading, error, refresh };
+  return { hasMemberships, loading, refresh };
 }
