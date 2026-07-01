@@ -1,0 +1,43 @@
+name: Issue Documentation Agent
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  docs-agent:
+    if: github.event.label.name == 'review-clean'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Post documentation checklist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          gh label create docs-updated --description "Documentation verified or updated" --color "BFD4F2" 2>/dev/null || true
+
+          gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body "$(cat <<EOF
+          ## Documentation Agent checklist
+
+          Review the linked PR for user-facing changes:
+
+          - [ ] README updated (if new feature)
+          - [ ] Release notes added (if release-worthy)
+          - [ ] \`.env.example\` updated (if new env vars)
+          - [ ] Issue screenshots verified (if UI changed)
+
+          Run locally: \`npm run agent:docs -- ${ISSUE_NUMBER}\`
+
+          _Advisory only — no label required. Merge when docs look good._
+          EOF
+          )"

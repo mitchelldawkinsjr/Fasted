@@ -1,0 +1,56 @@
+name: PR Specialist Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number
+        required: true
+        type: number
+      specialist:
+        description: Specialist agent type
+        required: true
+        type: choice
+        options:
+          - ui
+          - a11y
+          - security
+          - architecture
+
+jobs:
+  specialist-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check CURSOR_API_KEY
+        run: |
+          if [ -z "${{ secrets.CURSOR_API_KEY }}" ]; then
+            echo "::error::CURSOR_API_KEY secret is not configured."
+            exit 1
+          fi
+
+      - name: Resolve PR head ref
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          HEAD=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefName -q .headRefName)
+          echo "head_ref=$HEAD" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch specialist agent
+        env:
+          SPECIALIST_TYPE: ${{ inputs.specialist }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+          REPO: ${{ github.repository }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/dispatch-specialist-agent.mjs

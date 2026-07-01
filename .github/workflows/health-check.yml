@@ -71,3 +71,11 @@ jobs:
           curl -X POST -H 'Content-type: application/json' \
             --data '{"text":"Fasted Calendar VPS health check failed"}' \
             "$SLACK_WEBHOOK"
+
+      - name: Record lesson learned on failure
+        if: failure()
+        run: |
+          LESSON_TITLE="VPS health check failed" \
+          LESSON_BODY="Scheduled health check could not reach the app on VPS. Check docker compose status, publish port, and deploy logs." \
+          ISSUE_NUMBER=health-check \
+          node scripts/append-agent-lesson.mjs

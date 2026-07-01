@@ -15,6 +15,12 @@
   #root {
     @apply min-h-screen;
   }
+
+  /* Bottom nav conflicts with sheet modals — hide while any modal is open. */
+  body:has([aria-modal='true']) nav[aria-label='Main navigation'] {
+    visibility: hidden;
+    pointer-events: none;
+  }
 }
 
 @layer components {
