@@ -7,14 +7,13 @@ import { InstallPromptToast } from './InstallPromptToast';
 import { SyncToastWatcher } from './SyncToastWatcher';
 import { ToastHost } from './ToastHost';
 import { useActiveJourney } from '../hooks/useActiveJourney';
-import { useAuth } from '../hooks/useAuth';
-import { useHasGroupMemberships } from '../hooks/useHasGroupMemberships';
 
 const baseNavItems = [
   { to: '/', label: 'Today', icon: 'today' },
   { to: '/calendar', label: 'Calendar', icon: 'calendar_month' },
   { to: '/journal', label: 'Journal', icon: 'menu_book' },
   { to: '/progress', label: 'Progress', icon: 'query_stats' },
+  { to: '/groups', label: 'Groups', icon: 'groups' },
 ];
 
 const DEFAULT_HEADER_TITLE = 'Fasted';
@@ -34,17 +33,10 @@ const pageTitles: Record<string, string> = {
 export function Layout() {
   const { pathname } = useLocation();
   const { journey } = useActiveJourney();
-  const { isLoggedIn } = useAuth();
-  const { hasMemberships } = useHasGroupMemberships();
   const pageTitle = pageTitles[pathname] ?? DEFAULT_HEADER_TITLE;
   const journeyAwarePaths = new Set(['/', '/calendar', '/phases', '/progress']);
   const title =
     journeyAwarePaths.has(pathname) && !journey.isDefault ? journey.name : pageTitle;
-
-  const navItems = [...baseNavItems];
-  if (isLoggedIn && hasMemberships) {
-    navItems.push({ to: '/groups', label: 'Groups', icon: 'groups' });
-  }
 
   return (
     <div className="relative mx-auto min-h-screen max-w-lg pb-[calc(4.75rem+env(safe-area-inset-bottom))]">
@@ -66,7 +58,7 @@ export function Layout() {
         aria-label="Main navigation"
       >
         <div className="mx-auto flex w-full max-w-lg">
-          {navItems.map((item) => (
+          {baseNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

@@ -44,18 +44,6 @@ async function getUserId(): Promise<string> {
   return data.user.id;
 }
 
-export async function hasMyGroupMemberships(): Promise<boolean> {
-  const userId = await getUserId();
-  const { data, error } = await getSupabase()
-    .from(GROUP_MEMBERSHIPS_TABLE)
-    .select('group_id')
-    .eq('user_id', userId)
-    .limit(1);
-
-  if (error) throw error;
-  return (data?.length ?? 0) > 0;
-}
-
 export async function listMyGroups(): Promise<GroupRecord[]> {
   const userId = await getUserId();
   const { data: memberships, error: membershipError } = await getSupabase()

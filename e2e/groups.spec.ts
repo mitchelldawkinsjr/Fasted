@@ -15,31 +15,25 @@ test.describe('Groups', () => {
     await seedAuthSession(page);
   });
 
-  test('hides Groups in main nav when user has no group memberships', async ({ page }) => {
+  test('shows Groups in main nav by default without group memberships', async ({ page }) => {
     await mockGroupsApi(page, { myMemberships: [] });
 
     for (const viewport of NAV_VIEWPORTS) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto('/');
       const nav = page.locator(MAIN_NAV);
-      await expect(nav.getByRole('link', { name: 'Groups' })).toHaveCount(0);
+      await expect(nav.getByRole('link', { name: 'Groups' })).toBeVisible();
       await expect(nav.getByRole('link', { name: 'Settings' })).toHaveCount(0);
     }
   });
 
-  test('shows Groups in main nav when user has group memberships', async ({ page }) => {
+  test('navigates to groups from the main nav', async ({ page }) => {
     await mockGroupsApi(page, { myMemberships: [{ group_id: GROUP_ID }] });
-
-    for (const viewport of NAV_VIEWPORTS) {
-      await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await page.goto('/');
-      const groupsLink = page.locator(MAIN_NAV).getByRole('link', { name: 'Groups' });
-      await expect(groupsLink).toBeVisible();
-    }
 
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
     const groupsLink = page.locator(MAIN_NAV).getByRole('link', { name: 'Groups' });
+    await expect(groupsLink).toBeVisible();
     await groupsLink.click();
     await expect(page).toHaveURL('/groups');
     await expect(page.getByRole('heading', { level: 2, name: 'Your Groups' })).toBeVisible();
@@ -49,7 +43,7 @@ test.describe('Groups', () => {
     await mockGroupsApi(page, { myMemberships: [] });
 
     await page.goto('/');
-    await expect(page.locator(MAIN_NAV).getByRole('link', { name: 'Groups' })).toHaveCount(0);
+    await expect(page.locator(MAIN_NAV).getByRole('link', { name: 'Groups' })).toBeVisible();
 
     await page.goto('/groups');
     await page.getByRole('button', { name: 'Create Group' }).click();
