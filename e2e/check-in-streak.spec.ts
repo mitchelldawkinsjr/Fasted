@@ -66,7 +66,9 @@ test.describe('check-in streak', () => {
     await expect(modal.getByText('3 consecutive check-in days.')).toBeVisible({ timeout: 5000 });
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-celebration.png'), fullPage: true });
 
-    await page.waitForTimeout(3000);
+    await expect(modal.getByRole('button', { name: 'Continue' })).toBeEnabled({ timeout: 3000 });
+    await modal.getByRole('button', { name: 'Continue' }).click();
+    await expect(modal).toBeHidden();
     await expect(streakLabel).toContainText('3');
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'today-after-checkin.png'), fullPage: true });
   });
