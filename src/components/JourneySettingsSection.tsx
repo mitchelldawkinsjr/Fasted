@@ -8,10 +8,12 @@ import { JourneyBuilder } from './JourneyBuilder';
 import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
 import { toast } from '../lib/toast';
+import type { Journey } from '../types';
 
 export function JourneySettingsSection() {
   const { progress, journey, phases } = useActiveJourney();
   const [builderOpen, setBuilderOpen] = useState(false);
+  const [editingJourney, setEditingJourney] = useState<Journey | null>(null);
   const [startDate, setStartDate] = useState(
     progress.journeys.find((j) => j.id === FASTED_JOURNEY.id)?.startDate ?? FASTED_JOURNEY.startDate,
   );
@@ -87,9 +89,29 @@ export function JourneySettingsSection() {
             </label>
           ) : null}
 
+          {!journey.locked ? (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingJourney(journey);
+                setBuilderOpen(true);
+              }}
+              className="group flex w-full items-center justify-between rounded-xl bg-surface-container px-4 py-3 text-on-surface"
+            >
+              <span className="flex items-center gap-3 text-body-md">
+                <Icon name="edit" />
+                Edit active journey
+              </span>
+              <Icon name="chevron_right" />
+            </button>
+          ) : null}
+
           <button
             type="button"
-            onClick={() => setBuilderOpen(true)}
+            onClick={() => {
+              setEditingJourney(null);
+              setBuilderOpen(true);
+            }}
             className="group flex w-full items-center justify-between rounded-xl bg-secondary-container px-4 py-3 text-on-secondary-container"
           >
             <span className="flex items-center gap-3 text-body-md">
@@ -101,7 +123,14 @@ export function JourneySettingsSection() {
         </div>
       </section>
 
-      <JourneyBuilder open={builderOpen} onClose={() => setBuilderOpen(false)} />
+      <JourneyBuilder
+        open={builderOpen}
+        onClose={() => {
+          setBuilderOpen(false);
+          setEditingJourney(null);
+        }}
+        initialJourney={editingJourney}
+      />
     </>
   );
 }

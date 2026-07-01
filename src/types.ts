@@ -7,6 +7,7 @@ export type FastType =
   | 'extended-prayer';
 
 export type SchedulePattern =
+  | { kind: 'normal-eating' }
   | { kind: 'weekday-fast'; fastDays: number[]; fastType: FastType }
   | { kind: 'consecutive-daniel'; includesWalk?: boolean }
   | {
@@ -40,10 +41,38 @@ export type FastPhaseTemplate = {
   safetyNote?: string;
 };
 
-export type JourneyPhase = {
+export type CustomPhaseContent = {
+  title: string;
+  themeColor?: string;
+  schedulePattern: SchedulePattern;
+  allowed?: string[];
+  avoid?: string[];
+  beverages?: string[];
+  dailyReadings?: string[];
+  prayerFocus: string[];
+  scriptureReference?: string;
+  safetyNote?: string;
+  scheduleSummary?: string;
+  dayInstructions?: {
+    fast?: string[];
+    nonFast?: string[];
+    always?: string[];
+  };
+};
+
+export type TemplateJourneyPhase = {
   templateId: string;
   order: number;
 };
+
+export type CustomJourneyPhase = {
+  order: number;
+  startDate: string;
+  endDate: string;
+  content: CustomPhaseContent;
+};
+
+export type JourneyPhase = TemplateJourneyPhase | CustomJourneyPhase;
 
 export type Journey = {
   id: string;
@@ -57,7 +86,7 @@ export type Journey = {
 /** Date-bound phase view (computed from a journey). */
 export type FastPhase = {
   id: number;
-  templateId: string;
+  templateId?: string;
   title: string;
   startDate: string;
   endDate: string;
@@ -71,6 +100,7 @@ export type FastPhase = {
   prayerFocus: string[];
   imagePath: string;
   safetyNote?: string;
+  isCustom?: boolean;
 };
 
 export type DailyFastPlan = {

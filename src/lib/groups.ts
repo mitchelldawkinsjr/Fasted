@@ -29,6 +29,7 @@ import {
   getSupabase,
 } from './supabase';
 import { getLocalDateString } from './dateUtils';
+import { normalizeJourney } from './journey';
 
 function randomInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -422,10 +423,10 @@ export function groupJourneyToLocalJourney(
 
   if (!record.start_date || !record.phases?.length) return null;
 
-  return {
+  return normalizeJourney({
     id: record.id,
     name: record.name,
     startDate: record.start_date,
     phases: record.phases,
-  };
+  });
 }
