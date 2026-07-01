@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { expectDateInputContained } from './fixtures/date-input';
+import { expectDateInputContained } from './fixtures/overflow';
+import { AUDIT_VIEWPORTS } from './fixtures/viewports';
 import { messages } from '../src/lib/messages';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
@@ -103,11 +104,10 @@ test('date stays within plan bounds on save', async ({ page }) => {
 });
 
 test('date input fits within card on mobile and desktop', async ({ page }) => {
-  for (const viewport of [
-    { width: 390, height: 844 },
-    { width: 1280, height: 800 },
-  ]) {
-    await page.setViewportSize(viewport);
+  for (const viewport of AUDIT_VIEWPORTS.filter(
+    (v) => v.name === 'iphone-13' || v.name === 'laptop',
+  )) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto('/journal');
     await page.getByRole('button', { name: '+ New' }).click();
     await expectDateInputContained(page, { label: 'Date' });
