@@ -7,7 +7,7 @@
 
 Canonical entry point for all Fasted software engineering agents. **Read this file first**, then load only the rule files listed in your role manifest (`.github/agent-manifest.json`).
 
-Repository: [`mitchelldawkinsjr/Fasted`](https://github.com/mitchelldawkinsjr/Fasted)
+Repository: `[mitchelldawkinsjr/Fasted](https://github.com/mitchelldawkinsjr/Fasted)`
 
 ---
 
@@ -19,16 +19,20 @@ Repository: [`mitchelldawkinsjr/Fasted`](https://github.com/mitchelldawkinsjr/Fa
 
 ---
 
+
+
 ## Architecture summary
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Vite 5 + React 18, React Router 6, Tailwind CSS 3, `vite-plugin-pwa` |
-| Backend | Supabase client only (`src/lib/supabase.ts`) — no Next.js, no server routes |
-| Persistence | Local-first `localStorage` via `src/lib/storage.ts`, optional cloud sync |
-| Deployment | Docker + Caddy on VPS (`docker-compose.prod.yml`, `scripts/deploy-vps.sh`) |
-| Testing | Playwright e2e (`e2e/`), accessibility audit (`a11y-audit/`) |
-| CI | `.github/workflows/ci.yml` — build, e2e, a11y, overflow audit (advisory) |
+
+| Layer       | Technology                                                                  |
+| ----------- | --------------------------------------------------------------------------- |
+| Frontend    | Vite 5 + React 18, React Router 6, Tailwind CSS 3, `vite-plugin-pwa`        |
+| Backend     | Supabase client only (`src/lib/supabase.ts`) — no Next.js, no server routes |
+| Persistence | Local-first `localStorage` via `src/lib/storage.ts`, optional cloud sync    |
+| Deployment  | Docker + Caddy on VPS (`docker-compose.prod.yml`, `scripts/deploy-vps.sh`)  |
+| Testing     | Playwright e2e (`e2e/`), accessibility audit (`a11y-audit/`)                |
+| CI          | `.github/workflows/ci.yml` — build, e2e, a11y, overflow audit (advisory)    |
+
 
 This is a **client-side SPA**. All persistence is local-first with optional Supabase cloud sync.
 
@@ -36,58 +40,95 @@ This is a **client-side SPA**. All persistence is local-first with optional Supa
 
 ---
 
+
+
 ## Agent workflow (label state machine)
 
+**Default (hands-off):** open issue → auto spec → auto implement → review → optional auto-fix → **you merge**.
+
 ```text
-needs-spec → spec-added → ready → agent-working → pr-opened → review-running → review-clean | review-findings
-                ↑              ↑
-           Planning Agent   Coding Agent
+Issue opened → needs-spec → spec-added → ready → agent-working → pr-opened → review → review-clean | review-findings
+                              ↓ (complex)              ↑
+                        needs-architecture → architecture-reviewed
 ```
+
+### Human gates (kept on purpose)
+
+| Gate | Why |
+|------|-----|
+| **Open issue** | Product intent and priority |
+| **Merge PR** | Final quality and scope approval |
+| **`no-agent` / `agent-manual`** | Opt out of automation |
+| **`agent-failed` recovery** | Human unblocks ambiguous specs |
+| **Secrets / VPS** | Security and infra control |
+
+### Opt-out labels
+
+| Label | Effect |
+|-------|--------|
+| `no-agent` | Skip entire pipeline (no auto spec) |
+| `agent-manual` | Auto spec, but you add `ready` manually |
+| `[no-agent]` in title/body | Same as `no-agent` on create |
+
+### System labels
 
 | Label | Meaning |
 |-------|---------|
-| `needs-spec` | Triggers Planning Agent (`issue-spec.yml`) |
-| `spec-added` | Acceptance criteria posted; required before `ready` |
-| `ready` | Triggers Coding Agent (`issue-implement.yml`) |
-| `ready-local` | Local backup implement path |
-| `agent-working` | Implementation in progress |
-| `pr-opened` | Draft PR opened; triggers PR review |
-| `review-running` | Bugbot + Ponytail reviewing |
-| `review-clean` / `review-findings` | Review complete |
-| `needs-architecture` | Optional Architecture Agent review on issue |
-| `architecture-reviewed` | Architecture review posted |
-| `tests-verified` | Testing Agent verified coverage |
-| `docs-updated` | Documentation Agent updated docs |
-| `agent-failed` | Agent blocked or failed |
+| `needs-spec` | Planning — **auto** on issue open |
+| `spec-added` | Spec posted |
+| `ready` | Coding agent — **auto** after spec (or after architecture) |
+| `needs-architecture` | **Auto** for migrations, routes, schema |
+| `architecture-reviewed` | Arch done → auto `ready` |
+| `review-findings` | Triggers **one** auto-fix pass |
+| `auto-fix-attempted` | Auto-fix already used; use `/agent` for more |
+| `agent-failed` | Needs human intervention |
 
-Config: [`.github/issue-bench.yml`](issue-bench.yml)
+Disable automation: repo variables `AGENT_AUTO_SPEC_ENABLED=false`, `AGENT_AUTO_READY_ENABLED=false`, `AGENT_AUTO_FIX_ENABLED=false`.
+
+Config: `[.github/issue-bench.yml](issue-bench.yml)`
 
 ---
+
+
 
 ## Agent roster
 
-| Agent | Context file | Trigger |
-|-------|--------------|---------|
-| Planning | `ai-spec-context.md` | `needs-spec` label |
-| Architecture | `agent-context/architecture-context.md` | `needs-architecture` label |
-| Coding | `ai-implement-context.md` | `ready` label |
-| Testing | `agent-context/test-context.md` | PR opened (UI paths) |
-| Bugbot | `ai-bugbot-context.md` | PR opened |
-| Ponytail | `ai-ponytail-review-context.md` | PR opened |
-| PR Review (local) | `ai-agent-review-context.md` | `pr-opened-local` label |
-| PR Fix | `ai-agent-fix-context.md` | `/agent` PR comment |
-| UI Review | `agent-context/ui-context.md` | PR specialist review |
-| Accessibility | `agent-context/a11y-context.md` | PR specialist review |
-| Security | `agent-context/security-context.md` | PR specialist review |
-| Documentation | `agent-context/docs-context.md` | `review-clean` label |
-| Deployment | `agent-context/deploy-context.md` | merge to main |
-| Repo Audit | `ai-ponytail-audit-context.md` | scheduled / manual |
 
-Rule files live in [`.github/agent-rules/`](agent-rules/). Composed contexts are generated by `npm run agent:compose`.
+| Agent             | Context file                            | Trigger                    |
+| ----------------- | --------------------------------------- | -------------------------- |
+| Planning          | `ai-spec-context.md`                    | `needs-spec` label         |
+| Architecture      | `agent-context/architecture-context.md` | `needs-architecture` label |
+| Coding            | `ai-implement-context.md`               | `ready` label              |
+| Testing           | `agent-context/test-context.md`         | PR opened (UI paths)       |
+| Bugbot            | `ai-bugbot-context.md`                  | PR opened                  |
+| Ponytail          | `ai-ponytail-review-context.md`         | PR opened                  |
+| PR Review (local) | `ai-agent-review-context.md`            | `pr-opened-local` label    |
+| PR Fix            | `ai-agent-fix-context.md`               | auto on `review-findings` (once) or `/agent` |
+| UI Review         | `agent-context/ui-context.md`           | manual: PR Specialist Review workflow        |
+| Accessibility     | `agent-context/a11y-context.md`         | manual: PR Specialist Review workflow        |
+| Security          | `agent-context/security-context.md`     | manual: PR Specialist Review workflow        |
+| Documentation     | `agent-context/docs-context.md`         | `review-clean` (advisory comment only)       |
+| Deployment        | `agent-context/deploy-context.md`       | merge to main                                |
+| Repo Audit        | `ai-ponytail-audit-context.md`          | scheduled / manual                           |
+
+### Specialist agents (manual — not in the default loop)
+
+**UI**, **Accessibility**, and **Security** agents run only when you trigger **Actions → PR Specialist Review** (`workflow_dispatch`). They are not wired into the automatic loop because:
+
+1. **Cost** — each run is a full Cursor cloud agent; every PR would multiply API spend.
+2. **Redundancy** — Bugbot + Ponytail + CI (including axe a11y) + Testing Agent advisory already catch most issues.
+3. **Overlap** — UI agent duplicates `overlay-scroll` e2e and nightly visual; security overlaps `security.yml`.
+4. **Signal** — specialists are for high-risk work (auth, migrations, large layout refactors), not every small fix.
+
+**When to use them:** new auth flows, Supabase migrations, major UI overhaul, pre-release hardening.
+
+Rule files live in `[.github/agent-rules/](agent-rules/)`. Composed contexts are generated by `npm run agent:compose`.
 
 ---
 
-## Local CLI (Phase 3)
+
+
+## Local CLI
 
 ```bash
 npm run agent:compose          # Regenerate composed context files
@@ -103,26 +144,34 @@ Requires `CURSOR_API_KEY`, `GH_TOKEN`, and repo checkout.
 
 ---
 
+
+
 ## Testing commands
 
-| Command | Purpose |
-|---------|---------|
-| `npm run build` | Typecheck + production build |
-| `npm run test:e2e` | Desktop + mobile Playwright (blocking CI) |
-| `npm run test:audit` | Full viewport overflow audit (advisory CI) |
-| `npm run test:visual` | Visual regression baselines |
-| `npm run compress:artifacts` | Compress screenshot PNGs/JPEGs |
-| `npm run compress:artifacts:check` | CI drift check for artifacts |
+
+| Command                            | Purpose                                    |
+| ---------------------------------- | ------------------------------------------ |
+| `npm run build`                    | Typecheck + production build               |
+| `npm run test:e2e`                 | Desktop + mobile Playwright (blocking CI)  |
+| `npm run test:audit`               | Full viewport overflow audit (advisory CI) |
+| `npm run test:visual`              | Visual regression baselines                |
+| `npm run compress:artifacts`       | Compress screenshot PNGs/JPEGs             |
+| `npm run compress:artifacts:check` | CI drift check for artifacts               |
+
 
 Key e2e specs: `e2e/overlay-scroll.spec.ts` (mobile overlay/nav), `e2e/visual/` (baselines), `e2e/overflow-audit.spec.ts` (full matrix).
 
 ---
 
+
+
 ## Knowledge base
 
-Lessons learned from shipped work: [`.github/agent-knowledge/`](agent-knowledge/). Update after merge when patterns change or failures occur.
+Lessons learned from shipped work: `[.github/agent-knowledge/](agent-knowledge/)`. Update after merge when patterns change or failures occur.
 
 ---
+
+
 
 ## Guiding principles
 
@@ -132,6 +181,7 @@ Lessons learned from shipped work: [`.github/agent-knowledge/`](agent-knowledge/
 4. **Document before closing** — update docs for user-facing changes
 5. **Review before deploying** — Bugbot + Ponytail on every PR
 6. **Learn after shipping** — append lessons to agent-knowledge
+
 
 ---
 
