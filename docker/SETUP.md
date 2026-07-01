@@ -50,18 +50,24 @@ APP_DOMAIN=app.example.com API_DOMAIN=api.example.com sudo bash scripts/npm-add-
 
 `setup-supabase-vps.sh` sets `ENABLE_EMAIL_AUTOCONFIRM=true` so sign-up works without SMTP.
 
-Run the SQL migrations:
+Run the SQL migrations (applies only pending files, safe to re-run):
 
 ```bash
-docker exec -i supabase-db psql -U postgres -d postgres \
-  < "${DEPLOY_DIR:-/opt/apps/fasted-calendar}/supabase/migrations/20260627000000_initial.sql"
-
-docker exec -i supabase-db psql -U postgres -d postgres \
-  < "${DEPLOY_DIR:-/opt/apps/fasted-calendar}/supabase/migrations/20260628000000_groups.sql"
-
-docker exec -i supabase-db psql -U postgres -d postgres \
-  < "${DEPLOY_DIR:-/opt/apps/fasted-calendar}/supabase/migrations/20260628000001_fix_membership_rls.sql"
+cd "${DEPLOY_DIR:-/opt/apps/fasted-calendar}"
+bash scripts/apply-supabase-migrations.sh
 ```
+
+Manual one-off (same order as the script):
+
+| Migration | Purpose |
+|-----------|---------|
+| `20260627000000_initial.sql` | `user_progress` table, RLS |
+| `20260628000000_groups.sql` | Organizations, groups, shared journal |
+| `20260628000001_fix_membership_rls.sql` | Membership RLS fixes |
+| `20260630000000_group_commitments.sql` | `group_commitments`, `member_covenants`, leader-safe progress |
+| `20260631000000_backfill_group_commitments.sql` | Default commitments for existing groups |
+
+Deploys to `main` also run `scripts/apply-supabase-migrations.sh` when `supabase-db` is running.
 
 Copy `ANON_KEY` from `${SUPABASE_DIR}/.env` into the app `.env`:
 
