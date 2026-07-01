@@ -7,6 +7,10 @@ on:
   issues:
     types: [labeled]
 
+concurrency:
+  group: cursor-implement-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 jobs:
   queue-implement:
     if: github.event.label.name == 'architecture-reviewed'

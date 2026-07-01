@@ -6,6 +6,10 @@ on:
   issues:
     types: [labeled]
 
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
 jobs:
   resolve:
     if: |
@@ -228,7 +232,8 @@ jobs:
 
   finalize:
     needs: [resolve, bugbot, ponytail]
-    if: always() && needs.resolve.outputs.skip != 'true'
+    # resolve is skipped on unrelated label events; empty skip output must not run finalize.
+    if: always() && needs.resolve.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       issues: write
