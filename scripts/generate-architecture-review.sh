@@ -86,6 +86,8 @@ fi
 
 VERDICT=$(printf '%s\n' "$RAW" | rg -i 'VERDICT:\s*(.+)$' -m1 -r '$1' | tail -1 | tr -d '\r' || true)
 COMMENT=$(printf '%s\n' "$RAW" | sed '/^VERDICT:/Id' | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')
+# Strip accidental markdown fences from model output
+COMMENT=$(printf '%s\n' "$COMMENT" | sed '1{/^```markdown$/d;}' | sed '${/^```$/d;}')
 if [ -z "$COMMENT" ]; then
   COMMENT="$RAW"
 fi
