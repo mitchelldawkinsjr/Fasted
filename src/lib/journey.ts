@@ -1,6 +1,6 @@
 import { FASTED_JOURNEY, getTemplateById } from '../data/phaseTemplates';
 import { customPhaseToTemplate, generateScheduleSummary, withGeneratedScheduleSummary } from './customPhaseContent';
-import { resolveCustomPhaseImagePath, resolvePhaseImagePath } from './journeyImages';
+import { isDefaultFastedJourney, resolveCustomPhaseImagePath, resolvePhaseImagePath } from './journeyImages';
 import type {
   CustomJourneyPhase,
   FastPhase,
@@ -156,7 +156,7 @@ export function getJourneyPhaseWindows(journey: Journey): PhaseWindow[] {
     const startDate = cursor;
     const endDate = addDays(cursor, template.durationDays - 1);
     windows.push({
-      phaseId: template.legacyId,
+      phaseId: isDefaultFastedJourney(journey) ? template.legacyId : phase.order + 1,
       templateId: template.id,
       legacyId: template.legacyId,
       order: phase.order,

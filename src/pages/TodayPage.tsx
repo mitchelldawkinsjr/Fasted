@@ -28,9 +28,9 @@ export function TodayPage() {
   const previewDate = searchParams.get('date');
   const today = getLocalDateString();
   const viewDate = previewDate ?? today;
-  const inPlan = isWithinPlan(viewDate);
-  const plan = inPlan ? getDailyPlan(viewDate) : null;
   const { planStart, planEnd, journey } = useActiveJourney();
+  const inPlan = isWithinPlan(viewDate, journey);
+  const plan = inPlan ? getDailyPlan(viewDate, journey) : null;
   const progress = useProgress();
   const existingCheckIn = getCheckIn(viewDate);
   const [showCheckIn, setShowCheckIn] = useState(false);
