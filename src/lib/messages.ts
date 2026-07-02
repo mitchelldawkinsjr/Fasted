@@ -23,6 +23,8 @@ export const messages = {
     journalSuccess: 'Journal imported successfully.',
     journalInvalid: 'Import failed. Please check the file format.',
     fileReadError: 'Could not read the selected file.',
+    mealImagesTruncated: (max: number) =>
+      `Some meal photos were removed — each meal section allows up to ${max} photos.`,
   },
   sync: {
     signedIn: 'Signed in. Your progress is syncing.',

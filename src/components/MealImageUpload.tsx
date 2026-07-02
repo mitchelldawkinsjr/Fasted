@@ -22,10 +22,10 @@ export function MealImageUpload({ images, onChange, sectionName }: Props) {
 
     setUploading(true);
     try {
-      const { images: next, rejectedCount, atLimit } = await appendMealImages(images, files);
+      const { images: next, rejectedCount } = await appendMealImages(images, files);
       onChange(next);
 
-      if (atLimit) {
+      if (rejectedCount > 0 && next.length === images.length) {
         toast.error(messages.errors.mealImageLimitReached(MAX_MEAL_IMAGES_PER_SECTION));
       } else if (rejectedCount > 0) {
         const added = next.length - images.length;
