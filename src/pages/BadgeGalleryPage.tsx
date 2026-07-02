@@ -250,7 +250,7 @@ const TIER_LEGEND_ENTRIES: Array<{
   },
   {
     tier: 3,
-    desc: 'A deep milestone — usually after 14 or 21 check-ins in that phase.',
+    desc: 'A deep milestone — earned after 21 check-ins in that phase.',
   },
   {
     tier: 'complete',
@@ -262,23 +262,11 @@ function BadgeProgressionSection() {
   return (
     <section className="stitch-card p-stack-md space-y-stack-md">
       <h2 className="font-display text-headline-md text-primary">Badge Progression</h2>
-      <div className="space-y-3 text-body-md text-on-surface-variant">
-        <p>
-          Medallions reward faithfulness on your 8-phase journey. Check in each day to move
-          forward — only check-ins during a phase count toward that phase&apos;s milestones.
-        </p>
-        <p>
-          <strong className="font-semibold text-primary">Phase milestones</strong> — Each phase
-          has its own set of badges at different day counts (3, 5, 7, 14, or 21 days). Some
-          phases also include a completion badge when you finish the whole phase.
-        </p>
-        <p>
-          <strong className="font-semibold text-primary">Journey badges</strong> — Separate
-          rewards for your whole plan: daily streaks (3, 7, 14, or 21 days in a row), your first
-          check-in, praying over your focus on 10 check-ins, writing 5 journal entries, and
-          finishing the final phase.
-        </p>
-      </div>
+      <p className="text-body-md text-on-surface-variant">
+        Medallions reward faithfulness on your 8-phase journey. Phase milestones count total
+        check-ins on plan days within that phase — missed days do not reset progress. Streak
+        badges are separate and require consecutive daily check-ins.
+      </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {TIER_LEGEND_ENTRIES.map(({ tier, desc }) => {
           const meta = TIER_META[tier];
