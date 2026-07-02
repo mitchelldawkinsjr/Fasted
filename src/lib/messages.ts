@@ -23,6 +23,8 @@ export const messages = {
     journalSuccess: 'Journal imported successfully.',
     journalInvalid: 'Import failed. Please check the file format.',
     fileReadError: 'Could not read the selected file.',
+    mealImagesTruncated: (max: number) =>
+      `Some meal photos were removed — each meal section allows up to ${max} photos.`,
   },
   sync: {
     signedIn: 'Signed in. Your progress is syncing.',
@@ -53,6 +55,10 @@ export const messages = {
     savePreferences: 'Could not save preferences.',
     journalContentRequired: 'Write something in your reflection before saving.',
     journalMoodRequired: 'Choose how today felt before saving your daily reflection.',
+    mealImageLimitReached: (max: number) =>
+      `This meal already has ${max} photos. Remove one before adding another.`,
+    mealImageSomeSkipped: (added: number, max: number) =>
+      `Only ${added} photo${added === 1 ? '' : 's'} added — each meal allows up to ${max} photos.`,
     generic: 'Something went wrong. Please try again.',
   },
   confirm: {

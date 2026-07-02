@@ -11,6 +11,7 @@ import type {
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import { normalizeJourney, normalizeJourneys } from './journey';
 import { getDayMoodLabel } from './dayMood';
+import { clampMealSectionImages, normalizeMealImagesRecord } from './mealImages';
 import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
@@ -80,19 +81,22 @@ function loadRaw(): UserProgress {
     const parsed = JSON.parse(raw) as UserProgress;
     const journalEntries = normalizeJournalEntries(parsed.journalEntries ?? []);
     const { journeys, activeJourneyId } = normalizeJourneys(parsed.journeys, parsed.activeJourneyId);
+    const { record: mealImages, changed: mealImagesChanged } = normalizeMealImagesRecord(
+      parsed.mealImages ?? {},
+    );
     const progress: UserProgress = {
       ...DEFAULT_PROGRESS,
       ...parsed,
       checkInStreak: parsed.checkInStreak ?? 0,
       journalEntries,
-      mealImages: parsed.mealImages ?? {},
+      mealImages,
       settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
       journeys,
       activeJourneyId,
     };
 
     const needsJournalMigration = (parsed.journalEntries ?? []).some(journalEntryNeedsMigration);
-    if (needsJournalMigration) {
+    if (needsJournalMigration || mealImagesChanged) {
       try {
         localStorage.setItem(
           getActiveStorageKey(),
@@ -141,12 +145,13 @@ function persist(data: UserProgress, options?: { skipCloudSync?: boolean }) {
 /** Restore progress from cloud without triggering an upload. */
 export function persistFromCloud(data: UserProgress): void {
   const { journeys, activeJourneyId } = normalizeJourneys(data.journeys, data.activeJourneyId);
+  const { record: mealImages } = normalizeMealImagesRecord(data.mealImages ?? {});
   const normalized: UserProgress = {
     ...DEFAULT_PROGRESS,
     ...data,
     checkInStreak: data.checkInStreak ?? 0,
     journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
-    mealImages: data.mealImages ?? {},
+    mealImages,
     settings: { ...DEFAULT_SETTINGS, ...data.settings },
     journeys,
     activeJourneyId,
@@ -266,7 +271,8 @@ export function deleteJournalEntry(id: string): void {
 }
 
 export function getMealImages(entryId: string): MealSectionImages {
-  return getProgress().mealImages[entryId] ?? {};
+  const stored = getProgress().mealImages[entryId];
+  return stored ? clampMealSectionImages(stored).images : {};
 }
 
 export function saveMealImages(entryId: string, images: MealSectionImages): void {
@@ -361,18 +367,29 @@ export function exportJournal(): string {
   return JSON.stringify({ journalEntries, mealImages }, null, 2);
 }
 
-export function importJournalBackup(json: string): void {
+export function importJournalBackup(json: string): { mealImagesTruncated: boolean } {
   const { journalEntries: entries, mealImages } = parseJournalBackup(json);
   const progress = getProgress();
   const byId = new Map(progress.journalEntries.map((e) => [e.id, e]));
   entries.forEach((e) => byId.set(e.id, e));
+
+  let mealImagesTruncated = false;
+  let mergedMealImages = progress.mealImages;
+  if (mealImages) {
+    const { record: normalizedImport, changed } = normalizeMealImagesRecord(mealImages);
+    mealImagesTruncated = changed;
+    mergedMealImages = { ...progress.mealImages, ...normalizedImport };
+  }
+
   persist({
     ...progress,
     journalEntries: Array.from(byId.values()).sort((a, b) =>
       b.date.localeCompare(a.date),
     ),
-    mealImages: mealImages ? { ...progress.mealImages, ...mealImages } : progress.mealImages,
+    mealImages: mergedMealImages,
   });
+
+  return { mealImagesTruncated };
 }
 
 export function exportJournalMarkdown(): string {

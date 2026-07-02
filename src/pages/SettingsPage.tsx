@@ -20,6 +20,7 @@ import {
 } from '../lib/storage';
 import { toast } from '../lib/toast';
 import { setAuthReturnPath } from '../lib/authReturnPath';
+import { MAX_MEAL_IMAGES_PER_SECTION } from '../types';
 
 type SettingsLocationState = {
   from?: string;
@@ -72,8 +73,11 @@ export function SettingsPage() {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        importJournalBackup(reader.result as string);
+        const { mealImagesTruncated } = importJournalBackup(reader.result as string);
         toast.success(messages.import.journalSuccess);
+        if (mealImagesTruncated) {
+          toast.warning(messages.import.mealImagesTruncated(MAX_MEAL_IMAGES_PER_SECTION));
+        }
       } catch {
         toast.error(messages.import.journalInvalid);
       }

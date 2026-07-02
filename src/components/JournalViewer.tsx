@@ -29,6 +29,8 @@ type JournalEntryBodyClasses = {
   label: string;
   value: string;
   empty: string;
+  mealImages: string;
+  mealImage: string;
 };
 
 const DEFAULT_ENTRY_BODY_CLASSES: JournalEntryBodyClasses = {
@@ -37,6 +39,8 @@ const DEFAULT_ENTRY_BODY_CLASSES: JournalEntryBodyClasses = {
   label: 'mb-1 text-body-md font-medium text-on-surface',
   value: 'text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant',
   empty: 'text-body-md text-on-surface-variant',
+  mealImages: 'mt-2 flex flex-wrap gap-2',
+  mealImage: 'h-24 w-24 rounded-lg border border-outline-variant object-cover',
 };
 
 function FieldListBody<T extends string>({
@@ -101,13 +105,13 @@ export function JournalEntryBody({
     if (!images || images.length === 0) return null;
 
     return (
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className={classes.mealImages}>
         {images.map((src, index) => (
           <img
             key={`${key}-${index}`}
             src={src}
             alt={`${sectionName} photo ${index + 1}`}
-            className="h-24 w-24 rounded-lg border border-outline-variant object-cover"
+            className={classes.mealImage}
           />
         ))}
       </div>

@@ -36,6 +36,8 @@ const PRINT_ENTRY_BODY_CLASSES = {
   label: 'print-field-label',
   value: printFieldValue,
   empty: printFieldValue,
+  mealImages: 'print-meal-images',
+  mealImage: 'print-meal-image',
 };
 
 function PrintCoverPage({ model }: { model: JournalExportModel }) {
@@ -276,6 +278,23 @@ export function JournalPrintDocument({ model }: Props) {
           white-space: pre-wrap;
           overflow-wrap: anywhere;
           word-break: break-word;
+        }
+
+        .print-meal-images {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+        }
+
+        .print-meal-image {
+          width: 120px;
+          height: 120px;
+          border-radius: 8px;
+          border: 1px solid #e1e3d9;
+          object-fit: cover;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
 
         .print-footer {
