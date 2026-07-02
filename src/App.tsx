@@ -12,6 +12,7 @@ import { JournalPrintPage } from './pages/JournalPrintPage';
 import { LeaderDashboardPage } from './pages/LeaderDashboardPage';
 import { PhasesPage } from './pages/PhasesPage';
 import { BadgeGalleryPage } from './pages/BadgeGalleryPage';
+import { MilestoneDetailPage } from './pages/MilestoneDetailPage';
 import { MoodVisualizerPage } from './pages/MoodVisualizerPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="journal" element={<JournalPage />} />
             <Route path="progress" element={<ProgressPage />} />
             <Route path="progress/badges" element={<BadgeGalleryPage />} />
+            <Route path="progress/milestones/:milestoneId" element={<MilestoneDetailPage />} />
             <Route path="progress/mood" element={<MoodVisualizerPage />} />
             <Route path="phases" element={<PhasesPage />} />
             <Route path="groups" element={<GroupsHubPage />} />

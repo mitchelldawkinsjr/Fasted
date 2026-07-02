@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BadgeSprite } from '../components/BadgeSprite';
 import { Icon } from '../components/Icon';
@@ -6,6 +5,8 @@ import { GLOBAL_BADGES, getPhaseMilestonesForPhase } from '../data/phaseAchievem
 import type { PhaseMilestoneDef } from '../data/phaseAchievements';
 import { getMilestonePhaseId } from '../data/fastingPlan';
 import { useActiveJourney } from '../hooks/useActiveJourney';
+import { getAllBadgeDefinitions, type BadgeProgress } from '../lib/badges';
+import { getLocalDateString } from '../lib/dateUtils';
 
 // ─── Tier metadata ────────────────────────────────────────────────────────────
 type Tier = 1 | 2 | 3 | 'complete';
@@ -48,14 +49,15 @@ type TileData = {
   description: string;
   threshold: number | 'complete' | null;
   tier: Tier;
+  earned: boolean;
+  current: number;
+  target: number;
 };
 
 function ProgressTile({
   tile,
-  showLocked,
 }: {
   tile: TileData;
-  showLocked: boolean;
 }) {
   return (
     <figure className="flex flex-col items-center gap-1.5 text-center">
@@ -65,12 +67,12 @@ function ProgressTile({
       {/* Badge */}
       <div
         className={`rounded-full transition-transform hover:scale-105 ${
-          showLocked ? '' : 'grace-shadow'
+          tile.earned ? 'grace-shadow' : ''
         }`}
       >
         <BadgeSprite
           id={tile.id}
-          earned={!showLocked}
+          earned={tile.earned}
           size={BADGE_SIZE}
           title={tile.title}
         />
@@ -91,13 +93,28 @@ function ProgressTile({
           </span>
         )}
 
-        {/* Badge ID (dev reference) */}
-        <p className="font-mono text-[9px] leading-tight text-on-surface-variant/40">
-          {tile.id}
+        <p className={`label-caps ${tile.earned ? 'text-secondary' : 'text-on-surface-variant'}`}>
+          {tile.earned ? 'Earned' : `${Math.min(tile.current, tile.target)}/${tile.target}`}
         </p>
       </figcaption>
     </figure>
   );
+}
+
+function buildTile(
+  badge: BadgeProgress,
+  threshold: number | 'complete' | null = badge.target,
+): TileData {
+  return {
+    id: badge.id,
+    title: badge.title,
+    description: badge.description,
+    threshold,
+    tier: getTierFromId(badge.id),
+    earned: badge.earned,
+    current: badge.current,
+    target: badge.target,
+  };
 }
 
 // ─── Phase progression row ────────────────────────────────────────────────────
@@ -107,22 +124,14 @@ function PhaseProgressionTrack({
   scriptureRef,
   themeColor,
   milestones,
-  showLocked,
 }: {
   phaseId: number;
   title: string;
   scriptureRef: string;
   themeColor: string;
-  milestones: PhaseMilestoneDef[];
-  showLocked: boolean;
+  milestones: Array<{ def: PhaseMilestoneDef; badge: BadgeProgress }>;
 }) {
-  const tiles: TileData[] = milestones.map((m) => ({
-    id: m.id,
-    title: m.title,
-    description: m.description,
-    threshold: m.threshold,
-    tier: getTierFromId(m.id),
-  }));
+  const tiles = milestones.map(({ def, badge }) => buildTile(badge, def.threshold));
 
   return (
     <section className="stitch-card">
@@ -146,7 +155,7 @@ function PhaseProgressionTrack({
             <div className="flex gap-4 pb-1 pt-1">
               {tiles.map((tile) => (
                 <div key={tile.id} className="w-24 shrink-0">
-                  <ProgressTile tile={tile} showLocked={showLocked} />
+                  <ProgressTile tile={tile} />
                 </div>
               ))}
             </div>
@@ -170,15 +179,13 @@ function PhaseProgressionTrack({
 }
 
 // ─── Global streak progression ────────────────────────────────────────────────
-function StreakTrack({ showLocked }: { showLocked: boolean }) {
-  const streaks = GLOBAL_BADGES.filter((b) => b.kind === 'streak');
-  const tiles: TileData[] = streaks.map((b) => ({
-    id: b.id,
-    title: b.title,
-    description: b.description,
-    threshold: b.threshold,
-    tier: getTierFromId(b.id),
-  }));
+function StreakTrack({ badgesById }: { badgesById: Map<string, BadgeProgress> }) {
+  const tiles = GLOBAL_BADGES.filter((b) => b.kind === 'streak')
+    .map((def) => {
+      const badge = badgesById.get(def.id);
+      return badge ? buildTile(badge, def.threshold) : null;
+    })
+    .filter((tile): tile is TileData => tile !== null);
 
   return (
     <div className="space-y-stack-sm">
@@ -187,7 +194,7 @@ function StreakTrack({ showLocked }: { showLocked: boolean }) {
         <div className="flex gap-4 pb-1 pt-1">
           {tiles.map((tile) => (
             <div key={tile.id} className="w-24 shrink-0">
-              <ProgressTile tile={tile} showLocked={showLocked} />
+              <ProgressTile tile={tile} />
             </div>
           ))}
         </div>
@@ -197,15 +204,13 @@ function StreakTrack({ showLocked }: { showLocked: boolean }) {
 }
 
 // ─── One-off global badges grid ────────────────────────────────────────────────
-function OneOffBadges({ showLocked }: { showLocked: boolean }) {
-  const oneoffs = GLOBAL_BADGES.filter((b) => b.kind !== 'streak');
-  const tiles: TileData[] = oneoffs.map((b) => ({
-    id: b.id,
-    title: b.title,
-    description: b.description,
-    threshold: b.threshold,
-    tier: getTierFromId(b.id),
-  }));
+function OneOffBadges({ badgesById }: { badgesById: Map<string, BadgeProgress> }) {
+  const tiles = GLOBAL_BADGES.filter((b) => b.kind !== 'streak')
+    .map((def) => {
+      const badge = badgesById.get(def.id);
+      return badge ? buildTile(badge, def.threshold) : null;
+    })
+    .filter((tile): tile is TileData => tile !== null);
 
   return (
     <div className="space-y-stack-sm">
@@ -213,13 +218,15 @@ function OneOffBadges({ showLocked }: { showLocked: boolean }) {
       <div className="grid grid-cols-2 gap-x-gutter gap-y-stack-lg sm:grid-cols-4">
         {tiles.map((tile) => (
           <figure key={tile.id} className="group flex flex-col items-center text-center">
-            <div className={`rounded-full transition-transform group-hover:scale-105 ${showLocked ? '' : 'grace-shadow'}`}>
-              <BadgeSprite id={tile.id} earned={!showLocked} size={BADGE_SIZE} title={tile.title} />
+            <div className={`rounded-full transition-transform group-hover:scale-105 ${tile.earned ? 'grace-shadow' : ''}`}>
+              <BadgeSprite id={tile.id} earned={tile.earned} size={BADGE_SIZE} title={tile.title} />
             </div>
             <figcaption className="mt-2 space-y-1">
               <p className="text-body-md font-semibold leading-tight text-primary">{tile.title}</p>
               <TierPip tier={tile.tier} />
-              <p className="font-mono text-[9px] text-on-surface-variant/40">{tile.id}</p>
+              <p className={`label-caps ${tile.earned ? 'text-secondary' : 'text-on-surface-variant'}`}>
+                {tile.earned ? 'Earned' : `${Math.min(tile.current, tile.target)}/${tile.target}`}
+              </p>
             </figcaption>
           </figure>
         ))}
@@ -289,12 +296,13 @@ function TierLegend() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export function BadgeGalleryPage() {
-  const [showLocked, setShowLocked] = useState(false);
   const { phases } = useActiveJourney();
+  const today = getLocalDateString();
+  const badges = getAllBadgeDefinitions(today);
+  const badgesById = new Map(badges.map((badge) => [badge.id, badge]));
+  const earnedCount = badges.filter((badge) => badge.earned).length;
 
-  const totalCount =
-    GLOBAL_BADGES.length +
-    phases.reduce((sum, p) => sum + getPhaseMilestonesForPhase(getMilestonePhaseId(p)).length, 0);
+  const totalCount = badges.length;
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up pb-stack-lg">
@@ -314,31 +322,10 @@ export function BadgeGalleryPage() {
             Sacred Milestones
           </h1>
           <p className="mx-auto mt-2 max-w-md text-body-md text-on-surface-variant">
-            {totalCount} medallions — every badge earnable across the 8-phase fasting journey.
+            {earnedCount} of {totalCount} medallions earned across your 8-phase fasting journey.
           </p>
         </div>
       </header>
-
-      {/* Toggle */}
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low px-stack-md py-3">
-        <div>
-          <p className="text-body-md font-medium text-primary">Preview state</p>
-          <p className="label-caps text-on-surface-variant">
-            {showLocked ? 'Locked — grayscale / 35% opacity' : 'Earned — full color'}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowLocked((v) => !v)}
-          className={`rounded-lg px-4 py-2 text-body-md font-semibold transition-all active:scale-95 ${
-            showLocked
-              ? 'bg-surface-container-high text-on-surface-variant'
-              : 'bg-secondary-container text-on-secondary-container'
-          }`}
-        >
-          {showLocked ? 'Show earned' : 'Show locked'}
-        </button>
-      </div>
 
       {/* Tier legend */}
       <TierLegend />
@@ -349,23 +336,31 @@ export function BadgeGalleryPage() {
           <h3 className="font-display text-headline-md text-primary">Journey Badges</h3>
           <span className="label-caps text-secondary">{GLOBAL_BADGES.length} badges</span>
         </div>
-        <StreakTrack showLocked={showLocked} />
+        <StreakTrack badgesById={badgesById} />
         <div className="h-px bg-outline-variant/20" />
-        <OneOffBadges showLocked={showLocked} />
+        <OneOffBadges badgesById={badgesById} />
       </section>
 
       {/* Phase progression tracks */}
-      {phases.map((phase) => (
-        <PhaseProgressionTrack
-          key={phase.id}
-          phaseId={phase.id}
-          title={phase.title}
-          scriptureRef={phase.scriptureReference}
-          themeColor={phase.themeColor}
-          milestones={getPhaseMilestonesForPhase(getMilestonePhaseId(phase))}
-          showLocked={showLocked}
-        />
-      ))}
+      {phases.map((phase) => {
+        const milestones = getPhaseMilestonesForPhase(getMilestonePhaseId(phase))
+          .map((def) => {
+            const badge = badgesById.get(def.id);
+            return badge ? { def, badge } : null;
+          })
+          .filter((milestone): milestone is { def: PhaseMilestoneDef; badge: BadgeProgress } => milestone !== null);
+
+        return (
+          <PhaseProgressionTrack
+            key={phase.id}
+            phaseId={phase.id}
+            title={phase.title}
+            scriptureRef={phase.scriptureReference}
+            themeColor={phase.themeColor}
+            milestones={milestones}
+          />
+        );
+      })}
 
       <footer className="rounded-xl border border-dashed border-outline-variant/50 bg-surface-container-low/60 px-stack-md py-stack-md text-center space-y-1">
         <p className="label-caps text-on-surface-variant">

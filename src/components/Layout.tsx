@@ -33,7 +33,9 @@ const pageTitles: Record<string, string> = {
 export function Layout() {
   const { pathname } = useLocation();
   const { journey } = useActiveJourney();
-  const pageTitle = pageTitles[pathname] ?? DEFAULT_HEADER_TITLE;
+  const pageTitle = pathname.startsWith('/progress/milestones/')
+    ? 'Milestone'
+    : (pageTitles[pathname] ?? DEFAULT_HEADER_TITLE);
   const journeyAwarePaths = new Set(['/', '/calendar', '/phases', '/progress']);
   const title =
     journeyAwarePaths.has(pathname) && !journey.isDefault ? journey.name : pageTitle;
