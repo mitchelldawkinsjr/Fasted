@@ -59,10 +59,12 @@ function BadgeCard({
   badge: ReturnType<typeof getAllBadgeDefinitions>[number];
 }) {
   return (
-    <div
-      className={`stitch-card p-stack-md text-center transition-transform active:scale-95 ${
+    <Link
+      to={`/progress/milestones/${badge.id}`}
+      className={`stitch-card block p-stack-md text-center transition-opacity hover:opacity-80 active:scale-[0.98] ${
         badge.earned ? 'border-l-4 border-secondary' : ''
       }`}
+      aria-label={`${badge.title}${badge.earned ? ', earned' : ', not yet earned'}`}
     >
       <BadgeSprite
         id={badge.id}
@@ -73,11 +75,9 @@ function BadgeCard({
       />
       <p className="text-body-md font-semibold text-primary">{badge.title}</p>
       <p className="mt-1 text-label-caps text-on-surface-variant">{badge.description}</p>
-      {!badge.earned && (
-        <p className="mt-2 text-label-caps text-secondary">
-          {Math.min(badge.current, badge.target)}/{badge.target}
-        </p>
-      )}
+      <p className="mt-2 text-label-caps text-on-surface-variant">
+        {badge.earned ? 'Earned' : `${Math.min(badge.current, badge.target)}/${badge.target}`}
+      </p>
       {!badge.earned && badge.target > 0 && (
         <div className="mx-auto mt-2 h-1.5 max-w-[120px] overflow-hidden rounded-full bg-surface-container">
           <div
@@ -88,6 +88,6 @@ function BadgeCard({
           />
         </div>
       )}
-    </div>
+    </Link>
   );
 }
