@@ -288,7 +288,6 @@ export function getDailyPlan(date: string, journey?: Journey): DailyFastPlan | n
       'Did you pray over today’s focus?',
       'Did you read today’s scripture?',
       'Did you journal today?',
-      'What is one win from today?',
     ],
   };
 }

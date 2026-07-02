@@ -38,7 +38,6 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const [prayedFocus, setPrayedFocus] = useState(existing?.prayedFocus ?? false);
   const [readScripture, setReadScripture] = useState(existing?.readScripture ?? false);
   const [journaled, setJournaled] = useState(existing?.journaled ?? false);
-  const [win, setWin] = useState(existing?.win ?? '');
   const [celebrating, setCelebrating] = useState(false);
   const [continueReady, setContinueReady] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -140,7 +139,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
       prayedFocus,
       readScripture,
       journaled: journaled || Boolean(getJournalEntryByDate(date)),
-      win: win.trim(),
+      win: existing?.win ?? '',
       completedAt: new Date().toISOString(),
     };
 
@@ -294,19 +293,6 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
                 <CheckRow label="Did you pray over today's focus?" checked={prayedFocus} onChange={setPrayedFocus} />
                 <CheckRow label="Did you read today's scripture?" checked={readScripture} onChange={setReadScripture} />
                 <CheckRow label="Did you journal today?" checked={journaled} onChange={setJournaled} />
-
-                <label className="col-span-2 block">
-                  <span className="mb-1 block text-sm font-medium text-on-surface sm:text-body-md">
-                    What is one win from today?
-                  </span>
-                  <textarea
-                    value={win}
-                    onChange={(e) => setWin(e.target.value)}
-                    rows={1}
-                    className="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-1.5 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary sm:py-2"
-                    placeholder="Even a small victory counts..."
-                  />
-                </label>
               </div>
 
               {groupContexts.length > 0 && (
