@@ -82,11 +82,7 @@ export function TodayPage() {
   const hasJournal = progress.journalEntries.some((e) => e.date === viewDate);
 
   const handleCheckInComplete = (badges: Badge[]) => {
-    if (badges.length > 0) {
-      badges.forEach((badge) => {
-        toast.success(messages.progress.badgeEarned(badge.title));
-      });
-    } else {
+    if (badges.length === 0) {
       toast.success(messages.save.checkIn);
     }
     setShowCheckIn(false);

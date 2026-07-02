@@ -1,5 +1,5 @@
 import confetti from 'canvas-confetti';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getCelebrationMessage } from '../data/encouragements';
@@ -30,6 +30,9 @@ type GroupCommitmentContext = {
   hasExistingCheckIn: boolean;
 };
 
+const PLAIN_CELEBRATION_MS = 3200;
+const CONTINUE_READY_MS = 1200;
+
 export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const [followedPlan, setFollowedPlan] = useState(existing?.followedPlan ?? false);
   const [prayedFocus, setPrayedFocus] = useState(existing?.prayedFocus ?? false);
@@ -37,6 +40,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const [journaled, setJournaled] = useState(existing?.journaled ?? false);
   const [win, setWin] = useState(existing?.win ?? '');
   const [celebrating, setCelebrating] = useState(false);
+  const [continueReady, setContinueReady] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
@@ -47,6 +51,16 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const currentStreak = getCurrentStreak(date);
   const [groupContexts, setGroupContexts] = useState<GroupCommitmentContext[]>([]);
   const [groupResults, setGroupResults] = useState<Record<string, CommitmentResult[]>>({});
+  const onCompleteRef = useRef(onComplete);
+  const onCloseRef = useRef(onClose);
+
+  onCompleteRef.current = onComplete;
+  onCloseRef.current = onClose;
+
+  const dismissCelebration = () => {
+    onCompleteRef.current(earnedBadges);
+    onCloseRef.current();
+  };
 
   useEffect(() => {
     if (getJournalEntryByDate(date)) {
@@ -96,6 +110,25 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
     }
     setGroupResults(initial);
   }, [groupContexts]);
+
+  useEffect(() => {
+    if (!celebrating) {
+      setContinueReady(false);
+      return;
+    }
+
+    if (earnedBadges.length === 0) {
+      const timer = window.setTimeout(dismissCelebration, PLAIN_CELEBRATION_MS);
+      return () => window.clearTimeout(timer);
+    }
+
+    setContinueReady(false);
+    const readyTimer = window.setTimeout(() => setContinueReady(true), CONTINUE_READY_MS);
+
+    return () => {
+      window.clearTimeout(readyTimer);
+    };
+  }, [celebrating, earnedBadges.length]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,11 +192,6 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
         });
       }, 400);
     }
-
-    setTimeout(() => {
-      onComplete(earned);
-      onClose();
-    }, earned.length > 0 ? 2800 : 1800);
   };
 
   return createPortal(
@@ -171,51 +199,71 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
       className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-4"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="checkin-title"
+      aria-labelledby={celebrating ? 'checkin-celebration-title' : 'checkin-title'}
     >
       <div className="flex max-h-[90vh] w-full max-w-md animate-fade-in-up flex-col overflow-hidden rounded-xl bg-surface-container-lowest shadow-grace">
         {celebrating ? (
-          <div className="animate-gentle-pulse p-3 py-6 text-center sm:p-stack-lg">
-            <Icon name="celebration" className="mb-2 text-4xl text-secondary" />
-            <p className="font-display text-headline-md text-primary">{message}</p>
-            {savedStreak !== null && (
-              <p className="mt-stack-sm text-body-md text-on-surface-variant">
-                {savedStreak === 1 ? (
-                  <>Day 1 of your check-in streak.</>
-                ) : (
-                  <>
-                    <strong className="text-primary">{savedStreak}</strong> consecutive check-in days.
-                  </>
-                )}
+          <>
+            <div className="animate-gentle-pulse p-3 py-6 text-center sm:p-stack-lg">
+              <Icon name="celebration" className="mb-2 text-4xl text-secondary" />
+              <p id="checkin-celebration-title" className="font-display text-headline-md text-primary">
+                {message}
               </p>
-            )}
-            {earnedBadges.length > 0 && (
-              <div className="mt-stack-md space-y-stack-sm">
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  {earnedBadges.map((badge) => (
-                    <BadgeSprite
-                      key={badge.id}
-                      id={badge.id}
-                      earned
-                      size={72}
-                      title={badge.title}
-                    />
-                  ))}
-                </div>
-                <p className="text-body-md text-on-surface-variant">
-                  {earnedBadges.length === 1 ? (
-                    <>
-                      You earned <strong className="text-primary">{earnedBadges[0].title}</strong>.
-                    </>
+              {savedStreak !== null && (
+                <p className="mt-stack-sm text-body-md text-on-surface-variant">
+                  {savedStreak === 1 ? (
+                    <>Day 1 of your check-in streak.</>
                   ) : (
                     <>
-                      You earned {earnedBadges.length} new sacred milestones.
+                      <strong className="text-primary">{savedStreak}</strong> consecutive check-in days.
                     </>
                   )}
                 </p>
+              )}
+              {earnedBadges.length > 0 && (
+                <div className="mt-stack-md space-y-stack-sm">
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    {earnedBadges.map((badge) => (
+                      <BadgeSprite
+                        key={badge.id}
+                        id={badge.id}
+                        earned
+                        size={72}
+                        title={badge.title}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-body-md text-on-surface-variant">
+                    {earnedBadges.length === 1 ? (
+                      <>
+                        You earned <strong className="text-primary">{earnedBadges[0].title}</strong>.
+                      </>
+                    ) : (
+                      <>
+                        You earned {earnedBadges.length} new sacred milestones.
+                      </>
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+            {earnedBadges.length > 0 && (
+              <div
+                className={`shrink-0 border-t border-surface-variant p-3 pt-4 transition-opacity duration-500 sm:p-stack-lg ${
+                  continueReady ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                <LoadingButton
+                  type="button"
+                  onClick={dismissCelebration}
+                  disabled={!continueReady}
+                  className="w-full"
+                >
+                  Continue
+                </LoadingButton>
               </div>
             )}
-          </div>
+          </>
         ) : (
           <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-stack-lg">
