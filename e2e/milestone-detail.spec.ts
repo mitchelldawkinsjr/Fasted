@@ -7,6 +7,19 @@ import { SEED_STATES } from './fixtures/seed-states';
 const ARTIFACT_DIR_108 = path.join(process.cwd(), 'artifacts', 'issue-108');
 const ARTIFACT_DIR_117 = path.join(process.cwd(), 'artifacts', 'issue-117');
 
+const earnedProgress = {
+  ...SEED_STATES.rich,
+  badges: [
+    {
+      id: 'phase-1-milestone-7',
+      title: 'Week of Dedication',
+      description: 'Seven faithful check-ins in Phase 1.',
+      phaseId: 1,
+      earnedAt: `${FIXED_DATE}T12:00:00.000Z`,
+    },
+  ],
+};
+
 async function seedPage(page: Page, progress = SEED_STATES.rich) {
   await page.goto('/');
   await page.evaluate(
@@ -52,22 +65,13 @@ test.describe('milestone detail navigation', () => {
   });
 
   test('shows earned state on milestone detail when badge is earned', async ({ page }) => {
-    const earnedProgress = {
-      ...SEED_STATES.rich,
-      badges: [
-        {
-          id: 'phase-1-milestone-7',
-          title: 'Week of Dedication',
-          description: 'Seven faithful check-ins in Phase 1.',
-          phaseId: 1,
-          earnedAt: `${FIXED_DATE}T12:00:00.000Z`,
-        },
-      ],
-    };
-
     await seedPage(page, earnedProgress);
 
-    await page.goto(`/progress/milestones/phase-1-milestone-7`);
+    const badgeWall = page.locator('section[aria-labelledby="badges-heading"]');
+    await page.goto('/progress');
+    await badgeWall.getByRole('link', { name: /Week of Dedication, earned/ }).click();
+
+    await expect(page).toHaveURL(/\/progress\/milestones\/phase-1-milestone-7$/);
     await expect(page.getByText('Earned')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Week of Dedication' })).toBeVisible();
 
@@ -75,22 +79,14 @@ test.describe('milestone detail navigation', () => {
       path: path.join(ARTIFACT_DIR_108, 'milestone-detail-earned.png'),
       fullPage: true,
     });
+
+    await page.screenshot({
+      path: path.join(ARTIFACT_DIR_117, 'sacred-milestone-detail-earned.png'),
+      fullPage: true,
+    });
   });
 
   test('shows earned badges in full color on badge gallery', async ({ page }) => {
-    const earnedProgress = {
-      ...SEED_STATES.rich,
-      badges: [
-        {
-          id: 'phase-1-milestone-7',
-          title: 'Week of Dedication',
-          description: 'Seven faithful check-ins in Phase 1.',
-          phaseId: 1,
-          earnedAt: `${FIXED_DATE}T12:00:00.000Z`,
-        },
-      ],
-    };
-
     await seedPage(page, earnedProgress);
     await page.goto('/progress/badges');
 
@@ -142,33 +138,5 @@ test.describe('milestone detail navigation', () => {
     await expect(page).toHaveURL(/\/progress\/milestones\/streak-7$/);
     await expect(page.getByRole('heading', { name: '7-Day Streak' })).toBeVisible();
     await expect(page.getByText('Not yet earned')).toBeVisible();
-  });
-
-  test('shows earned state for sacred milestone clicked from progress page', async ({ page }) => {
-    const earnedProgress = {
-      ...SEED_STATES.rich,
-      badges: [
-        {
-          id: 'phase-1-milestone-7',
-          title: 'Week of Dedication',
-          description: 'Seven faithful check-ins in Phase 1.',
-          phaseId: 1,
-          earnedAt: `${FIXED_DATE}T12:00:00.000Z`,
-        },
-      ],
-    };
-
-    await seedPage(page, earnedProgress);
-    await page.goto('/progress');
-    const badgeWall = page.locator('section[aria-labelledby="badges-heading"]');
-    await badgeWall.getByRole('link', { name: /Week of Dedication, earned/ }).click();
-
-    await expect(page).toHaveURL(/\/progress\/milestones\/phase-1-milestone-7$/);
-    await expect(page.getByText('Earned')).toBeVisible();
-
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR_117, 'sacred-milestone-detail-earned.png'),
-      fullPage: true,
-    });
   });
 });
