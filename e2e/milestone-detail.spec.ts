@@ -74,4 +74,34 @@ test.describe('milestone detail navigation', () => {
       fullPage: true,
     });
   });
+
+  test('shows earned badges in full color on badge gallery', async ({ page }) => {
+    const earnedProgress = {
+      ...SEED_STATES.rich,
+      badges: [
+        {
+          id: 'phase-1-milestone-7',
+          title: 'Week of Dedication',
+          description: 'Seven faithful check-ins in Phase 1.',
+          phaseId: 1,
+          earnedAt: `${FIXED_DATE}T12:00:00.000Z`,
+        },
+      ],
+    };
+
+    await seedPage(page, earnedProgress);
+    await page.goto('/progress/badges');
+
+    const earnedBadge = page
+      .locator('figure')
+      .filter({ hasText: 'Week of Dedication' })
+      .locator('img');
+    const lockedBadge = page
+      .locator('figure')
+      .filter({ hasText: 'Steadfast Heart' })
+      .locator('img');
+
+    await expect(earnedBadge).not.toHaveClass(/badge-locked/);
+    await expect(lockedBadge).toHaveClass(/badge-locked/);
+  });
 });
