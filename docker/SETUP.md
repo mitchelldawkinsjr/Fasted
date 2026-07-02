@@ -40,6 +40,8 @@ Only `DEPLOY_DIR`, `SUPABASE_DIR`, and `DOCKER_NETWORK` are used on every deploy
 | PWA | `fasted-calendar-app:80` | `$APP_DOMAIN` |
 | Supabase API (Kong) | `supabase-kong:8000` | `$API_DOMAIN` |
 
+The PWA container (`deploy/nginx.conf`) serves `index.html`, `/sw.js`, `/registerSW.js`, and Workbox files with `Cache-Control: no-cache, max-age=0, must-revalidate`. Only hashed JS/CSS bundles under `/assets/` (Vite filename hashes) use `public, max-age=31536000, immutable`; stable-name assets such as PNGs under `/assets/` are served with `no-cache` so image updates reach returning users. After deploys, users see an in-app **Update available — Refresh** toast when a new service worker is waiting.
+
 ### First-time Supabase setup (on VPS)
 
 ```bash

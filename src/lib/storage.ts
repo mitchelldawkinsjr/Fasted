@@ -376,8 +376,8 @@ export function importJournalBackup(json: string): { mealImagesTruncated: boolea
   let mealImagesTruncated = false;
   let mergedMealImages = progress.mealImages;
   if (mealImages) {
-    const { record: normalizedImport, changed } = normalizeMealImagesRecord(mealImages);
-    mealImagesTruncated = changed;
+    const { record: normalizedImport, truncated } = normalizeMealImagesRecord(mealImages);
+    mealImagesTruncated = truncated;
     mergedMealImages = { ...progress.mealImages, ...normalizedImport };
   }
 
