@@ -114,7 +114,6 @@ export type DailyFastPlan = {
   scriptureReferences: string[];
   prayerPoints: string[];
   encouragement: string;
-  checkInPrompts: string[];
 };
 
 export type CheckIn = {

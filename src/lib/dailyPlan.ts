@@ -283,12 +283,6 @@ export function getDailyPlan(date: string, journey?: Journey): DailyFastPlan | n
     scriptureReferences,
     prayerPoints: template.prayerFocus,
     encouragement,
-    checkInPrompts: [
-      'Did you follow today’s fasting plan?',
-      'Did you pray over today’s focus?',
-      'Did you read today’s scripture?',
-      'Did you journal today?',
-    ],
   };
 }
 
