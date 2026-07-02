@@ -39,13 +39,22 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
-      testIgnore: ['**/visual/**', '**/overflow-audit.spec.ts', '**/overlay-scroll.spec.ts'],
+      testIgnore: ['**/visual/**', '**/overflow-audit.spec.ts', '**/overlay-scroll.spec.ts', '**/pwa-update.spec.ts'],
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'mobile',
       testMatch: ['**/overlay-scroll.spec.ts'],
       use: mobileChrome,
+    },
+    {
+      name: 'pwa',
+      testMatch: ['**/pwa-update.spec.ts'],
+      fullyParallel: false,
+      use: {
+        ...devices['Desktop Chrome'],
+        serviceWorkers: 'allow',
+      },
     },
     {
       name: 'audit',

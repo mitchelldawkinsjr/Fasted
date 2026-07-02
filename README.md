@@ -40,6 +40,12 @@ npm run build
 npm run preview
 ```
 
+### PWA updates and caching
+
+After deploys, the app shell (`index.html`, service worker, Workbox runtime) is served with `Cache-Control: no-cache` so browsers pick up new releases quickly. Hashed JS/CSS under `/assets/` is cached for one year. PNG images are not precached by the service worker (they load from the network or browser cache).
+
+When a new version is available, a top toast prompts **Update available — Refresh**; tap Refresh to activate the waiting service worker and reload.
+
 ## Testing
 
 ```bash

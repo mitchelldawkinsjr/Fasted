@@ -9,7 +9,7 @@
     "dev:seed:force": "VITE_SEED_DATA=true VITE_SEED_FORCE=true vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test:e2e": "playwright test --project=desktop --project=mobile",
+    "test:e2e": "playwright test --project=desktop --project=mobile --project=pwa",
     "test:audit": "playwright test e2e/overflow-audit.spec.ts --project=audit",
     "test:visual": "playwright test e2e/visual --project=visual-mobile --project=visual-tablet --project=visual-desktop",
     "test:visual:update": "playwright test e2e/visual --project=visual-mobile --project=visual-tablet --project=visual-desktop --update-snapshots && npm run compress:artifacts",

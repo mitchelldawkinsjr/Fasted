@@ -4,6 +4,7 @@ import { AppHeader } from './AppHeader';
 import { Icon } from './Icon';
 import { ConfirmModal } from './ConfirmModal';
 import { InstallPromptToast } from './InstallPromptToast';
+import { PwaUpdatePrompt } from './PwaUpdatePrompt';
 import { SyncToastWatcher } from './SyncToastWatcher';
 import { ToastHost } from './ToastHost';
 import { useActiveJourney } from '../hooks/useActiveJourney';
@@ -54,6 +55,7 @@ export function Layout() {
       <AuthReturnRedirect />
       <ConfirmModal />
       <InstallPromptToast />
+      <PwaUpdatePrompt />
 
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl bg-surface-container-lowest px-1 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-grace-up"

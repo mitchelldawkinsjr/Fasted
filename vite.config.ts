@@ -6,9 +6,10 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      // Root icons only — globPatterns below already precaches public/assets/**.
-      includeAssets: ['favicon.ico', 'favicon-32x32.png', 'apple-touch-icon.png'],
+      registerType: 'prompt',
+      includeManifestIcons: false,
+      // Icons ship with the app shell but PNGs are not precached (runtime / browser cache only).
+      includeAssets: ['favicon.ico'],
       manifest: {
         name: 'Fasted Calendar',
         short_name: 'Fasted',
@@ -34,7 +35,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
+        globIgnores: ['**/*.png'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
     }),
