@@ -1,7 +1,8 @@
+import { Link } from 'react-router-dom';
 import { getPhaseMilestonesForPhase } from '../data/phaseAchievements';
 import { getPhaseById } from '../data/fastingPlan';
 import { getPhaseBadgeDefinitions } from '../lib/badges';
-import { getMilestoneTarget } from '../lib/phaseProgress';
+import { MilestoneSection } from './MilestoneSection';
 import { BadgeSprite } from './BadgeSprite';
 import { Icon } from './Icon';
 
@@ -28,46 +29,7 @@ export function PhaseMilestonesCard({ phaseId, today, compact = false }: Props) 
     primaryMetric === 'phase-fast-days' ? 'Fast days checked in' : 'Phase check-ins';
 
   if (compact) {
-    const next = milestones.find((m) => !m.earned);
-    return (
-      <div className="rounded-xl bg-surface-container-high/60 px-3 py-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="label-caps text-on-surface">{metricLabel}</span>
-          <span className="font-display text-body-md text-primary">{progressValue}</span>
-        </div>
-        {next && (
-          <p className="mt-1 text-label-caps text-on-surface">
-            Next: {next.title} ({next.current}/{next.target})
-          </p>
-        )}
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {tierMilestones.map((tier) => {
-            const badge = milestones.find((m) => m.id === tier.id);
-            const earned = badge?.earned;
-            const target =
-              typeof tier.threshold === 'number'
-                ? tier.threshold
-                : getMilestoneTarget(tier, phase.startDate, phase.endDate);
-            return (
-              <span
-                key={tier.id}
-                className={`inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-label-caps ${
-                  earned
-                    ? 'bg-secondary text-on-secondary'
-                    : progressValue >= target
-                      ? 'bg-secondary/30 text-primary'
-                      : 'bg-surface-container text-on-surface-variant'
-                }`}
-                title={tier.title}
-              >
-                {typeof tier.threshold === 'number' ? tier.threshold : '✓'}
-                {earned && <Icon name="star" size={12} className="ml-0.5" filled />}
-              </span>
-            );
-          })}
-        </div>
-      </div>
-    );
+    return <MilestoneSection phaseId={phaseId} today={today} />;
   }
 
   return (
@@ -86,9 +48,10 @@ export function PhaseMilestonesCard({ phaseId, today, compact = false }: Props) 
 
       <div className="grid grid-cols-2 gap-gutter sm:grid-cols-4">
         {milestones.map((badge) => (
-          <div
+          <Link
             key={badge.id}
-            className={`rounded-xl border p-3 text-center ${
+            to={`/progress/milestones/${badge.id}`}
+            className={`rounded-xl border p-3 text-center transition-opacity hover:opacity-80 active:scale-[0.98] ${
               badge.earned
                 ? 'border-secondary bg-secondary/10'
                 : 'border-outline-variant/30 bg-surface-container-low'
@@ -105,7 +68,7 @@ export function PhaseMilestonesCard({ phaseId, today, compact = false }: Props) 
             <p className="mt-1 text-label-caps text-on-surface-variant">
               {badge.earned ? 'Earned' : `${Math.min(badge.current, badge.target)}/${badge.target}`}
             </p>
-          </div>
+          </Link>
         ))}
       </div>
     </section>

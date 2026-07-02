@@ -1,10 +1,9 @@
 import { getMilestonePhaseId } from '../data/fastingPlan';
 import { useActiveJourney } from '../hooks/useActiveJourney';
-import { getNextReward } from '../lib/badges';
 import { getPhaseDates } from '../lib/phaseProgress';
 import { getCurrentStreak } from '../lib/streaks';
 import { Icon } from './Icon';
-import { PhaseMilestonesCard } from './PhaseMilestonesCard';
+import { MilestoneSection } from './MilestoneSection';
 
 type Props = {
   date: string;
@@ -16,14 +15,6 @@ export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
   const { getPhaseForDate } = useActiveJourney();
   const streak = getCurrentStreak(date);
   const phase = getPhaseForDate(date);
-  const nextReward = phase && !phase.isCustom
-    ? getNextReward(
-        getMilestonePhaseId(phase),
-        phase.startDate,
-        phase.endDate,
-        date,
-      )
-    : null;
 
   return (
     <section className="rounded-xl bg-primary-container p-stack-lg text-on-primary grace-shadow">
@@ -76,21 +67,12 @@ export function DailyCommitmentCard({ date, checkedIn, onCheckIn }: Props) {
               </span>
             </div>
             {!phase.isCustom && (
-              <PhaseMilestonesCard
+              <MilestoneSection
                 phaseId={getMilestonePhaseId(phase)}
                 today={date}
-                compact
               />
             )}
           </>
-        )}
-
-        {nextReward && (
-          <p className="rounded-lg bg-black/10 px-3 py-2 text-body-md text-on-primary-container">
-            <span className="label-caps text-secondary-container">Next milestone · </span>
-            {nextReward.title} ({Math.min(nextReward.current, nextReward.target)}/
-            {nextReward.target})
-          </p>
         )}
       </div>
     </section>
