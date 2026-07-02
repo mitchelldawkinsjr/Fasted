@@ -2,24 +2,49 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { BadgeSprite } from '../components/BadgeSprite';
 import { Icon } from '../components/Icon';
 import { formatMilestoneDayLabel } from '../components/MilestoneSection';
-import { PHASE_MILESTONES } from '../data/phaseAchievements';
+import {
+  GLOBAL_BADGES,
+  PHASE_MILESTONES,
+  type GlobalBadgeDef,
+} from '../data/phaseAchievements';
 import { getPhaseById } from '../data/fastingPlan';
 import { getAllBadgeDefinitions } from '../lib/badges';
 import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
+
+function formatGlobalBadgeLabel(def: GlobalBadgeDef): string {
+  switch (def.kind) {
+    case 'check-ins':
+      return `${def.threshold} check-in${def.threshold === 1 ? '' : 's'}`;
+    case 'streak':
+      return `${def.threshold}-day streak`;
+    case 'prayer':
+      return `${def.threshold} prayers`;
+    case 'journal':
+      return `${def.threshold} entries`;
+    case 'plan-finish':
+      return 'Plan complete';
+  }
+}
 
 export function MilestoneDetailPage() {
   const { milestoneId } = useParams<{ milestoneId: string }>();
   const today = getLocalDateString();
 
   const milestoneDef = PHASE_MILESTONES.find((m) => m.id === milestoneId);
-  if (!milestoneDef) {
+  const globalDef = GLOBAL_BADGES.find((g) => g.id === milestoneId);
+  if (!milestoneDef && !globalDef) {
     return <Navigate to="/" replace />;
   }
 
-  const phase = getPhaseById(milestoneDef.phaseId);
-  const badge = getAllBadgeDefinitions(today).find((b) => b.id === milestoneDef.id);
+  const badgeId = milestoneDef?.id ?? globalDef!.id;
+  const title = milestoneDef?.title ?? globalDef!.title;
+  const description = milestoneDef?.description ?? globalDef!.description;
+  const phase = milestoneDef ? getPhaseById(milestoneDef.phaseId) : null;
+  const badge = getAllBadgeDefinitions(today).find((b) => b.id === badgeId);
   const earned = badge?.earned ?? false;
-  const dayLabel = formatMilestoneDayLabel(milestoneDef.threshold);
+  const dayLabel = milestoneDef
+    ? formatMilestoneDayLabel(milestoneDef.threshold)
+    : formatGlobalBadgeLabel(globalDef!);
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up pb-stack-lg">
@@ -45,10 +70,10 @@ export function MilestoneDetailPage() {
         >
           <div className={`mx-auto w-fit rounded-full ${earned ? 'grace-shadow' : ''}`}>
             <BadgeSprite
-              id={milestoneDef.id}
+              id={badgeId}
               earned={earned}
               size={120}
-              title={milestoneDef.title}
+              title={title}
             />
           </div>
 
@@ -58,7 +83,7 @@ export function MilestoneDetailPage() {
               earned ? 'text-primary' : 'text-on-surface-variant'
             }`}
           >
-            {milestoneDef.title}
+            {title}
           </h1>
 
           {phase && (
@@ -72,7 +97,7 @@ export function MilestoneDetailPage() {
               earned ? 'text-on-surface' : 'text-on-surface-variant'
             }`}
           >
-            {milestoneDef.description}
+            {description}
           </p>
 
           <div className="mt-stack-lg inline-flex items-center gap-2 rounded-full px-4 py-2 text-body-md font-semibold">
