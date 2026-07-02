@@ -235,43 +235,52 @@ function OneOffBadges({ badgesById }: { badgesById: Map<string, BadgeProgress> }
   );
 }
 
-// ─── Tier legend ──────────────────────────────────────────────────────────────
+// ─── Badge progression explainer ──────────────────────────────────────────────
 const TIER_LEGEND_ENTRIES: Array<{
   tier: Tier;
-  frame: string;
   desc: string;
 }> = [
   {
     tier: 1,
-    frame: 'Single accent ring · 32 tick marks',
-    desc: 'Early milestone — clean and simple',
+    desc: 'Your first milestone in a phase — often after a few faithful check-ins.',
   },
   {
     tier: 2,
-    frame: 'Double ring · dashed gold outer · 4 diamond accents',
-    desc: 'Mid-phase achievement — starting to ornament',
+    desc: 'A mid-phase milestone — earned by staying consistent over more days.',
   },
   {
     tier: 3,
-    frame: 'Triple ring · gold border · 8 laurel leaves',
-    desc: 'Late-phase mastery — gold laurel treatment',
+    desc: 'A deep milestone — usually after 14 or 21 check-ins in that phase.',
   },
   {
     tier: 'complete',
-    frame: 'Full laurel wreath · crown at top · double gold ring',
-    desc: 'Phase complete — most prestigious frame',
+    desc: 'You finished the entire phase — the highest honor for that season.',
   },
 ];
 
-function TierLegend() {
+function BadgeProgressionSection() {
   return (
     <section className="stitch-card p-stack-md space-y-stack-md">
-      <h2 className="font-display text-headline-md text-primary">Frame Progression</h2>
-      <p className="text-body-md text-on-surface-variant">
-        All badges are the same size. Tier is expressed through the medallion frame — more ornament, more rings, more gold.
-      </p>
+      <h2 className="font-display text-headline-md text-primary">Badge Progression</h2>
+      <div className="space-y-3 text-body-md text-on-surface-variant">
+        <p>
+          Medallions reward faithfulness on your 8-phase journey. Check in each day to move
+          forward — only check-ins during a phase count toward that phase&apos;s milestones.
+        </p>
+        <p>
+          <strong className="font-semibold text-primary">Phase milestones</strong> — Each phase
+          has its own set of badges at different day counts (3, 5, 7, 14, or 21 days). Some
+          phases also include a completion badge when you finish the whole phase.
+        </p>
+        <p>
+          <strong className="font-semibold text-primary">Journey badges</strong> — Separate
+          rewards for your whole plan: daily streaks (3, 7, 14, or 21 days in a row), your first
+          check-in, praying over your focus on 10 check-ins, writing 5 journal entries, and
+          finishing the final phase.
+        </p>
+      </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {TIER_LEGEND_ENTRIES.map(({ tier, frame, desc }) => {
+        {TIER_LEGEND_ENTRIES.map(({ tier, desc }) => {
           const meta = TIER_META[tier];
           return (
             <div
@@ -282,9 +291,8 @@ function TierLegend() {
               <div className="shrink-0 pt-0.5">
                 <TierPip tier={tier} />
               </div>
-              <div className="min-w-0 space-y-1">
-                <p className="text-body-md font-semibold leading-tight text-primary">{desc}</p>
-                <p className="text-[11px] leading-snug text-on-surface-variant">{frame}</p>
+              <div className="min-w-0">
+                <p className="text-body-md leading-snug text-primary">{desc}</p>
               </div>
             </div>
           );
@@ -327,8 +335,8 @@ export function BadgeGalleryPage() {
         </div>
       </header>
 
-      {/* Tier legend */}
-      <TierLegend />
+      {/* Badge progression */}
+      <BadgeProgressionSection />
 
       {/* Global journey badges */}
       <section className="stitch-card space-y-stack-lg p-stack-md">
