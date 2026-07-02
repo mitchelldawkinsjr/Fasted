@@ -27,7 +27,7 @@ export function PwaUpdatePrompt() {
 
     const id = toast.persistent({
       title: 'Update available',
-      message: 'A new version of Fasted Calendar is ready.',
+      message: 'A new version of Fasted is ready.',
       type: 'info',
       position: 'top',
       actions: [

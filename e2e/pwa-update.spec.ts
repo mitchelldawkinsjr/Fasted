@@ -58,8 +58,8 @@ test.describe('PWA update prompt', () => {
       writeFileSync(
         PROMPT_PATH,
         originalPrompt.replace(
-          'A new version of Fasted Calendar is ready.',
-          `A new version of Fasted Calendar is ready. (${Date.now()})`,
+          'A new version of Fasted is ready.',
+          `A new version of Fasted is ready. (${Date.now()})`,
         ),
       );
       execSync('npm run build', { stdio: 'inherit' });
