@@ -109,14 +109,16 @@ export function clampMealSectionImages(
 
 export function normalizeMealImagesRecord(
   record: Record<string, MealSectionImages>,
-): { record: Record<string, MealSectionImages>; changed: boolean } {
+): { record: Record<string, MealSectionImages>; changed: boolean; truncated: boolean } {
   let changed = false;
+  let truncated = false;
   const normalized: Record<string, MealSectionImages> = {};
 
   for (const [entryId, images] of Object.entries(record)) {
     const { images: clamped, changed: sectionChanged } = clampMealSectionImages(images);
     if (sectionChanged) {
       changed = true;
+      truncated = true;
     }
 
     const hasImages = Object.values(clamped).some((section) => section && section.length > 0);
@@ -131,7 +133,7 @@ export function normalizeMealImagesRecord(
     changed = true;
   }
 
-  return { record: normalized, changed };
+  return { record: normalized, changed, truncated };
 }
 
 export async function appendMealImages(

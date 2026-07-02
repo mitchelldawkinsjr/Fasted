@@ -1,17 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
-import { dismissToast, toast } from '../lib/toast';
-
-let updateToastId: string | null = null;
-
-function dismissUpdatePrompt() {
-  if (updateToastId) {
-    dismissToast(updateToastId);
-    updateToastId = null;
-  }
-}
+import { dismissToast, getToasts, subscribeToasts, toast } from '../lib/toast';
 
 export function PwaUpdatePrompt() {
+  const [activeToastId, setActiveToastId] = useState<string | null>(null);
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
@@ -20,9 +12,20 @@ export function PwaUpdatePrompt() {
   });
 
   useEffect(() => {
-    if (!needRefresh || updateToastId) return;
+    return subscribeToasts(() => {
+      setActiveToastId((current) => {
+        if (current && !getToasts().some((t) => t.id === current)) {
+          return null;
+        }
+        return current;
+      });
+    });
+  }, []);
 
-    updateToastId = toast.persistent({
+  useEffect(() => {
+    if (!needRefresh || activeToastId) return;
+
+    const id = toast.persistent({
       title: 'Update available',
       message: 'A new version of Fasted Calendar is ready.',
       type: 'info',
@@ -32,18 +35,15 @@ export function PwaUpdatePrompt() {
           label: 'Refresh',
           variant: 'primary',
           onClick: async () => {
-            dismissUpdatePrompt();
+            dismissToast(id);
+            setActiveToastId(null);
             await updateServiceWorker(true);
           },
         },
       ],
     });
-  }, [needRefresh, updateServiceWorker]);
-
-  useEffect(() => {
-    if (needRefresh) return;
-    dismissUpdatePrompt();
-  }, [needRefresh]);
+    setActiveToastId(id);
+  }, [needRefresh, activeToastId, updateServiceWorker]);
 
   return null;
 }

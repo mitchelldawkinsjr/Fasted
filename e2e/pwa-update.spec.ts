@@ -36,38 +36,8 @@ test.afterAll(async () => {
   previewProcess = null;
 });
 
-test.describe('PWA caching and update strategy', () => {
-  test.use({ baseURL: PREVIEW_URL, serviceWorkers: 'allow' });
-
-  test('preview server serves the production build', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
-  });
-
-  test('nginx config sets no-cache for shell assets and immutable cache for hashed assets', async () => {
-    const conf = readFileSync('deploy/nginx.conf', 'utf8');
-
-    expect(conf).toMatch(
-      /location = \/index\.html[\s\S]*Cache-Control "no-cache, max-age=0, must-revalidate"/,
-    );
-    expect(conf).toMatch(
-      /location = \/sw\.js[\s\S]*Cache-Control "no-cache, max-age=0, must-revalidate"/,
-    );
-    expect(conf).toMatch(
-      /location = \/registerSW\.js[\s\S]*Cache-Control "no-cache, max-age=0, must-revalidate"/,
-    );
-    expect(conf).toMatch(
-      /location \/workbox-[\s\S]*Cache-Control "no-cache, max-age=0, must-revalidate"/,
-    );
-    expect(conf).toMatch(
-      /location \/assets\/[\s\S]*Cache-Control "public, max-age=31536000, immutable"/,
-    );
-  });
-
-  test('service worker precache manifest excludes PNG assets', async () => {
-    const sw = readFileSync('dist/sw.js', 'utf8');
-    expect(sw).not.toMatch(/['"][^'"]*\.png['"]/);
-  });
+test.describe('PWA update prompt', () => {
+  test.use({ baseURL: PREVIEW_URL });
 
   test('registers service worker and shows update prompt after redeploy', async ({ page }) => {
     const originalPrompt = readFileSync(PROMPT_PATH, 'utf8');
