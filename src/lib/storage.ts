@@ -11,6 +11,7 @@ import type {
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import { normalizeJourney, normalizeJourneys } from './journey';
 import { getDayMoodLabel } from './dayMood';
+import { clampMealSectionImages } from './mealImages';
 import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
@@ -238,9 +239,10 @@ export function saveJournalEntryWithMealImages(
   const nextMealImages = { ...progress.mealImages };
 
   if (images) {
-    const hasImages = Object.values(images).some((section) => section && section.length > 0);
+    const normalizedImages = clampMealSectionImages(images);
+    const hasImages = Object.values(normalizedImages).some((section) => section && section.length > 0);
     if (hasImages) {
-      nextMealImages[entry.id] = images;
+      nextMealImages[entry.id] = normalizedImages;
     } else {
       delete nextMealImages[entry.id];
     }
@@ -271,11 +273,12 @@ export function getMealImages(entryId: string): MealSectionImages {
 
 export function saveMealImages(entryId: string, images: MealSectionImages): void {
   const progress = getProgress();
-  const hasImages = Object.values(images).some((section) => section && section.length > 0);
+  const normalizedImages = clampMealSectionImages(images);
+  const hasImages = Object.values(normalizedImages).some((section) => section && section.length > 0);
   const nextMealImages = { ...progress.mealImages };
 
   if (hasImages) {
-    nextMealImages[entryId] = images;
+    nextMealImages[entryId] = normalizedImages;
   } else {
     delete nextMealImages[entryId];
   }

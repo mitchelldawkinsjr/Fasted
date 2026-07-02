@@ -273,6 +273,53 @@ test('saves meal photos with a food entry', async ({ page }) => {
   await expect(page.getByText('Eggs and toast')).toBeVisible();
 });
 
+test('saves up to four meal photos per section', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Food');
+  await page.getByLabel('What did you eat for breakfast?').fill('Photo breakfast log');
+
+  const fileInput = page.locator('input[type="file"]').first();
+  await fileInput.setInputFiles([
+    'e2e/fixtures/meal-photo.png',
+    'e2e/fixtures/meal-photo.png',
+    'e2e/fixtures/meal-photo.png',
+    'e2e/fixtures/meal-photo.png',
+  ]);
+
+  await expect(page.getByRole('img', { name: /breakfast photo 4/i })).toBeVisible();
+  await expect(page.getByLabel('Add breakfast photo')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+  await expect(page.getByText('Reflection saved.')).toBeVisible();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  const entryId = stored.journalEntries[0].id;
+  expect(stored.mealImages[entryId].breakfast).toHaveLength(4);
+});
+
+test('warns when selecting more meal photos than the section allows', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Food');
+  await page.getByLabel('What did you eat for lunch?').fill('Lunch photo limit test');
+
+  const fileInput = page.locator('input[type="file"]').nth(1);
+  await fileInput.setInputFiles([
+    'e2e/fixtures/meal-photo.png',
+    'e2e/fixtures/meal-photo.png',
+    'e2e/fixtures/meal-photo.png',
+    'e2e/fixtures/meal-photo.png',
+    'e2e/fixtures/meal-photo.png',
+  ]);
+
+  await expect(page.getByText(messages.errors.mealImageSomeSkipped(4, 4))).toBeVisible();
+  await expect(page.getByRole('img', { name: /lunch photo 4/i })).toBeVisible();
+  await expect(page.getByRole('img', { name: /lunch photo 5/i })).toHaveCount(0);
+});
+
 test('saves a fitness entry', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Fitness');
@@ -476,6 +523,34 @@ test('opens print document when exporting journal as PDF', async ({ page }) => {
   await expect(popup.getByText('Fasted', { exact: true })).toBeVisible();
   await expect(popup.getByText('Export cover verse')).toBeVisible();
   await expect(popup.getByText('Export victory note')).toBeVisible();
+  await Promise.all([
+    popup.waitForEvent('close'),
+    popup.evaluate(() => window.dispatchEvent(new Event('afterprint'))),
+  ]);
+});
+
+test('includes meal photos in journal PDF export', async ({ page, context }) => {
+  await context.addInitScript(() => {
+    window.print = () => undefined;
+  });
+
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Food');
+  await page.getByLabel('What did you eat for breakfast?').fill('PDF export breakfast photo');
+
+  const fileInput = page.locator('input[type="file"]').first();
+  await fileInput.setInputFiles('e2e/fixtures/meal-photo.png');
+  await expect(page.getByRole('img', { name: /breakfast photo 1/i })).toBeVisible();
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Export journal as PDF' }).click(),
+  ]);
+
+  await popup.waitForLoadState('domcontentloaded');
+  await expect(popup.getByText('PDF export breakfast photo')).toBeVisible();
+  await expect(popup.getByRole('img', { name: /breakfast photo 1/i })).toBeVisible();
   await Promise.all([
     popup.waitForEvent('close'),
     popup.evaluate(() => window.dispatchEvent(new Event('afterprint'))),

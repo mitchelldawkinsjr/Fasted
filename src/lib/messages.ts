@@ -53,6 +53,10 @@ export const messages = {
     savePreferences: 'Could not save preferences.',
     journalContentRequired: 'Write something in your reflection before saving.',
     journalMoodRequired: 'Choose how today felt before saving your daily reflection.',
+    mealImageLimitReached: (max: number) =>
+      `This meal already has ${max} photos. Remove one before adding another.`,
+    mealImageSomeSkipped: (added: number, max: number) =>
+      `Only ${added} photo${added === 1 ? '' : 's'} added — each meal allows up to ${max} photos.`,
     generic: 'Something went wrong. Please try again.',
   },
   confirm: {
