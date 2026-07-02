@@ -25,7 +25,6 @@ const pageTitles: Record<string, string> = {
   '/progress': DEFAULT_HEADER_TITLE,
   '/progress/mood': 'Your Sacred Journey',
   '/progress/badges': 'Sacred Milestones',
-  '/progress/milestones': 'Milestone',
   '/phases': DEFAULT_HEADER_TITLE,
   '/groups': 'Your Groups',
   '/settings': DEFAULT_HEADER_TITLE,

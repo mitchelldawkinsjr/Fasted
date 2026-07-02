@@ -6,14 +6,14 @@ import { SEED_STATES } from './fixtures/seed-states';
 
 const ARTIFACT_DIR = path.join(process.cwd(), 'artifacts', 'issue-108');
 
-async function seedPage(page: Page) {
+async function seedPage(page: Page, progress = SEED_STATES.rich) {
   await page.goto('/');
   await page.evaluate(
-    ({ key, progress, toastKey }) => {
-      localStorage.setItem(key, JSON.stringify(progress));
+    ({ key, seededProgress, toastKey }) => {
+      localStorage.setItem(key, JSON.stringify(seededProgress));
       localStorage.setItem(toastKey, '1');
     },
-    { key: STORAGE_KEY, progress: SEED_STATES.rich, toastKey: INSTALL_TOAST_KEY },
+    { key: STORAGE_KEY, seededProgress: progress, toastKey: INSTALL_TOAST_KEY },
   );
   await page.reload();
   await page.waitForLoadState('networkidle');
@@ -63,16 +63,7 @@ test.describe('milestone detail navigation', () => {
       ],
     };
 
-    await page.goto('/');
-    await page.evaluate(
-      ({ key, progress, toastKey }) => {
-        localStorage.setItem(key, JSON.stringify(progress));
-        localStorage.setItem(toastKey, '1');
-      },
-      { key: STORAGE_KEY, progress: earnedProgress, toastKey: INSTALL_TOAST_KEY },
-    );
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    await seedPage(page, earnedProgress);
 
     await page.goto(`/progress/milestones/phase-1-milestone-7`);
     await expect(page.getByText('Earned')).toBeVisible();

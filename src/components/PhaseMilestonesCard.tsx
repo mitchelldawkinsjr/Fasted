@@ -1,36 +1,18 @@
 import { Link } from 'react-router-dom';
-import { getPhaseMilestonesForPhase } from '../data/phaseAchievements';
-import { getPhaseById } from '../data/fastingPlan';
-import { getPhaseBadgeDefinitions } from '../lib/badges';
-import { MilestoneSection } from './MilestoneSection';
+import { getPhaseMilestoneContext } from '../lib/milestones';
 import { BadgeSprite } from './BadgeSprite';
 import { Icon } from './Icon';
 
 type Props = {
   phaseId: number;
   today: string;
-  compact?: boolean;
 };
 
-export function PhaseMilestonesCard({ phaseId, today, compact = false }: Props) {
-  const phase = getPhaseById(phaseId);
-  if (!phase) return null;
+export function PhaseMilestonesCard({ phaseId, today }: Props) {
+  const ctx = getPhaseMilestoneContext(phaseId, today);
+  if (!ctx) return null;
 
-  const milestones = getPhaseBadgeDefinitions(phaseId, today);
-  const tierMilestones = getPhaseMilestonesForPhase(phaseId).filter(
-    (m) => m.threshold !== 'complete',
-  );
-  const progressMilestones = milestones.filter((m) =>
-    tierMilestones.some((t) => t.id === m.id),
-  );
-  const primaryMetric = tierMilestones[0]?.metric ?? 'phase-check-ins';
-  const progressValue = progressMilestones[0]?.current ?? 0;
-  const metricLabel =
-    primaryMetric === 'phase-fast-days' ? 'Fast days checked in' : 'Phase check-ins';
-
-  if (compact) {
-    return <MilestoneSection phaseId={phaseId} today={today} />;
-  }
+  const { phase, milestones, progressValue, metricLabel } = ctx;
 
   return (
     <section className="stitch-card p-stack-md" aria-label={`${phase.title} milestones`}>

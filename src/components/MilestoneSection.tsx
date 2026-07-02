@@ -1,30 +1,56 @@
-import { getPhaseMilestonesForPhase } from '../data/phaseAchievements';
-import { getPhaseById } from '../data/fastingPlan';
-import { getPhaseBadgeDefinitions } from '../lib/badges';
+import { Link } from 'react-router-dom';
+import type { PhaseMilestoneDef } from '../data/phaseAchievements';
+import { getNextReward } from '../lib/badges';
+import { getPhaseMilestoneContext } from '../lib/milestones';
 import { getMilestoneTarget } from '../lib/phaseProgress';
-import { MilestoneLabel } from './MilestoneLabel';
+import { Icon } from './Icon';
 
 type Props = {
   phaseId: number;
   today: string;
 };
 
-export function MilestoneSection({ phaseId, today }: Props) {
-  const phase = getPhaseById(phaseId);
-  if (!phase) return null;
+export function formatMilestoneDayLabel(threshold: number | 'complete'): string {
+  if (threshold === 'complete') return 'Complete';
+  return `Day ${threshold}`;
+}
 
-  const milestones = getPhaseBadgeDefinitions(phaseId, today);
-  const tierMilestones = getPhaseMilestonesForPhase(phaseId).filter(
-    (m) => m.threshold !== 'complete',
+function MilestoneLabel({
+  tier,
+  earned,
+  inProgress,
+}: {
+  tier: PhaseMilestoneDef;
+  earned: boolean;
+  inProgress: boolean;
+}) {
+  const label = formatMilestoneDayLabel(tier.threshold);
+
+  return (
+    <Link
+      to={`/progress/milestones/${tier.id}`}
+      className={`inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-label-caps transition-opacity hover:opacity-80 active:scale-95 ${
+        earned
+          ? 'bg-secondary text-on-secondary'
+          : inProgress
+            ? 'bg-secondary/30 text-primary'
+            : 'bg-surface-container text-on-surface-variant'
+      }`}
+      title={tier.title}
+      aria-label={`${label}: ${tier.title}${earned ? ', earned' : ''}`}
+    >
+      {label}
+      {earned && <Icon name="star" size={12} className="ml-0.5" filled />}
+    </Link>
   );
-  const progressMilestones = milestones.filter((m) =>
-    tierMilestones.some((t) => t.id === m.id),
-  );
-  const primaryMetric = tierMilestones[0]?.metric ?? 'phase-check-ins';
-  const progressValue = progressMilestones[0]?.current ?? 0;
-  const metricLabel =
-    primaryMetric === 'phase-fast-days' ? 'Fast days checked in' : 'Phase check-ins';
-  const next = milestones.find((m) => !m.earned);
+}
+
+export function MilestoneSection({ phaseId, today }: Props) {
+  const ctx = getPhaseMilestoneContext(phaseId, today);
+  if (!ctx) return null;
+
+  const { phase, milestones, tierMilestones, progressValue, metricLabel } = ctx;
+  const nextReward = getNextReward(phaseId, phase.startDate, phase.endDate, today);
 
   return (
     <div className="rounded-xl bg-surface-container-high/60 px-3 py-2">
@@ -32,9 +58,9 @@ export function MilestoneSection({ phaseId, today }: Props) {
         <span className="label-caps text-on-surface">{metricLabel}</span>
         <span className="font-display text-body-md text-primary">{progressValue}</span>
       </div>
-      {next && (
+      {nextReward && (
         <p className="mt-1 text-label-caps text-on-surface">
-          Next: {next.title} ({next.current}/{next.target})
+          Next: {nextReward.title} ({nextReward.current}/{nextReward.target})
         </p>
       )}
       <div className="mt-2 flex flex-wrap gap-1.5">

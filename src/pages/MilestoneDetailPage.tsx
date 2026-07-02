@@ -1,7 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { BadgeSprite } from '../components/BadgeSprite';
 import { Icon } from '../components/Icon';
-import { formatMilestoneDayLabel } from '../components/MilestoneLabel';
+import { formatMilestoneDayLabel } from '../components/MilestoneSection';
 import { PHASE_MILESTONES } from '../data/phaseAchievements';
 import { getPhaseById } from '../data/fastingPlan';
 import { getAllBadgeDefinitions } from '../lib/badges';
@@ -24,11 +24,11 @@ export function MilestoneDetailPage() {
   return (
     <div className="space-y-stack-lg animate-fade-in-up pb-stack-lg">
       <Link
-        to="/"
+        to="/progress"
         className="inline-flex items-center gap-1 text-body-md font-medium text-primary transition-opacity hover:opacity-80"
       >
         <Icon name="arrow_back" size={20} />
-        Today
+        Your Sacred Journey
       </Link>
 
       <section
