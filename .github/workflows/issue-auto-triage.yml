@@ -8,7 +8,8 @@ on:
     types: [opened]
 
 concurrency:
-  group: cursor-implement-${{ github.event.issue.number }}
+  # Per-workflow group — shared cursor-implement-* caused competing labeled/open runs to cancel each other.
+  group: ${{ github.workflow }}-${{ github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:
