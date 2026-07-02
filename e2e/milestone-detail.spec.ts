@@ -47,8 +47,6 @@ test.describe('milestone detail navigation', () => {
       path: path.join(ARTIFACT_DIR, 'milestone-detail-unearned.png'),
       fullPage: true,
     });
-
-    await page.goto(`/progress/milestones/phase-1-milestone-7?date=${FIXED_DATE}`);
   });
 
   test('shows earned state on milestone detail when badge is earned', async ({ page }) => {
