@@ -11,7 +11,7 @@ export default defineConfig({
       // Icons ship with the app shell but PNGs are not precached (runtime / browser cache only).
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'Fasted Calendar',
+        name: 'Fasted',
         short_name: 'Fasted',
         description: 'A spiritual fasting companion for June 13 – December 19, 2026',
         theme_color: '#fbf9f8',

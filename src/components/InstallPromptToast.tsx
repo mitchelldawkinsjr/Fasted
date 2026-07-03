@@ -31,7 +31,7 @@ function showInstallPrompt() {
     ? 'Tap Share, then Add to Home Screen for quick access and offline use.'
     : deferredPrompt
       ? 'Install on your home screen for a faster, app-like experience and offline access.'
-      : 'Add Fasted Calendar from your browser menu for quick access and offline use.';
+      : 'Add Fasted from your browser menu for quick access and offline use.';
 
   installToastId = toast.persistent({
     title: 'Add to Home Screen',
