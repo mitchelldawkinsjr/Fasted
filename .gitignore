@@ -9,6 +9,7 @@ docker/pb_data
 tsconfig.tsbuildinfo
 test-results
 playwright-report
+coverage/
 e2e/overflow-screenshots/
 pocketbase-backup/
 a11y-audit/node_modules/

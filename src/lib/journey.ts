@@ -1,6 +1,6 @@
+import { CUSTOM_JOURNEY_IMAGES } from '../data/customJourneyImages';
 import { FASTED_JOURNEY, getTemplateById } from '../data/phaseTemplates';
 import { customPhaseToTemplate, generateScheduleSummary, withGeneratedScheduleSummary } from './customPhaseContent';
-import { isDefaultFastedJourney, resolveCustomPhaseImagePath, resolvePhaseImagePath } from './journeyImages';
 import type {
   CustomJourneyPhase,
   FastPhase,
@@ -11,6 +11,29 @@ import type {
 } from '../types';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const CUSTOM_PHASE_FALLBACK_IMAGES = Object.values(CUSTOM_JOURNEY_IMAGES);
+
+export function isDefaultFastedJourney(journey: Journey): boolean {
+  return Boolean(journey.locked || journey.isDefault || journey.id === FASTED_JOURNEY.id);
+}
+
+function resolvePhaseImagePath(
+  journey: Journey,
+  templateId: string,
+  templateImagePath: string,
+): string {
+  if (isDefaultFastedJourney(journey)) {
+    return templateImagePath;
+  }
+  return CUSTOM_JOURNEY_IMAGES[templateId] ?? templateImagePath;
+}
+
+function resolveCustomPhaseImagePath(order: number): string {
+  return (
+    CUSTOM_PHASE_FALLBACK_IMAGES[order % CUSTOM_PHASE_FALLBACK_IMAGES.length] ??
+    '/assets/fasting-plan-all-phases.png'
+  );
+}
 
 export function isTemplateJourneyPhase(phase: JourneyPhase): phase is TemplateJourneyPhase {
   return Boolean(phase && typeof phase === 'object' && 'templateId' in phase);

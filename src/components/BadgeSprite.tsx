@@ -1,4 +1,3 @@
-import { getBadgeSpritePath } from '../lib/badgeSprites';
 import type { BadgeId } from '../types';
 
 type Props = {
@@ -12,7 +11,7 @@ type Props = {
 export function BadgeSprite({ id, earned = true, size = 48, className = '' }: Props) {
   return (
     <img
-      src={getBadgeSpritePath(id)}
+      src={`/assets-2/badges/${id}.png`}
       alt=""
       aria-hidden
       width={size}
