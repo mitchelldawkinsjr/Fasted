@@ -9,10 +9,27 @@ import {
   leavePrintView,
   withSuppressedPrintFooter,
 } from '../lib/journalPrintExport';
+import { collectMealImageIds } from '../lib/mealImages';
 import { getStorageScope } from '../lib/storage';
 
 const BACK_NAV_CLASS =
   'inline-flex items-center gap-1 text-body-md font-medium text-primary transition-opacity hover:opacity-80';
+
+async function waitForPrintMealImages(expectedCount: number): Promise<void> {
+  if (expectedCount === 0) return;
+
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    const imgs = document.querySelectorAll<HTMLImageElement>('.print-meal-image');
+    if (
+      imgs.length >= expectedCount &&
+      [...imgs].every((img) => img.complete && img.naturalWidth > 0)
+    ) {
+      return;
+    }
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+  }
+}
 
 export function JournalPrintPage() {
   const navigate = useNavigate();
@@ -24,6 +41,10 @@ export function JournalPrintPage() {
   const storageScope = getStorageScope();
   const scopeReady = initialized && storageScope === (user?.id ?? null);
   const model = useMemo(() => buildJournalExportModel(progress), [progress]);
+  const mealImageCount = useMemo(
+    () => Object.values(progress.mealImages ?? {}).flatMap((images) => collectMealImageIds(images)).length,
+    [progress.mealImages],
+  );
   const entryCount = model.entries.length;
   const progressStamp = `${storageScope ?? 'guest'}:${progress.updatedAt ?? ''}:${progress.journalEntries.map((e) => e.id).join(',')}`;
   const printedStampRef = useRef<string | null>(null);
@@ -52,6 +73,9 @@ export function JournalPrintPage() {
       await fontsReady;
       if (cancelled || printedStampRef.current === progressStamp) return;
 
+      await waitForPrintMealImages(mealImageCount);
+      if (cancelled || printedStampRef.current === progressStamp) return;
+
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
       if (cancelled || printedStampRef.current === progressStamp) return;
 
@@ -64,7 +88,7 @@ export function JournalPrintPage() {
     return () => {
       cancelled = true;
     };
-  }, [entryCount, progressStamp, scopeReady]);
+  }, [entryCount, mealImageCount, progressStamp, scopeReady]);
 
   const backControl = (
     <button

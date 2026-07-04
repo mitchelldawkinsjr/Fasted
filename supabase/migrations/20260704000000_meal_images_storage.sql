@@ -6,7 +6,7 @@ values (
   'meal-images',
   false,
   5242880,
-  array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  array['image/jpeg']
 )
 on conflict (id) do nothing;
 

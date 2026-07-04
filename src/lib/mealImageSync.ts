@@ -74,7 +74,7 @@ export async function ensureMealImageAvailable(
   const downloaded = await downloadMealImage(activeScope, imageId);
   if (!downloaded) return null;
 
-  await putImage(imageId, downloaded, 'image/jpeg', { scope: activeScope, synced: true });
+  await putImage(imageId, downloaded, { scope: activeScope, synced: true });
   return downloaded;
 }
 

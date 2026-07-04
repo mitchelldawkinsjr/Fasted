@@ -1,10 +1,9 @@
 import type { UserProgress } from '../types';
 import { formatAuthError, isNetworkError, withNetworkRetry } from './authErrors';
 import { messages } from './messages';
-import { copyScopeMealImages } from './mealImages';
+import { copyScope } from './imageStore';
 import { syncPendingMealImages } from './mealImageSync';
 import {
-  ensureMealImagesMigrated,
   getProgress,
   migrateLegacyStorage,
   persistFromCloud,
@@ -198,7 +197,7 @@ export async function reconcileWithCloud(options?: {
         persistFromCloud(guestFallback);
         const userId = await getCurrentUserId();
         if (userId) {
-          await copyScopeMealImages('guest', userId);
+          await copyScope('guest', userId);
         }
         await pushProgressToCloud(getProgress());
         clearPendingGuestMigration();
@@ -281,7 +280,6 @@ function attachAuthScopeListener(): void {
 /** Call once before the app renders — restores session scope and pulls cloud data. */
 export function initAuthSync(): void {
   migrateLegacyStorage();
-  void ensureMealImagesMigrated();
   attachAuthScopeListener();
 
   if (!isSyncConfigured()) {
@@ -323,7 +321,7 @@ async function completeAuthOrWarn(userId: string, guestFallback?: UserProgress):
   switchStorageScope(userId);
 
   if (guestFallback && hasLocalProgress(guestFallback)) {
-    await copyScopeMealImages('guest', userId);
+    await copyScope('guest', userId);
   }
 
   try {

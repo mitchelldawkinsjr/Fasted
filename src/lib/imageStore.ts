@@ -1,5 +1,5 @@
 const DB_NAME = 'fasted-calendar-meal-images';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'images';
 
 export type ImageScope = 'guest' | string;
@@ -8,7 +8,6 @@ export type StoredImageRecord = {
   id: string;
   scope: ImageScope;
   blob: Blob;
-  mimeType: string;
   synced: boolean;
 };
 
@@ -20,12 +19,18 @@ function openDb(): Promise<IDBDatabase> {
   dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
+      const tx = request.transaction;
+      if (event.oldVersion < 1) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
         store.createIndex('scope', 'scope', { unique: false });
-        store.createIndex('synced', 'synced', { unique: false });
+      }
+      if (event.oldVersion > 0 && event.oldVersion < 2 && tx) {
+        const store = tx.objectStore(STORE_NAME);
+        if (store.indexNames.contains('synced')) {
+          store.deleteIndex('synced');
+        }
       }
     };
 
@@ -59,6 +64,18 @@ function runTransaction<T>(
   );
 }
 
+function runWrite(fn: (store: IDBObjectStore) => void): Promise<void> {
+  return openDb().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        fn(tx.objectStore(STORE_NAME));
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error ?? new Error('Meal image store transaction failed.'));
+      }),
+  );
+}
+
 export function normalizeImageScope(scope: string | null): ImageScope {
   return scope ?? 'guest';
 }
@@ -66,13 +83,12 @@ export function normalizeImageScope(scope: string | null): ImageScope {
 export async function putImage(
   id: string,
   blob: Blob,
-  mimeType: string,
   options?: { scope?: ImageScope; synced?: boolean },
 ): Promise<void> {
   const scope = options?.scope ?? 'guest';
   const synced = options?.synced ?? false;
   await runTransaction('readwrite', (store) =>
-    store.put({ id, scope, blob, mimeType, synced } satisfies StoredImageRecord),
+    store.put({ id, scope, blob, synced } satisfies StoredImageRecord),
   );
 }
 
@@ -85,36 +101,18 @@ export async function getImage(id: string, scope?: ImageScope): Promise<Blob | n
   return record.blob;
 }
 
-export async function deleteImage(id: string): Promise<void> {
-  await runTransaction('readwrite', (store) => store.delete(id));
-}
-
 export async function deleteImages(ids: readonly string[]): Promise<void> {
   if (ids.length === 0) return;
-  await openDb().then(
-    (db) =>
-      new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        for (const id of ids) {
-          store.delete(id);
-        }
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error ?? new Error('Could not delete meal images.'));
-      }),
-  );
+  await runWrite((store) => {
+    for (const id of ids) {
+      store.delete(id);
+    }
+  });
 }
 
 export async function listImagesForScope(scope: ImageScope): Promise<StoredImageRecord[]> {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const index = store.index('scope');
-    const request = index.getAll(scope);
-    request.onsuccess = () => resolve((request.result as StoredImageRecord[]) ?? []);
-    request.onerror = () => reject(request.error ?? new Error('Could not list meal images.'));
-  });
+  const result = await runTransaction('readonly', (store) => store.index('scope').getAll(scope));
+  return (result as StoredImageRecord[]) ?? [];
 }
 
 export async function listUnsynced(scope: ImageScope): Promise<StoredImageRecord[]> {
@@ -125,12 +123,7 @@ export async function listUnsynced(scope: ImageScope): Promise<StoredImageRecord
 export async function markSynced(ids: readonly string[]): Promise<void> {
   if (ids.length === 0) return;
 
-  const db = await openDb();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    let pending = ids.length;
-
+  await runWrite((store) => {
     for (const id of ids) {
       const getRequest = store.get(id);
       getRequest.onsuccess = () => {
@@ -138,16 +131,8 @@ export async function markSynced(ids: readonly string[]): Promise<void> {
         if (record) {
           store.put({ ...record, synced: true });
         }
-        pending -= 1;
-        if (pending === 0) {
-          /* wait for tx.oncomplete */
-        }
       };
-      getRequest.onerror = () => reject(getRequest.error ?? new Error('Could not mark meal image synced.'));
     }
-
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error ?? new Error('Could not mark meal images synced.'));
   });
 }
 
@@ -155,24 +140,15 @@ export async function copyScope(fromScope: ImageScope, toScope: ImageScope): Pro
   const records = await listImagesForScope(fromScope);
   if (records.length === 0) return;
 
-  await openDb().then(
-    (db) =>
-      new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-
-        for (const record of records) {
-          store.put({
-            ...record,
-            scope: toScope,
-            synced: false,
-          });
-        }
-
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error ?? new Error('Could not copy meal image scope.'));
-      }),
-  );
+  await runWrite((store) => {
+    for (const record of records) {
+      store.put({
+        ...record,
+        scope: toScope,
+        synced: false,
+      });
+    }
+  });
 }
 
 export async function clearScope(scope: ImageScope): Promise<void> {

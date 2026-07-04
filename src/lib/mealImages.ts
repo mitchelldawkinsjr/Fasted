@@ -3,6 +3,7 @@ import {
   putImage,
   type ImageScope,
 } from './imageStore';
+import { ensureMealImageAvailable, deleteMealImagesEverywhere } from './mealImageSync';
 import type { FoodMealKey, MealSectionImages } from '../types';
 import { MAX_MEAL_IMAGES_PER_SECTION } from '../types';
 import { getStorageScope } from './storageScope';
@@ -23,10 +24,6 @@ const DATA_URL_PATTERN = /^data:image\//;
 
 export function isBase64DataUrl(value: string): boolean {
   return DATA_URL_PATTERN.test(value);
-}
-
-export function isMealImageId(value: string): boolean {
-  return !isBase64DataUrl(value);
 }
 
 export function createMealImageId(): string {
@@ -123,7 +120,7 @@ function activeScope(): ImageScope {
 }
 
 export async function storeMealImageBlob(blob: Blob, id = createMealImageId()): Promise<string> {
-  await putImage(id, blob, 'image/jpeg', { scope: activeScope(), synced: false });
+  await putImage(id, blob, { scope: activeScope(), synced: false });
   return id;
 }
 
@@ -205,11 +202,11 @@ export function normalizeMealImagesRecord(
   return { record: normalized, changed, truncated };
 }
 
-export async function migrateBase64MealImages(
+async function mapMealImageItems(
   record: Record<string, MealSectionImages>,
-): Promise<{ record: Record<string, MealSectionImages>; changed: boolean }> {
-  let changed = false;
-  const migrated: Record<string, MealSectionImages> = {};
+  mapItem: (item: string) => Promise<string | null | undefined>,
+): Promise<Record<string, MealSectionImages>> {
+  const mapped: Record<string, MealSectionImages> = {};
 
   for (const [entryId, sections] of Object.entries(record)) {
     const nextSections: MealSectionImages = {};
@@ -219,11 +216,9 @@ export async function migrateBase64MealImages(
       const nextItems: string[] = [];
 
       for (const item of items) {
-        if (isBase64DataUrl(item)) {
-          nextItems.push(await storeBase64MealImage(item));
-          changed = true;
-        } else {
-          nextItems.push(item);
+        const next = await mapItem(item);
+        if (next) {
+          nextItems.push(next);
         }
       }
 
@@ -233,9 +228,24 @@ export async function migrateBase64MealImages(
     }
 
     if (Object.keys(nextSections).length > 0) {
-      migrated[entryId] = nextSections;
+      mapped[entryId] = nextSections;
     }
   }
+
+  return mapped;
+}
+
+export async function migrateBase64MealImages(
+  record: Record<string, MealSectionImages>,
+): Promise<{ record: Record<string, MealSectionImages>; changed: boolean }> {
+  let changed = false;
+  const migrated = await mapMealImageItems(record, async (item) => {
+    if (isBase64DataUrl(item)) {
+      changed = true;
+      return storeBase64MealImage(item);
+    }
+    return item;
+  });
 
   return { record: migrated, changed };
 }
@@ -243,75 +253,27 @@ export async function migrateBase64MealImages(
 export async function embedMealImagesAsBase64(
   record: Record<string, MealSectionImages>,
 ): Promise<Record<string, MealSectionImages>> {
-  const embedded: Record<string, MealSectionImages> = {};
-
-  for (const [entryId, sections] of Object.entries(record)) {
-    const nextSections: MealSectionImages = {};
-
-    for (const [key, items] of Object.entries(sections)) {
-      if (!items?.length) continue;
-      const nextItems: string[] = [];
-
-      for (const item of items) {
-        if (isBase64DataUrl(item)) {
-          nextItems.push(item);
-          continue;
-        }
-
-        const blob = await ensureMealImageBlob(item);
-        if (blob) {
-          nextItems.push(await blobToDataUrl(blob));
-        }
-      }
-
-      if (nextItems.length > 0) {
-        nextSections[key as FoodMealKey] = nextItems;
-      }
+  return mapMealImageItems(record, async (item) => {
+    if (isBase64DataUrl(item)) {
+      return item;
     }
 
-    if (Object.keys(nextSections).length > 0) {
-      embedded[entryId] = nextSections;
-    }
-  }
-
-  return embedded;
-}
-
-async function ensureMealImageBlob(imageId: string): Promise<Blob | null> {
-  const { ensureMealImageAvailable } = await import('./mealImageSync');
-  return ensureMealImageAvailable(imageId);
+    const blob = await ensureMealImageAvailable(item);
+    if (!blob) return null;
+    return blobToDataUrl(blob);
+  });
 }
 
 export async function importMealImagesFromBackup(
   record: Record<string, MealSectionImages>,
 ): Promise<{ record: Record<string, MealSectionImages>; truncated: boolean }> {
   const { record: normalized, truncated } = normalizeMealImagesRecord(record);
-  const imported: Record<string, MealSectionImages> = {};
-
-  for (const [entryId, sections] of Object.entries(normalized)) {
-    const nextSections: MealSectionImages = {};
-
-    for (const [key, items] of Object.entries(sections)) {
-      if (!items?.length) continue;
-      const nextItems: string[] = [];
-
-      for (const item of items) {
-        if (isBase64DataUrl(item)) {
-          nextItems.push(await storeBase64MealImage(item));
-        } else if (isMealImageId(item)) {
-          nextItems.push(item);
-        }
-      }
-
-      if (nextItems.length > 0) {
-        nextSections[key as FoodMealKey] = nextItems;
-      }
+  const imported = await mapMealImageItems(normalized, async (item) => {
+    if (isBase64DataUrl(item)) {
+      return storeBase64MealImage(item);
     }
-
-    if (Object.keys(nextSections).length > 0) {
-      imported[entryId] = nextSections;
-    }
-  }
+    return item;
+  });
 
   return { record: imported, truncated };
 }
@@ -350,8 +312,6 @@ export async function deleteOrphanMealImages(
   const nextIds = new Set(collectMealImageIds(next));
   const removed = [...previousIds].filter((id) => !nextIds.has(id));
   if (removed.length === 0) return;
-
-  const { deleteMealImagesEverywhere } = await import('./mealImageSync');
   await deleteMealImagesEverywhere(removed);
 }
 
@@ -362,14 +322,4 @@ export function emptyMealSectionImages(): Record<FoodMealKey, string[]> {
     dinner: [],
     snack: [],
   };
-}
-
-export async function clearScopeMealImages(scope: ImageScope): Promise<void> {
-  const { clearScope } = await import('./imageStore');
-  await clearScope(scope);
-}
-
-export async function copyScopeMealImages(fromScope: ImageScope, toScope: ImageScope): Promise<void> {
-  const { copyScope } = await import('./imageStore');
-  await copyScope(fromScope, toScope);
 }

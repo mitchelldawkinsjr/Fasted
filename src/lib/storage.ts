@@ -13,14 +13,13 @@ import { normalizeJourney, normalizeJourneys } from './journey';
 import { getDayMoodLabel } from './dayMood';
 import {
   clampMealSectionImages,
-  clearScopeMealImages,
   deleteOrphanMealImages,
   embedMealImagesAsBase64,
   importMealImagesFromBackup,
   migrateBase64MealImages,
   normalizeMealImagesRecord,
 } from './mealImages';
-import { normalizeImageScope } from './imageStore';
+import { clearScope, normalizeImageScope } from './imageStore';
 import { getStorageScope, setStorageScope } from './storageScope';
 import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
@@ -56,7 +55,7 @@ const DEFAULT_PROGRESS: UserProgress = {
 
 let cache: UserProgress | null = null;
 const listeners = new Set<() => void>();
-let mealImageMigrationPromise: Promise<void> | null = null;
+const mealImageMigrationByScope = new Map<string, Promise<void>>();
 
 function getActiveStorageKey(): string {
   const scope = getStorageScope();
@@ -80,6 +79,7 @@ export function switchStorageScope(userId: string | null): void {
   setStorageScope(userId);
   cache = null;
   notify();
+  void ensureMealImagesMigrated();
 }
 
 function loadRaw(): UserProgress {
@@ -350,7 +350,7 @@ export function updateFastedJourneyStartDate(startDate: string): void {
 }
 
 export function resetProgress(): void {
-  void clearScopeMealImages(normalizeImageScope(getStorageScope()));
+  void clearScope(normalizeImageScope(getStorageScope()));
   persist({ ...DEFAULT_PROGRESS });
 }
 
@@ -418,14 +418,21 @@ async function runMealImageMigration(): Promise<void> {
   });
 }
 
+function mealImageMigrationScopeKey(): string {
+  return getStorageScope() ?? 'guest';
+}
+
 /** Move legacy base64 meal photos from the progress blob into IndexedDB. */
 export function ensureMealImagesMigrated(): Promise<void> {
-  if (!mealImageMigrationPromise) {
-    mealImageMigrationPromise = runMealImageMigration().catch(() => {
-      mealImageMigrationPromise = null;
+  const scopeKey = mealImageMigrationScopeKey();
+  let promise = mealImageMigrationByScope.get(scopeKey);
+  if (!promise) {
+    promise = runMealImageMigration().catch(() => {
+      mealImageMigrationByScope.delete(scopeKey);
     });
+    mealImageMigrationByScope.set(scopeKey, promise);
   }
-  return mealImageMigrationPromise;
+  return promise;
 }
 
 export function exportJournalMarkdown(): string {

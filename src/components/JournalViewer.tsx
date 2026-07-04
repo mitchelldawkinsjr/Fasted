@@ -43,7 +43,7 @@ function MealImageGallery({
   sectionName: string;
   classes: Pick<JournalEntryBodyClasses, 'mealImages' | 'mealImage'>;
 }) {
-  const urls = useMealImageUrls(imageIds);
+  const urls = useMealImageUrls(imageIds).urls;
 
   return (
     <div className={classes.mealImages}>

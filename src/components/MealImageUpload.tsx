@@ -15,7 +15,7 @@ type Props = {
 export function MealImageUpload({ images, onChange, sectionName }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const displayUrls = useMealImageUrls(images);
+  const displayUrls = useMealImageUrls(images).urls;
   const canAddMore = images.length < MAX_MEAL_IMAGES_PER_SECTION;
 
   const handleSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
