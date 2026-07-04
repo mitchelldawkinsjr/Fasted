@@ -19,13 +19,13 @@ import {
   deleteImages,
   getImage,
   imageScopeKey,
+  invalidateMealImageSrcs,
   isDataUrl,
   putImage,
 } from './imageStore';
 import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { collectMealImageIds } from './mealImages';
-import { deleteRemoteImages } from './mealImageSync';
-import { invalidateMealImageSrcs } from './mealImageUrls';
+import { deleteRemoteImages, resolveMealImageBlob } from './mealImageSync';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
 import { computeCheckInStreak } from './streaks';
@@ -506,6 +506,11 @@ export async function exportJournal(): Promise<string> {
         const record = await getImage(scope, value);
         if (record) {
           dataUrls.push(await blobToDataUrl(record.blob));
+          continue;
+        }
+        const blob = await resolveMealImageBlob(scope, value);
+        if (blob) {
+          dataUrls.push(await blobToDataUrl(blob));
         }
       }
       if (dataUrls.length > 0) {

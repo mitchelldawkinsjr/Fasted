@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
 import { MealImageUpload } from './MealImageUpload';
@@ -6,7 +6,7 @@ import { MoodPicker } from './MoodPicker';
 import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
-import { deleteImages, imageScopeKey } from '../lib/imageStore';
+import { deleteImages, imageScopeKey, invalidateMealImageSrcs } from '../lib/imageStore';
 import {
   DEFAULT_JOURNAL_ENTRY_TYPE,
   DAILY_REFLECTION_FIELDS,
@@ -22,7 +22,6 @@ import {
   emptyMealSectionImages,
   mealSectionHasImages,
 } from '../lib/mealImages';
-import { invalidateMealImageSrcs } from '../lib/mealImageUrls';
 import { formatError, messages } from '../lib/messages';
 import {
   createJournalEntryId,
@@ -81,6 +80,9 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       collectMealImageIds(entry?.type === 'food' ? getMealImages(entry.id) : undefined),
     ),
   );
+  const mealImagesRef = useRef(mealImages);
+  mealImagesRef.current = mealImages;
+  const savedSuccessfully = useRef(false);
 
   const discardUnsavedMealImages = (ids: string[]) => {
     const orphans = ids.filter((id) => !savedMealImageIds.current.has(id));
@@ -89,6 +91,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     invalidateMealImageSrcs(scope, orphans);
     void deleteImages(scope, orphans);
   };
+
   const [prayerFocus, setPrayerFocus] = useState(
     entry && isDailyReflectionEntry(entry) ? entry.prayerFocus : '',
   );
@@ -108,6 +111,13 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     entry && isDailyReflectionEntry(entry) ? entry.tomorrowIntention : '',
   );
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (savedSuccessfully.current) return;
+      discardUnsavedMealImages(collectMealImageIds(mealImagesRef.current));
+    };
+  }, []);
 
   const clearSimpleFields = () => {
     setContent('');
@@ -235,6 +245,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         }
       }
       saveJournalEntryWithMealImages(saved, entryType === 'food' ? imagesToSave : undefined);
+      savedSuccessfully.current = true;
       toast.success(entry ? messages.save.journalUpdated : messages.save.journal);
       onSave();
     } catch (err) {

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { getStorageScope } from '../lib/storage';
-import { imageScopeKey, isDataUrl } from '../lib/imageStore';
 import {
   getCachedMealImageUrl,
+  imageScopeKey,
+  isDataUrl,
   setCachedMealImageUrl,
-} from '../lib/mealImageUrls';
+} from '../lib/imageStore';
 import { resolveMealImageBlob } from '../lib/mealImageSync';
 
 async function resolveSrc(scope: string, imageId: string): Promise<string | undefined> {
@@ -48,31 +49,4 @@ export function useMealImageSrc(imageId: string | undefined): string | undefined
   }, [imageId, scope]);
 
   return src;
-}
-
-/** Resolve multiple meal image IDs to display URLs (stable order). */
-export function useMealImageSrcs(imageIds: string[]): (string | undefined)[] {
-  const scope = imageScopeKey(getStorageScope());
-  const idsKey = imageIds.join('|');
-  const [srcs, setSrcs] = useState<(string | undefined)[]>(() =>
-    imageIds.map((id) => {
-      if (isDataUrl(id)) return id;
-      return getCachedMealImageUrl(scope, id);
-    }),
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    const ids = idsKey ? idsKey.split('|') : [];
-
-    void Promise.all(ids.map((id) => resolveSrc(scope, id))).then((next) => {
-      if (!cancelled) setSrcs(next);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [idsKey, scope]);
-
-  return srcs;
 }

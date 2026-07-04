@@ -327,6 +327,12 @@ async function authWithRetry<T extends { error: unknown }>(call: () => Promise<T
   });
 }
 
+async function snapshotGuestProgress(): Promise<UserProgress | undefined> {
+  await ensureMealImageMigration();
+  const progress = getProgress();
+  return hasLocalProgress(progress) ? structuredClone(progress) : undefined;
+}
+
 async function completeAuthOrWarn(userId: string, guestFallback?: UserProgress): Promise<AuthResult> {
   rememberGuestMigration(guestFallback);
   switchStorageScope(userId);
@@ -343,7 +349,7 @@ async function completeAuthOrWarn(userId: string, guestFallback?: UserProgress):
 }
 
 export async function signIn(email: string, password: string): Promise<AuthResult> {
-  const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
+  const guestFallback = await snapshotGuestProgress();
 
   const { data, error } = await authWithRetry(() =>
     getSupabase().auth.signInWithPassword({
@@ -368,7 +374,7 @@ export async function signUp(
     throw new Error('Passwords do not match');
   }
 
-  const guestFallback = hasLocalProgress(getProgress()) ? getProgress() : undefined;
+  const guestFallback = await snapshotGuestProgress();
 
   const { data, error } = await authWithRetry(() =>
     getSupabase().auth.signUp({
@@ -394,7 +400,7 @@ export async function updateUserProfile(name: string): Promise<void> {
 }
 
 export async function signInWithOAuth(provider: 'google' | 'facebook'): Promise<void> {
-  rememberGuestMigration(hasLocalProgress(getProgress()) ? getProgress() : undefined);
+  rememberGuestMigration(await snapshotGuestProgress());
 
   const { error } = await authWithRetry(() =>
     getSupabase().auth.signInWithOAuth({

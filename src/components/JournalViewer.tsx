@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { JournalTypeBadge } from './JournalTypePicker';
-import { MealImageThumb } from './MealImageThumb';
 import { MoodBadge } from './MoodPicker';
 import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
+import { useMealImageSrc } from '../hooks/useMealImageSrc';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
   DAILY_REFLECTION_FIELDS,
@@ -39,6 +39,22 @@ const DEFAULT_ENTRY_BODY_CLASSES: JournalEntryBodyClasses = {
   value: 'text-wrap-anywhere whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant',
   empty: 'text-body-md text-on-surface-variant',
 };
+
+function MealImagePreview({
+  imageId,
+  alt,
+  className,
+}: {
+  imageId: string;
+  alt: string;
+  className?: string;
+}) {
+  const src = useMealImageSrc(imageId);
+  if (!src) {
+    return <div className={className} aria-hidden="true" />;
+  }
+  return <img src={src} alt={alt} className={className} />;
+}
 
 function FieldListBody<T extends string>({
   fields,
@@ -104,7 +120,7 @@ export function JournalEntryBody({
     return (
       <div className="mt-2 flex flex-wrap gap-2">
         {images.map((imageId, index) => (
-          <MealImageThumb
+          <MealImagePreview
             key={imageId}
             imageId={imageId}
             alt={`${sectionName} photo ${index + 1}`}
