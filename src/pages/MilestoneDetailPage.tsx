@@ -1,7 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { BadgeSprite } from '../components/BadgeSprite';
 import { Icon } from '../components/Icon';
-import { formatMilestoneDayLabel } from '../components/MilestoneSection';
+import { formatMilestoneDayLabel } from '../lib/milestones';
 import { PHASE_MILESTONES } from '../data/phaseAchievements';
 import { getPhaseById } from '../data/fastingPlan';
 import { getAllBadgeDefinitions } from '../lib/badges';

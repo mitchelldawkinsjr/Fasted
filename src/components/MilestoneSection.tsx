@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { PhaseMilestoneDef } from '../data/phaseAchievements';
 import { getNextReward } from '../lib/badges';
-import { getPhaseMilestoneContext } from '../lib/milestones';
+import { formatMilestoneDayLabel, getPhaseMilestoneContext } from '../lib/milestones';
 import { getMilestoneTarget } from '../lib/phaseProgress';
 import { Icon } from './Icon';
 
@@ -9,11 +9,6 @@ type Props = {
   phaseId: number;
   today: string;
 };
-
-export function formatMilestoneDayLabel(threshold: number | 'complete'): string {
-  if (threshold === 'complete') return 'Complete';
-  return `Day ${threshold}`;
-}
 
 function MilestoneLabel({
   tier,
