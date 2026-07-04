@@ -17,7 +17,6 @@ import {
   clearScope,
   dataUrlToBlob,
   deleteImages,
-  getImage,
   imageScopeKey,
   invalidateMealImageSrcs,
   isDataUrl,
@@ -501,11 +500,6 @@ export async function exportJournal(): Promise<string> {
       for (const value of values) {
         if (isDataUrl(value)) {
           dataUrls.push(value);
-          continue;
-        }
-        const record = await getImage(scope, value);
-        if (record) {
-          dataUrls.push(await blobToDataUrl(record.blob));
           continue;
         }
         const blob = await resolveMealImageBlob(scope, value);

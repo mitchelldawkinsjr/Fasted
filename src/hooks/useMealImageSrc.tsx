@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { getStorageScope } from '../lib/storage';
 import {
   getCachedMealImageUrl,
   imageScopeKey,
@@ -7,6 +6,7 @@ import {
   setCachedMealImageUrl,
 } from '../lib/imageStore';
 import { resolveMealImageBlob } from '../lib/mealImageSync';
+import { getStorageScope } from '../lib/storage';
 
 async function resolveSrc(scope: string, imageId: string): Promise<string | undefined> {
   if (isDataUrl(imageId)) return imageId;

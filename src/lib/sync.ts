@@ -327,10 +327,12 @@ async function authWithRetry<T extends { error: unknown }>(call: () => Promise<T
   });
 }
 
+/** Snapshot guest progress after migrating meal images, as a deep clone (not a live cache ref). */
 async function snapshotGuestProgress(): Promise<UserProgress | undefined> {
   await ensureMealImageMigration();
   const progress = getProgress();
-  return hasLocalProgress(progress) ? structuredClone(progress) : undefined;
+  if (!hasLocalProgress(progress)) return undefined;
+  return structuredClone(progress);
 }
 
 async function completeAuthOrWarn(userId: string, guestFallback?: UserProgress): Promise<AuthResult> {
