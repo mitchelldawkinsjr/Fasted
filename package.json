@@ -9,6 +9,8 @@
     "dev:seed:force": "VITE_SEED_DATA=true VITE_SEED_FORCE=true vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "test:unit": "vitest run",
+    "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test --project=desktop --project=mobile --project=pwa",
     "test:audit": "playwright test e2e/overflow-audit.spec.ts --project=audit",
     "test:visual": "playwright test e2e/visual --project=visual-mobile --project=visual-tablet --project=visual-desktop",
@@ -39,12 +41,14 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^4.1.9",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "sharp": "^0.33.5",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
-    "vite-plugin-pwa": "^0.21.1"
+    "vite-plugin-pwa": "^0.21.1",
+    "vitest": "^4.1.9"
   }
 }
