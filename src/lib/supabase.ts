@@ -34,3 +34,4 @@ export const SHARED_JOURNAL_TABLE = 'shared_journal_entries';
 export const PRAYER_REQUESTS_TABLE = 'prayer_requests';
 export const GROUP_COMMITMENTS_TABLE = 'group_commitments';
 export const MEMBER_COVENANTS_TABLE = 'member_covenants';
+export const TELEMETRY_EVENTS_TABLE = 'telemetry_events';

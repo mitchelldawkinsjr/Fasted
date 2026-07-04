@@ -68,6 +68,7 @@ Manual one-off (same order as the script):
 | `20260628000001_fix_membership_rls.sql` | Membership RLS fixes |
 | `20260630000000_group_commitments.sql` | `group_commitments`, `member_covenants`, leader-safe progress |
 | `20260631000000_backfill_group_commitments.sql` | Default commitments for existing groups |
+| `20260704123000_telemetry_events.sql` | Insert-only client telemetry event store |
 
 Deploys to `main` also run `scripts/apply-supabase-migrations.sh` when `supabase-db` is running.
 
@@ -77,6 +78,21 @@ Copy `ANON_KEY` from `${SUPABASE_DIR}/.env` into the app `.env`:
 VITE_SUPABASE_URL=https://api.example.com
 VITE_SUPABASE_ANON_KEY=<anon-key-from-supabase-env>
 APP_PUBLISH_PORT=8022
+```
+
+### Telemetry visibility
+
+Client auth/sync failures can be reported two ways:
+
+- `VITE_TELEMETRY_URL=https://...` posts JSON events to an external telemetry receiver.
+- `VITE_TELEMETRY_SUPABASE=true` stores events in the `telemetry_events` table after `20260704123000_telemetry_events.sql` is applied.
+
+Browser clients can only insert telemetry events; there are no client read/update/delete policies. To inspect recent events as an operator:
+
+```bash
+SUPABASE_URL=https://api.example.com \
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key-from-supabase-env> \
+npm run telemetry:report -- --hours 24 --level error
 ```
 
 ### Deploy app

@@ -24,6 +24,7 @@
     "agent:test": "node scripts/agent-cli.mjs test",
     "agent:docs": "node scripts/agent-cli.mjs docs",
     "agent:deploy": "node scripts/agent-cli.mjs deploy",
+    "telemetry:report": "node scripts/telemetry-report.mjs",
     "deploy:vps": "bash scripts/deploy-vps.sh",
     "deploy:npm": "echo 'Run scripts/npm-add-fasted.sh on the VPS with APP_DOMAIN and API_DOMAIN set'"
   },
