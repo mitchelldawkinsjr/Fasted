@@ -527,9 +527,15 @@ export async function importJournalBackup(json: string): Promise<void> {
   entries.forEach((e) => byId.set(e.id, e));
 
   let nextMealImages = progress.mealImages;
+  const removedIds: string[] = [];
   if (mealImages) {
     const scope = getImageScope();
     const imported = await migrateBase64MealImages(mealImages, scope);
+    for (const [entryId, sections] of Object.entries(imported)) {
+      const previousIds = collectMealImageIds(progress.mealImages[entryId]);
+      const nextIds = new Set(collectMealImageIds(sections));
+      removedIds.push(...previousIds.filter((id) => !nextIds.has(id)));
+    }
     nextMealImages = { ...progress.mealImages, ...imported };
   }
 
@@ -540,6 +546,7 @@ export async function importJournalBackup(json: string): Promise<void> {
     ),
     mealImages: nextMealImages,
   });
+  void removeMealImageBlobs(removedIds);
 }
 
 export function exportJournalMarkdown(): string {

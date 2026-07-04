@@ -48,8 +48,22 @@ export function JournalPrintPage() {
 
     let cancelled = false;
 
+    const waitForImages = async () => {
+      const deadline = Date.now() + 2500;
+      while (Date.now() < deadline) {
+        if (cancelled) return;
+        const images = Array.from(document.images);
+        const pending = images.filter((img) => !img.complete || img.naturalWidth === 0);
+        if (pending.length === 0) return;
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 100));
+      }
+    };
+
     const printWhenReady = async () => {
       await fontsReady;
+      if (cancelled || printedStampRef.current === progressStamp) return;
+
+      await waitForImages();
       if (cancelled || printedStampRef.current === progressStamp) return;
 
       await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
