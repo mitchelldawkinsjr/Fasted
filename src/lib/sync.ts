@@ -8,8 +8,10 @@ import {
   getProgress,
   migrateLegacyStorage,
   persistFromCloud,
+  resetProgress,
   switchStorageScope,
 } from './storage';
+import { MEAL_IMAGES_BUCKET } from './mealImageSync';
 import {
   getSupabase,
   isSyncConfigured,
@@ -540,14 +542,14 @@ export async function signInWithOAuth(provider: 'google' | 'facebook'): Promise<
   // Session is picked up automatically by onAuthStateChange in useAuth after redirect
 }
 
-export async function signOut(): Promise<void> {
+export async function signOut(options?: { skipFlush?: boolean }): Promise<void> {
   if (syncTimer) {
     clearTimeout(syncTimer);
     syncTimer = null;
   }
 
   // Flush pending edits before leaving the signed-in storage scope.
-  if (navigator.onLine && (await isLoggedIn())) {
+  if (!options?.skipFlush && navigator.onLine && (await isLoggedIn())) {
     try {
       await pushProgressToCloud(getProgress());
     } catch {
@@ -560,4 +562,34 @@ export async function signOut(): Promise<void> {
     await getSupabase().auth.signOut();
   }
   setStatus({ state: 'idle', lastSyncedAt: null, error: null });
+}
+
+/**
+ * Delete cloud progress + meal images for the signed-in user, clear local data,
+ * and sign out. Auth user row removal requires a server-side admin action.
+ */
+export async function deleteAccountData(): Promise<void> {
+  const userId = await getCurrentUserId();
+  if (userId && isSyncConfigured()) {
+    const client = getSupabase();
+    const { error: progressError } = await client
+      .from(PROGRESS_TABLE)
+      .delete()
+      .eq('user_id', userId);
+    if (progressError) throw progressError;
+
+    try {
+      const { data: files } = await client.storage.from(MEAL_IMAGES_BUCKET).list(userId);
+      if (files && files.length > 0) {
+        await client.storage
+          .from(MEAL_IMAGES_BUCKET)
+          .remove(files.map((file) => `${userId}/${file.name}`));
+      }
+    } catch (err) {
+      reportError(err, { source: 'deleteAccountData.mealImages' });
+    }
+  }
+
+  resetProgress();
+  await signOut({ skipFlush: true });
 }

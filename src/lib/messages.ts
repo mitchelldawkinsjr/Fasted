@@ -75,6 +75,13 @@ export const messages = {
       confirm: 'Reset everything',
       cancel: 'Cancel',
     },
+    deleteAccountData: {
+      title: 'Delete account data?',
+      message:
+        'Cloud progress and meal photos for this account will be deleted, local data on this device will be cleared, and you will be signed out. Your login identity may remain until an admin removes it. This cannot be undone.',
+      confirm: 'Delete my data',
+      cancel: 'Cancel',
+    },
   },
   empty: {
     journal: {
