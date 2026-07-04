@@ -139,7 +139,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     setEntryType(nextType);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (entryType === 'daily-reflection' && !dayMood) {
@@ -207,7 +207,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           }
         }
       }
-      saveJournalEntryWithMealImages(saved, entryType === 'food' ? imagesToSave : undefined);
+      await saveJournalEntryWithMealImages(saved, entryType === 'food' ? imagesToSave : undefined);
       toast.success(entry ? messages.save.journalUpdated : messages.save.journal);
       onSave();
     } catch (err) {

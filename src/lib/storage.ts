@@ -11,7 +11,17 @@ import type {
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import { normalizeJourney, normalizeJourneys } from './journey';
 import { getDayMoodLabel } from './dayMood';
-import { clampMealSectionImages, normalizeMealImagesRecord } from './mealImages';
+import {
+  clampMealSectionImages,
+  clearScopeMealImages,
+  deleteOrphanMealImages,
+  embedMealImagesAsBase64,
+  importMealImagesFromBackup,
+  migrateBase64MealImages,
+  normalizeMealImagesRecord,
+} from './mealImages';
+import { normalizeImageScope } from './imageStore';
+import { getStorageScope, setStorageScope } from './storageScope';
 import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
@@ -44,18 +54,16 @@ const DEFAULT_PROGRESS: UserProgress = {
   journeys: [FASTED_JOURNEY],
 };
 
-/** `null` = guest (unsigned) scope. */
-let currentScope: string | null = null;
 let cache: UserProgress | null = null;
 const listeners = new Set<() => void>();
+let mealImageMigrationPromise: Promise<void> | null = null;
 
 function getActiveStorageKey(): string {
-  return currentScope ? userStorageKey(currentScope) : GUEST_STORAGE_KEY;
+  const scope = getStorageScope();
+  return scope ? userStorageKey(scope) : GUEST_STORAGE_KEY;
 }
 
-export function getStorageScope(): string | null {
-  return currentScope;
-}
+export { getStorageScope } from './storageScope';
 
 /** Move pre-scoping data into the guest key once. */
 export function migrateLegacyStorage(): void {
@@ -69,7 +77,7 @@ export function migrateLegacyStorage(): void {
 
 /** Switch the active local cache to a user account or guest mode. */
 export function switchStorageScope(userId: string | null): void {
-  currentScope = userId;
+  setStorageScope(userId);
   cache = null;
   notify();
 }
@@ -231,16 +239,17 @@ export function createJournalEntryId(): string {
 }
 
 export function saveJournalEntry(entry: JournalEntry): void {
-  saveJournalEntryWithMealImages(entry);
+  void saveJournalEntryWithMealImages(entry);
 }
 
-export function saveJournalEntryWithMealImages(
+export async function saveJournalEntryWithMealImages(
   entry: JournalEntry,
   images?: MealSectionImages,
-): void {
+): Promise<void> {
   const progress = getProgress();
   const filtered = progress.journalEntries.filter((e) => e.id !== entry.id);
   const nextMealImages = { ...progress.mealImages };
+  const previousImages = progress.mealImages[entry.id];
 
   if (images) {
     const hasImages = Object.values(images).some((section) => section && section.length > 0);
@@ -250,6 +259,8 @@ export function saveJournalEntryWithMealImages(
       delete nextMealImages[entry.id];
     }
   }
+
+  await deleteOrphanMealImages(previousImages, images);
 
   persist({
     ...progress,
@@ -262,12 +273,14 @@ export function saveJournalEntryWithMealImages(
 
 export function deleteJournalEntry(id: string): void {
   const progress = getProgress();
+  const removedImages = progress.mealImages[id];
   const { [id]: _removed, ...remainingMealImages } = progress.mealImages;
   persist({
     ...progress,
     journalEntries: progress.journalEntries.filter((e) => e.id !== id),
     mealImages: remainingMealImages,
   });
+  void deleteOrphanMealImages(removedImages, undefined);
 }
 
 export function getMealImages(entryId: string): MealSectionImages {
@@ -337,6 +350,7 @@ export function updateFastedJourneyStartDate(startDate: string): void {
 }
 
 export function resetProgress(): void {
+  void clearScopeMealImages(normalizeImageScope(getStorageScope()));
   persist({ ...DEFAULT_PROGRESS });
 }
 
@@ -362,12 +376,13 @@ function parseJournalBackup(json: string): JournalBackup {
   throw new Error('Invalid journal backup format.');
 }
 
-export function exportJournal(): string {
+export async function exportJournal(): Promise<string> {
   const { journalEntries, mealImages } = getProgress();
-  return JSON.stringify({ journalEntries, mealImages }, null, 2);
+  const embedded = await embedMealImagesAsBase64(mealImages);
+  return JSON.stringify({ journalEntries, mealImages: embedded }, null, 2);
 }
 
-export function importJournalBackup(json: string): { mealImagesTruncated: boolean } {
+export async function importJournalBackup(json: string): Promise<{ mealImagesTruncated: boolean }> {
   const { journalEntries: entries, mealImages } = parseJournalBackup(json);
   const progress = getProgress();
   const byId = new Map(progress.journalEntries.map((e) => [e.id, e]));
@@ -376,7 +391,7 @@ export function importJournalBackup(json: string): { mealImagesTruncated: boolea
   let mealImagesTruncated = false;
   let mergedMealImages = progress.mealImages;
   if (mealImages) {
-    const { record: normalizedImport, truncated } = normalizeMealImagesRecord(mealImages);
+    const { record: normalizedImport, truncated } = await importMealImagesFromBackup(mealImages);
     mealImagesTruncated = truncated;
     mergedMealImages = { ...progress.mealImages, ...normalizedImport };
   }
@@ -390,6 +405,27 @@ export function importJournalBackup(json: string): { mealImagesTruncated: boolea
   });
 
   return { mealImagesTruncated };
+}
+
+async function runMealImageMigration(): Promise<void> {
+  const progress = getProgress();
+  const { record, changed } = await migrateBase64MealImages(progress.mealImages);
+  if (!changed) return;
+
+  persist({
+    ...progress,
+    mealImages: record,
+  });
+}
+
+/** Move legacy base64 meal photos from the progress blob into IndexedDB. */
+export function ensureMealImagesMigrated(): Promise<void> {
+  if (!mealImageMigrationPromise) {
+    mealImageMigrationPromise = runMealImageMigration().catch(() => {
+      mealImageMigrationPromise = null;
+    });
+  }
+  return mealImageMigrationPromise;
 }
 
 export function exportJournalMarkdown(): string {

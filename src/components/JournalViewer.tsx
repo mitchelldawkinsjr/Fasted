@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { JournalTypeBadge } from './JournalTypePicker';
 import { MoodBadge } from './MoodPicker';
 import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
+import { useMealImageUrls } from '../hooks/useMealImageUrls';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
   DAILY_REFLECTION_FIELDS,
@@ -32,6 +33,33 @@ type JournalEntryBodyClasses = {
   mealImages: string;
   mealImage: string;
 };
+
+function MealImageGallery({
+  imageIds,
+  sectionName,
+  classes,
+}: {
+  imageIds: string[];
+  sectionName: string;
+  classes: Pick<JournalEntryBodyClasses, 'mealImages' | 'mealImage'>;
+}) {
+  const urls = useMealImageUrls(imageIds);
+
+  return (
+    <div className={classes.mealImages}>
+      {imageIds.map((imageId, index) =>
+        urls[index] ? (
+          <img
+            key={imageId}
+            src={urls[index]}
+            alt={`${sectionName} photo ${index + 1}`}
+            className={classes.mealImage}
+          />
+        ) : null,
+      )}
+    </div>
+  );
+}
 
 const DEFAULT_ENTRY_BODY_CLASSES: JournalEntryBodyClasses = {
   fields: 'space-y-stack-md',
@@ -105,16 +133,7 @@ export function JournalEntryBody({
     if (!images || images.length === 0) return null;
 
     return (
-      <div className={classes.mealImages}>
-        {images.map((src, index) => (
-          <img
-            key={`${key}-${index}`}
-            src={src}
-            alt={`${sectionName} photo ${index + 1}`}
-            className={classes.mealImage}
-          />
-        ))}
-      </div>
+      <MealImageGallery imageIds={images} sectionName={sectionName} classes={classes} />
     );
   };
 

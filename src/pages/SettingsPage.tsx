@@ -72,15 +72,16 @@ export function SettingsPage() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      try {
-        const { mealImagesTruncated } = importJournalBackup(reader.result as string);
-        toast.success(messages.import.journalSuccess);
-        if (mealImagesTruncated) {
-          toast.warning(messages.import.mealImagesTruncated(MAX_MEAL_IMAGES_PER_SECTION));
-        }
-      } catch {
-        toast.error(messages.import.journalInvalid);
-      }
+      void importJournalBackup(reader.result as string)
+        .then(({ mealImagesTruncated }) => {
+          toast.success(messages.import.journalSuccess);
+          if (mealImagesTruncated) {
+            toast.warning(messages.import.mealImagesTruncated(MAX_MEAL_IMAGES_PER_SECTION));
+          }
+        })
+        .catch(() => {
+          toast.error(messages.import.journalInvalid);
+        });
     };
     reader.onerror = () => {
       toast.error(messages.import.fileReadError);
@@ -157,8 +158,14 @@ export function SettingsPage() {
           <button
             type="button"
             onClick={() => {
-              download(exportJournal(), 'fasted-journal.json', 'application/json');
-              toast.info(messages.export.journalJson);
+              void exportJournal()
+                .then((json) => {
+                  download(json, 'fasted-journal.json', 'application/json');
+                  toast.info(messages.export.journalJson);
+                })
+                .catch((err) => {
+                  toast.error(formatError(err, messages.errors.storage));
+                });
             }}
             className="group flex w-full items-center justify-between p-gutter transition-colors hover:bg-surface-container"
           >

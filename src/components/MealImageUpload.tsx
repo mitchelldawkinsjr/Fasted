@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Icon } from './Icon';
+import { useMealImageUrls } from '../hooks/useMealImageUrls';
 import { appendMealImages, MEAL_IMAGE_ACCEPT } from '../lib/mealImages';
 import { formatError, messages } from '../lib/messages';
 import { toast } from '../lib/toast';
@@ -14,6 +15,7 @@ type Props = {
 export function MealImageUpload({ images, onChange, sectionName }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const displayUrls = useMealImageUrls(images);
   const canAddMore = images.length < MAX_MEAL_IMAGES_PER_SECTION;
 
   const handleSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,13 +48,20 @@ export function MealImageUpload({ images, onChange, sectionName }: Props) {
   return (
     <div className="mt-2 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        {images.map((src, index) => (
-          <div key={`${sectionName}-${index}`} className="relative">
-            <img
-              src={src}
-              alt={`${sectionName} photo ${index + 1}`}
-              className="h-16 w-16 rounded-lg border border-outline-variant object-cover"
-            />
+        {images.map((imageId, index) => (
+          <div key={`${sectionName}-${imageId}`} className="relative">
+            {displayUrls[index] ? (
+              <img
+                src={displayUrls[index]}
+                alt={`${sectionName} photo ${index + 1}`}
+                className="h-16 w-16 rounded-lg border border-outline-variant object-cover"
+              />
+            ) : (
+              <div
+                className="h-16 w-16 rounded-lg border border-outline-variant bg-surface-container-low"
+                aria-hidden
+              />
+            )}
             <button
               type="button"
               onClick={() => removeImage(index)}

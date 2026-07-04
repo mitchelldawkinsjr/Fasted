@@ -1,9 +1,15 @@
+import {
+  normalizeImageScope,
+  putImage,
+  type ImageScope,
+} from './imageStore';
 import type { FoodMealKey, MealSectionImages } from '../types';
 import { MAX_MEAL_IMAGES_PER_SECTION } from '../types';
+import { getStorageScope } from './storageScope';
 
 export const MEAL_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
 
-/** Max edge length for stored meal photos (keeps localStorage usage reasonable). */
+/** Max edge length for stored meal photos. */
 export const MEAL_IMAGE_MAX_DIMENSION = 1200;
 export const MEAL_IMAGE_JPEG_QUALITY = 0.82;
 
@@ -12,6 +18,20 @@ export type AppendMealImagesResult = {
   /** Files not added because the section is at the limit. */
   rejectedCount: number;
 };
+
+const DATA_URL_PATTERN = /^data:image\//;
+
+export function isBase64DataUrl(value: string): boolean {
+  return DATA_URL_PATTERN.test(value);
+}
+
+export function isMealImageId(value: string): boolean {
+  return !isBase64DataUrl(value);
+}
+
+export function createMealImageId(): string {
+  return crypto.randomUUID();
+}
 
 export function readImageAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -33,39 +53,37 @@ export function readImageAsDataUrl(file: File): Promise<string> {
   });
 }
 
-function encodeCanvasAsJpeg(
+function encodeCanvasAsJpegBlob(
   source: CanvasImageSource,
   width: number,
   height: number,
-  fallback: string,
-): string {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    return fallback;
-  }
-  ctx.drawImage(source, 0, 0, width, height);
-  return canvas.toDataURL('image/jpeg', MEAL_IMAGE_JPEG_QUALITY);
-}
-
-/** Downscale and re-encode meal photos before persisting to localStorage. */
-function compressMealImageDataUrl(dataUrl: string): Promise<string> {
+): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const scale = Math.min(1, MEAL_IMAGE_MAX_DIMENSION / Math.max(img.width, img.height));
-      const width = Math.max(1, Math.round(img.width * scale));
-      const height = Math.max(1, Math.round(img.height * scale));
-      resolve(encodeCanvasAsJpeg(img, width, height, dataUrl));
-    };
-    img.onerror = () => reject(new Error('Could not process the selected image.'));
-    img.src = dataUrl;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      reject(new Error('Could not process the selected image.'));
+      return;
+    }
+    ctx.drawImage(source, 0, 0, width, height);
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Could not process the selected image.'));
+        }
+      },
+      'image/jpeg',
+      MEAL_IMAGE_JPEG_QUALITY,
+    );
   });
 }
 
-async function compressMealImageFile(file: File): Promise<string> {
+/** Downscale and re-encode meal photos before persisting to IndexedDB. */
+async function compressMealImageFile(file: File): Promise<Blob> {
   if (typeof createImageBitmap !== 'undefined') {
     try {
       const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
@@ -73,8 +91,7 @@ async function compressMealImageFile(file: File): Promise<string> {
         const scale = Math.min(1, MEAL_IMAGE_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
         const width = Math.max(1, Math.round(bitmap.width * scale));
         const height = Math.max(1, Math.round(bitmap.height * scale));
-        const dataUrl = await readImageAsDataUrl(file);
-        return encodeCanvasAsJpeg(bitmap, width, height, dataUrl);
+        return encodeCanvasAsJpegBlob(bitmap, width, height);
       } finally {
         bitmap.close();
       }
@@ -87,8 +104,60 @@ async function compressMealImageFile(file: File): Promise<string> {
   return compressMealImageDataUrl(dataUrl);
 }
 
+async function compressMealImageDataUrl(dataUrl: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, MEAL_IMAGE_MAX_DIMENSION / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+      void encodeCanvasAsJpegBlob(img, width, height).then(resolve).catch(reject);
+    };
+    img.onerror = () => reject(new Error('Could not process the selected image.'));
+    img.src = dataUrl;
+  });
+}
+
+function activeScope(): ImageScope {
+  return normalizeImageScope(getStorageScope());
+}
+
+export async function storeMealImageBlob(blob: Blob, id = createMealImageId()): Promise<string> {
+  await putImage(id, blob, 'image/jpeg', { scope: activeScope(), synced: false });
+  return id;
+}
+
+export async function storeBase64MealImage(dataUrl: string): Promise<string> {
+  const blob = await compressMealImageDataUrl(dataUrl);
+  return storeMealImageBlob(blob);
+}
+
+export async function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Could not read meal image.'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Could not read meal image.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
 export function mealSectionHasImages(images: MealSectionImages): boolean {
   return Object.values(images).some((section) => section && section.length > 0);
+}
+
+export function collectMealImageIds(images?: MealSectionImages): string[] {
+  if (!images) return [];
+  const ids: string[] = [];
+  for (const section of Object.values(images)) {
+    if (section) ids.push(...section);
+  }
+  return ids;
 }
 
 export function clampMealSectionImages(
@@ -136,6 +205,117 @@ export function normalizeMealImagesRecord(
   return { record: normalized, changed, truncated };
 }
 
+export async function migrateBase64MealImages(
+  record: Record<string, MealSectionImages>,
+): Promise<{ record: Record<string, MealSectionImages>; changed: boolean }> {
+  let changed = false;
+  const migrated: Record<string, MealSectionImages> = {};
+
+  for (const [entryId, sections] of Object.entries(record)) {
+    const nextSections: MealSectionImages = {};
+
+    for (const [key, items] of Object.entries(sections)) {
+      if (!items?.length) continue;
+      const nextItems: string[] = [];
+
+      for (const item of items) {
+        if (isBase64DataUrl(item)) {
+          nextItems.push(await storeBase64MealImage(item));
+          changed = true;
+        } else {
+          nextItems.push(item);
+        }
+      }
+
+      if (nextItems.length > 0) {
+        nextSections[key as FoodMealKey] = nextItems;
+      }
+    }
+
+    if (Object.keys(nextSections).length > 0) {
+      migrated[entryId] = nextSections;
+    }
+  }
+
+  return { record: migrated, changed };
+}
+
+export async function embedMealImagesAsBase64(
+  record: Record<string, MealSectionImages>,
+): Promise<Record<string, MealSectionImages>> {
+  const embedded: Record<string, MealSectionImages> = {};
+
+  for (const [entryId, sections] of Object.entries(record)) {
+    const nextSections: MealSectionImages = {};
+
+    for (const [key, items] of Object.entries(sections)) {
+      if (!items?.length) continue;
+      const nextItems: string[] = [];
+
+      for (const item of items) {
+        if (isBase64DataUrl(item)) {
+          nextItems.push(item);
+          continue;
+        }
+
+        const blob = await ensureMealImageBlob(item);
+        if (blob) {
+          nextItems.push(await blobToDataUrl(blob));
+        }
+      }
+
+      if (nextItems.length > 0) {
+        nextSections[key as FoodMealKey] = nextItems;
+      }
+    }
+
+    if (Object.keys(nextSections).length > 0) {
+      embedded[entryId] = nextSections;
+    }
+  }
+
+  return embedded;
+}
+
+async function ensureMealImageBlob(imageId: string): Promise<Blob | null> {
+  const { ensureMealImageAvailable } = await import('./mealImageSync');
+  return ensureMealImageAvailable(imageId);
+}
+
+export async function importMealImagesFromBackup(
+  record: Record<string, MealSectionImages>,
+): Promise<{ record: Record<string, MealSectionImages>; truncated: boolean }> {
+  const { record: normalized, truncated } = normalizeMealImagesRecord(record);
+  const imported: Record<string, MealSectionImages> = {};
+
+  for (const [entryId, sections] of Object.entries(normalized)) {
+    const nextSections: MealSectionImages = {};
+
+    for (const [key, items] of Object.entries(sections)) {
+      if (!items?.length) continue;
+      const nextItems: string[] = [];
+
+      for (const item of items) {
+        if (isBase64DataUrl(item)) {
+          nextItems.push(await storeBase64MealImage(item));
+        } else if (isMealImageId(item)) {
+          nextItems.push(item);
+        }
+      }
+
+      if (nextItems.length > 0) {
+        nextSections[key as FoodMealKey] = nextItems;
+      }
+    }
+
+    if (Object.keys(nextSections).length > 0) {
+      imported[entryId] = nextSections;
+    }
+  }
+
+  return { record: imported, truncated };
+}
+
 export async function appendMealImages(
   current: string[],
   files: FileList | File[],
@@ -149,12 +329,30 @@ export async function appendMealImages(
 
   const accepted = fileList.slice(0, remaining);
   const rejectedCount = fileList.length - accepted.length;
-  const nextImages = await Promise.all(accepted.map(compressMealImageFile));
+  const addedIds: string[] = [];
+
+  for (const file of accepted) {
+    const blob = await compressMealImageFile(file);
+    addedIds.push(await storeMealImageBlob(blob));
+  }
 
   return {
-    images: [...current, ...nextImages],
+    images: [...current, ...addedIds],
     rejectedCount,
   };
+}
+
+export async function deleteOrphanMealImages(
+  previous?: MealSectionImages,
+  next?: MealSectionImages,
+): Promise<void> {
+  const previousIds = new Set(collectMealImageIds(previous));
+  const nextIds = new Set(collectMealImageIds(next));
+  const removed = [...previousIds].filter((id) => !nextIds.has(id));
+  if (removed.length === 0) return;
+
+  const { deleteMealImagesEverywhere } = await import('./mealImageSync');
+  await deleteMealImagesEverywhere(removed);
 }
 
 export function emptyMealSectionImages(): Record<FoodMealKey, string[]> {
@@ -164,4 +362,14 @@ export function emptyMealSectionImages(): Record<FoodMealKey, string[]> {
     dinner: [],
     snack: [],
   };
+}
+
+export async function clearScopeMealImages(scope: ImageScope): Promise<void> {
+  const { clearScope } = await import('./imageStore');
+  await clearScope(scope);
+}
+
+export async function copyScopeMealImages(fromScope: ImageScope, toScope: ImageScope): Promise<void> {
+  const { copyScope } = await import('./imageStore');
+  await copyScope(fromScope, toScope);
 }

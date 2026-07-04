@@ -1,7 +1,10 @@
 import type { UserProgress } from '../types';
 import { formatAuthError, isNetworkError, withNetworkRetry } from './authErrors';
 import { messages } from './messages';
+import { copyScopeMealImages } from './mealImages';
+import { syncPendingMealImages } from './mealImageSync';
 import {
+  ensureMealImagesMigrated,
   getProgress,
   migrateLegacyStorage,
   persistFromCloud,
@@ -119,6 +122,7 @@ export async function pushProgressToCloud(data: UserProgress): Promise<void> {
 
   try {
     const updatedAt = data.updatedAt ?? new Date().toISOString();
+    await syncPendingMealImages(userId);
     const { error } = await getSupabase()
       .from(PROGRESS_TABLE)
       .upsert(
@@ -192,6 +196,10 @@ export async function reconcileWithCloud(options?: {
       }
       if (guestFallback && hasLocalProgress(guestFallback)) {
         persistFromCloud(guestFallback);
+        const userId = await getCurrentUserId();
+        if (userId) {
+          await copyScopeMealImages('guest', userId);
+        }
         await pushProgressToCloud(getProgress());
         clearPendingGuestMigration();
         return;
@@ -273,6 +281,7 @@ function attachAuthScopeListener(): void {
 /** Call once before the app renders — restores session scope and pulls cloud data. */
 export function initAuthSync(): void {
   migrateLegacyStorage();
+  void ensureMealImagesMigrated();
   attachAuthScopeListener();
 
   if (!isSyncConfigured()) {
@@ -312,6 +321,10 @@ async function authWithRetry<T extends { error: unknown }>(call: () => Promise<T
 async function completeAuthOrWarn(userId: string, guestFallback?: UserProgress): Promise<AuthResult> {
   rememberGuestMigration(guestFallback);
   switchStorageScope(userId);
+
+  if (guestFallback && hasLocalProgress(guestFallback)) {
+    await copyScopeMealImages('guest', userId);
+  }
 
   try {
     await reconcileWithCloud({ guestFallback: pendingGuestMigration });
