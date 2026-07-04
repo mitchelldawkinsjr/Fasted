@@ -20,7 +20,6 @@ import {
 } from '../lib/storage';
 import { toast } from '../lib/toast';
 import { setAuthReturnPath } from '../lib/authReturnPath';
-import { MAX_MEAL_IMAGES_PER_SECTION } from '../types';
 
 type SettingsLocationState = {
   from?: string;
@@ -72,15 +71,14 @@ export function SettingsPage() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      try {
-        const { mealImagesTruncated } = importJournalBackup(reader.result as string);
-        toast.success(messages.import.journalSuccess);
-        if (mealImagesTruncated) {
-          toast.warning(messages.import.mealImagesTruncated(MAX_MEAL_IMAGES_PER_SECTION));
+      void (async () => {
+        try {
+          await importJournalBackup(reader.result as string);
+          toast.success(messages.import.journalSuccess);
+        } catch {
+          toast.error(messages.import.journalInvalid);
         }
-      } catch {
-        toast.error(messages.import.journalInvalid);
-      }
+      })();
     };
     reader.onerror = () => {
       toast.error(messages.import.fileReadError);
@@ -157,8 +155,15 @@ export function SettingsPage() {
           <button
             type="button"
             onClick={() => {
-              download(exportJournal(), 'fasted-journal.json', 'application/json');
-              toast.info(messages.export.journalJson);
+              void (async () => {
+                try {
+                  const json = await exportJournal();
+                  download(json, 'fasted-journal.json', 'application/json');
+                  toast.info(messages.export.journalJson);
+                } catch (err) {
+                  toast.error(formatError(err, messages.errors.generic));
+                }
+              })();
             }}
             className="group flex w-full items-center justify-between p-gutter transition-colors hover:bg-surface-container"
           >

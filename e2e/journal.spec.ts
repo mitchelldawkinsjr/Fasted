@@ -266,7 +266,11 @@ test('saves meal photos with a food entry', async ({ page }) => {
 
   const entryId = stored.journalEntries[0].id;
   expect(stored.mealImages[entryId].breakfast).toHaveLength(1);
-  expect(stored.mealImages[entryId].breakfast[0]).toMatch(/^data:image\//);
+  const imageId = stored.mealImages[entryId].breakfast[0] as string;
+  expect(imageId).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  );
+  expect(imageId.startsWith('data:')).toBe(false);
 
   await page.getByRole('button', { name: /View reflection from/i }).click();
   await expect(page.getByRole('img', { name: /breakfast photo 1/i })).toBeVisible();

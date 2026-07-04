@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react';
 import { Icon } from './Icon';
+import { useMealImageSrc } from '../hooks/useMealImageSrc';
 import { appendMealImages, MEAL_IMAGE_ACCEPT } from '../lib/mealImages';
 import { formatError, messages } from '../lib/messages';
+import { getStorageScope } from '../lib/storage';
+import { imageScopeKey } from '../lib/imageStore';
 import { toast } from '../lib/toast';
 import { MAX_MEAL_IMAGES_PER_SECTION } from '../types';
 
@@ -10,6 +13,22 @@ type Props = {
   onChange: (images: string[]) => void;
   sectionName: string;
 };
+
+function MealImagePreview({
+  imageId,
+  alt,
+  className,
+}: {
+  imageId: string;
+  alt: string;
+  className?: string;
+}) {
+  const src = useMealImageSrc(imageId);
+  if (!src) {
+    return <div className={className} aria-hidden="true" />;
+  }
+  return <img src={src} alt={alt} className={className} />;
+}
 
 export function MealImageUpload({ images, onChange, sectionName }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -22,14 +41,13 @@ export function MealImageUpload({ images, onChange, sectionName }: Props) {
 
     setUploading(true);
     try {
-      const { images: next, rejectedCount } = await appendMealImages(images, files);
+      const scope = imageScopeKey(getStorageScope());
+      const selectedCount = files.length;
+      const next = await appendMealImages(images, files, scope);
       onChange(next);
-
-      if (rejectedCount > 0 && next.length === images.length) {
-        toast.error(messages.errors.mealImageLimitReached(MAX_MEAL_IMAGES_PER_SECTION));
-      } else if (rejectedCount > 0) {
-        const added = next.length - images.length;
-        toast.warning(messages.errors.mealImageSomeSkipped(added, MAX_MEAL_IMAGES_PER_SECTION));
+      const added = next.length - images.length;
+      if (selectedCount > added) {
+        toast.error(messages.errors.mealImageSomeSkipped(added, MAX_MEAL_IMAGES_PER_SECTION));
       }
     } catch (err) {
       toast.error(formatError(err, 'Could not add the selected image.'));
@@ -46,12 +64,12 @@ export function MealImageUpload({ images, onChange, sectionName }: Props) {
   return (
     <div className="mt-2 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        {images.map((src, index) => (
-          <div key={`${sectionName}-${index}`} className="relative">
-            <img
-              src={src}
+        {images.map((imageId, index) => (
+          <div key={imageId} className="relative">
+            <MealImagePreview
+              imageId={imageId}
               alt={`${sectionName} photo ${index + 1}`}
-              className="h-16 w-16 rounded-lg border border-outline-variant object-cover"
+              className="h-16 w-16 rounded-lg border border-outline-variant object-cover bg-surface-container-low"
             />
             <button
               type="button"
