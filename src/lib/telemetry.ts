@@ -1,3 +1,9 @@
+import {
+  getSupabase,
+  isSyncConfigured,
+  TELEMETRY_EVENTS_TABLE,
+} from './supabase';
+
 type TelemetryLevel = 'error' | 'warning' | 'info';
 
 type TelemetryEvent = {
@@ -7,9 +13,19 @@ type TelemetryEvent = {
   at: string;
 };
 
+type TelemetryInsert = {
+  level: TelemetryLevel;
+  message: string;
+  context: Record<string, unknown>;
+  reported_at: string;
+  path?: string;
+  user_agent?: string;
+};
+
 /**
- * Lightweight client telemetry. When `VITE_TELEMETRY_URL` is set, events are
- * POSTed as JSON. Otherwise errors only log in development.
+ * Lightweight client telemetry. Events are delivered best-effort to the
+ * optional webhook endpoint and, when explicitly enabled, the Supabase
+ * telemetry table. Telemetry must never block or fail the app flow.
  */
 export function reportError(error: unknown, context?: Record<string, unknown>): void {
   const message = error instanceof Error ? error.message : String(error);
@@ -26,6 +42,10 @@ function emit(event: TelemetryEvent): void {
     log('[telemetry]', event.message, event.context ?? '');
   }
 
+  void persistToSupabase(event).catch(() => {
+    /* never block the app on telemetry */
+  });
+
   const endpoint = import.meta.env.VITE_TELEMETRY_URL;
   if (!endpoint || typeof fetch !== 'function') return;
 
@@ -41,4 +61,31 @@ function emit(event: TelemetryEvent): void {
   } catch {
     /* ignore */
   }
+}
+
+async function persistToSupabase(event: TelemetryEvent): Promise<void> {
+  if (import.meta.env.VITE_TELEMETRY_SUPABASE !== 'true' || !isSyncConfigured()) return;
+
+  const payload: TelemetryInsert = {
+    level: event.level,
+    message: event.message,
+    context: event.context ?? {},
+    reported_at: event.at,
+    ...browserContext(),
+  };
+
+  const { error } = await getSupabase()
+    .from(TELEMETRY_EVENTS_TABLE)
+    .insert(payload);
+
+  if (error) throw error;
+}
+
+function browserContext(): Pick<TelemetryInsert, 'path' | 'user_agent'> {
+  if (typeof window === 'undefined') return {};
+
+  return {
+    path: `${window.location.pathname}${window.location.search}`,
+    user_agent: window.navigator.userAgent,
+  };
 }

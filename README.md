@@ -81,6 +81,10 @@ Sign in under **Settings → Cloud Sync** to back up your progress JSON to a sel
 
 See [`docker/SETUP.md`](docker/SETUP.md) for VPS + Docker + reverse-proxy deployment.
 
+### Optional client telemetry
+
+Auth and sync failures can be sent to `VITE_TELEMETRY_URL` or recorded in Supabase with `VITE_TELEMETRY_SUPABASE=true`. Apply the `telemetry_events` migration, then run `npm run telemetry:report` with a service role key to inspect recent events.
+
 Push to `main` can trigger GitHub Actions deploy when repository secrets and variables are configured (see [`docker/SETUP.md`](docker/SETUP.md#github-actions)).
 
 ## Tech Stack
