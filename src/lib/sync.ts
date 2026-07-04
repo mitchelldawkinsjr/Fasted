@@ -40,6 +40,9 @@ let syncTimer: ReturnType<typeof setTimeout> | null = null;
 let authListenerAttached = false;
 let pendingGuestMigration: UserProgress | undefined;
 
+/** Survives full-page OAuth redirects (in-memory alone does not). */
+const GUEST_MIGRATION_KEY = 'fasted-guest-migration';
+
 function notify() {
   listeners.forEach((fn) => fn());
 }
@@ -164,12 +167,117 @@ export async function pullProgressFromCloud(): Promise<UserProgress | null> {
 
 function clearPendingGuestMigration(): void {
   pendingGuestMigration = undefined;
+  try {
+    sessionStorage.removeItem(GUEST_MIGRATION_KEY);
+  } catch {
+    /* ignore */
+  }
 }
 
 function rememberGuestMigration(guestFallback?: UserProgress): void {
-  if (guestFallback && hasLocalProgress(guestFallback)) {
-    pendingGuestMigration = guestFallback;
+  if (!guestFallback || !hasLocalProgress(guestFallback)) return;
+  pendingGuestMigration = guestFallback;
+  try {
+    sessionStorage.setItem(GUEST_MIGRATION_KEY, JSON.stringify(guestFallback));
+  } catch {
+    /* quota / private mode — in-memory still used for password auth */
   }
+}
+
+function loadGuestMigration(): UserProgress | undefined {
+  if (pendingGuestMigration && hasLocalProgress(pendingGuestMigration)) {
+    return pendingGuestMigration;
+  }
+  try {
+    const raw = sessionStorage.getItem(GUEST_MIGRATION_KEY);
+    if (!raw) return undefined;
+    const parsed = normalizeProgress(JSON.parse(raw) as unknown);
+    if (parsed && hasLocalProgress(parsed)) {
+      pendingGuestMigration = parsed;
+      return parsed;
+    }
+  } catch {
+    /* ignore */
+  }
+  return undefined;
+}
+
+/** Merge guest journals/check-ins/images into an account copy without dropping either side. */
+export function mergeUserProgress(account: UserProgress, guest: UserProgress): UserProgress {
+  const journals = new Map(account.journalEntries.map((e) => [e.id, e]));
+  for (const entry of guest.journalEntries) {
+    const existing = journals.get(entry.id);
+    if (!existing || (entry.updatedAt ?? '') >= (existing.updatedAt ?? '')) {
+      journals.set(entry.id, entry);
+    }
+  }
+
+  const checkIns = new Map(account.checkIns.map((c) => [c.date, c]));
+  for (const checkIn of guest.checkIns) {
+    const existing = checkIns.get(checkIn.date);
+    if (!existing || (checkIn.completedAt ?? '') >= (existing.completedAt ?? '')) {
+      checkIns.set(checkIn.date, checkIn);
+    }
+  }
+
+  const mealImages = { ...guest.mealImages, ...account.mealImages };
+  for (const [entryId, sections] of Object.entries(guest.mealImages)) {
+    if (!mealImages[entryId]) {
+      mealImages[entryId] = sections;
+      continue;
+    }
+    mealImages[entryId] = { ...sections, ...mealImages[entryId] };
+  }
+
+  const badges = new Map(account.badges.map((b) => [b.id, b]));
+  for (const badge of guest.badges) {
+    const existing = badges.get(badge.id);
+    if (!existing || (badge.earnedAt && !existing.earnedAt)) {
+      badges.set(badge.id, badge);
+    }
+  }
+
+  const journeys = new Map(account.journeys.map((j) => [j.id, j]));
+  for (const journey of guest.journeys) {
+    if (!journeys.has(journey.id)) journeys.set(journey.id, journey);
+  }
+
+  const groupCheckIns = { ...(guest.groupCheckIns ?? {}) };
+  for (const [groupId, records] of Object.entries(account.groupCheckIns ?? {})) {
+    const byDate = new Map((groupCheckIns[groupId] ?? []).map((r) => [r.date, r]));
+    for (const record of records) {
+      byDate.set(record.date, record);
+    }
+    groupCheckIns[groupId] = Array.from(byDate.values()).sort((a, b) =>
+      a.date.localeCompare(b.date),
+    );
+  }
+
+  const checkInList = Array.from(checkIns.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+  return {
+    ...account,
+    checkIns: checkInList,
+    checkInStreak: account.checkInStreak,
+    journalEntries: Array.from(journals.values()).sort((a, b) => b.date.localeCompare(a.date)),
+    mealImages,
+    badges: Array.from(badges.values()),
+    journeys: Array.from(journeys.values()),
+    groupCheckIns,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function incorporateGuest(
+  userId: string | null,
+  account: UserProgress,
+  guest: UserProgress | undefined,
+): Promise<UserProgress> {
+  if (!guest || !hasLocalProgress(guest)) return account;
+  if (userId) {
+    await copyScope(GUEST_IMAGE_SCOPE, imageScopeKey(userId));
+  }
+  return mergeUserProgress(account, guest);
 }
 
 /** Cloud-first reconcile: newer `updatedAt` wins; guest data seeds a new account once. */
@@ -185,17 +293,19 @@ export async function reconcileWithCloud(options?: {
 
   setStatus({ state: 'syncing', error: null });
 
-  const guestFallback = options?.guestFallback ?? pendingGuestMigration;
+  const guestFallback = options?.guestFallback ?? loadGuestMigration();
 
   try {
     const local = getProgress();
     const remote = await pullProgressFromCloud();
-
     const userId = await getCurrentUserId();
 
     if (!remote) {
       if (hasLocalProgress(local)) {
-        await pushProgressToCloud(local);
+        const merged = await incorporateGuest(userId, local, guestFallback);
+        if (merged !== local) persistFromCloud(merged);
+        await ensureMealImageMigration();
+        await pushProgressToCloud(getProgress());
         clearPendingGuestMigration();
         return;
       }
@@ -214,8 +324,12 @@ export async function reconcileWithCloud(options?: {
     }
 
     if (!hasLocalProgress(local)) {
-      persistFromCloud(remote);
+      const merged = await incorporateGuest(userId, remote, guestFallback);
+      persistFromCloud(merged);
       await ensureMealImageMigration();
+      if (guestFallback && hasLocalProgress(guestFallback)) {
+        await pushProgressToCloud(getProgress());
+      }
       clearPendingGuestMigration();
       setStatus({
         state: 'synced',
@@ -226,10 +340,17 @@ export async function reconcileWithCloud(options?: {
     }
 
     if (progressTimestamp(remote) >= progressTimestamp(local)) {
-      persistFromCloud(remote);
+      const merged = await incorporateGuest(userId, remote, guestFallback);
+      persistFromCloud(merged);
       await ensureMealImageMigration();
+      if (guestFallback && hasLocalProgress(guestFallback)) {
+        await pushProgressToCloud(getProgress());
+      }
     } else {
-      await pushProgressToCloud(local);
+      const merged = await incorporateGuest(userId, local, guestFallback);
+      if (merged !== local) persistFromCloud(merged);
+      await ensureMealImageMigration();
+      await pushProgressToCloud(getProgress());
       clearPendingGuestMigration();
       return;
     }
@@ -262,7 +383,7 @@ export function scheduleCloudSync(): void {
 }
 
 export async function syncNow(): Promise<void> {
-  await reconcileWithCloud({ guestFallback: pendingGuestMigration });
+  await reconcileWithCloud({ guestFallback: loadGuestMigration() });
 }
 
 function attachAuthScopeListener(): void {
@@ -303,7 +424,7 @@ export function initAuthSync(): void {
       switchStorageScope(data.session.user.id);
       await ensureMealImageMigration();
       if (navigator.onLine) {
-        void reconcileWithCloud().catch(() => {
+        void reconcileWithCloud({ guestFallback: loadGuestMigration() }).catch(() => {
           /* status updated in reconcileWithCloud */
         });
       } else {
@@ -421,6 +542,16 @@ export async function signOut(): Promise<void> {
     clearTimeout(syncTimer);
     syncTimer = null;
   }
+
+  // Flush pending edits before leaving the signed-in storage scope.
+  if (navigator.onLine && (await isLoggedIn())) {
+    try {
+      await pushProgressToCloud(getProgress());
+    } catch {
+      /* best-effort — do not block sign-out */
+    }
+  }
+
   switchStorageScope(null);
   if (isSyncConfigured()) {
     await getSupabase().auth.signOut();
