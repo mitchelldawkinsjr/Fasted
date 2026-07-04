@@ -32,6 +32,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Unit tests with coverage gate
+        run: npm run test:unit:coverage
+
       # Issue #65: keep accessibility checks in the required CI workflow so PR
       # status reflects WCAG compliance and publishes axe report artifacts.
       - name: Install accessibility audit dependencies

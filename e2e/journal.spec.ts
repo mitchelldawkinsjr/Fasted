@@ -277,6 +277,98 @@ test('saves meal photos with a food entry', async ({ page }) => {
   await expect(page.getByText('Eggs and toast')).toBeVisible();
 });
 
+test('migrates legacy base64 meal images and saves without storage-full', async ({ page }) => {
+  // Simulate pre-split storage: many base64 meal photos in localStorage (the old design).
+  // After load, IDs must replace data URLs and a new photo save must not hit quota.
+  const legacyPayload = await page.evaluate((key) => {
+    const chunk = 'A'.repeat(80_000);
+    const dataUrl = `data:image/png;base64,${chunk}`;
+    const journalEntries: Array<Record<string, unknown>> = [];
+    const mealImages: Record<string, { breakfast: string[] }> = {};
+
+    for (let i = 0; i < 8; i += 1) {
+      const id = `legacy-food-${i}`;
+      journalEntries.push({
+        id,
+        type: 'food',
+        date: `2026-06-${String(20 + i).padStart(2, '0')}`,
+        breakfast: `Legacy breakfast ${i}`,
+        lunch: '',
+        dinner: '',
+        snack: '',
+        updatedAt: new Date().toISOString(),
+      });
+      mealImages[id] = { breakfast: [dataUrl, dataUrl, dataUrl, dataUrl] };
+    }
+
+    const progress = {
+      checkIns: [],
+      checkInStreak: 0,
+      journalEntries,
+      mealImages,
+      badges: [],
+      settings: {
+        reminderTime: '07:00',
+        theme: 'light',
+        scriptureNote: '',
+      },
+      activeJourneyId: 'fasted-2026',
+      journeys: [],
+      updatedAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem(key, JSON.stringify(progress));
+    return { entryCount: journalEntries.length, approxChars: JSON.stringify(progress).length };
+  }, STORAGE_KEY);
+
+  expect(legacyPayload.approxChars).toBeGreaterThan(2_000_000);
+
+  await page.reload();
+  await expect(page.getByText(/reflections/i).first()).toBeVisible();
+
+  // Migration is async — wait until progress no longer embeds data URLs.
+  await expect
+    .poll(async () => {
+      return page.evaluate((key) => {
+        const raw = localStorage.getItem(key);
+        if (!raw) return 'missing';
+        if (raw.includes('data:image')) return 'legacy';
+        const parsed = JSON.parse(raw) as {
+          mealImages?: Record<string, { breakfast?: string[] }>;
+        };
+        const first = Object.values(parsed.mealImages ?? {})[0]?.breakfast?.[0];
+        return first && !first.startsWith('data:') ? 'migrated' : 'pending';
+      }, STORAGE_KEY);
+    }, { timeout: 10_000 })
+    .toBe('migrated');
+
+  await page.getByRole('button', { name: '+ New' }).click();
+  await selectType(page, 'Food');
+  await page.getByLabel('What did you eat for breakfast?').fill('Post-migration meal');
+
+  const fileInput = page.locator('input[type="file"]').first();
+  await fileInput.setInputFiles('e2e/fixtures/meal-photo.png');
+  await expect(page.getByRole('img', { name: /breakfast photo 1/i })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+  await expect(page.getByText('Reflection saved.')).toBeVisible();
+  await expect(page.getByText(/Storage is full/i)).toHaveCount(0);
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  expect(JSON.stringify(stored.mealImages)).not.toContain('data:image');
+  const newest = stored.journalEntries.find(
+    (entry: { breakfast?: string }) => entry.breakfast === 'Post-migration meal',
+  );
+  expect(newest).toBeTruthy();
+  expect(stored.mealImages[newest.id].breakfast[0]).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  );
+});
+
 test('saves up to four meal photos per section', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Food');

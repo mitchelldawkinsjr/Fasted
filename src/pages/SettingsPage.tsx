@@ -18,6 +18,8 @@ import {
   resetProgress,
   saveSettings,
 } from '../lib/storage';
+import { useAuth } from '../hooks/useAuth';
+import { deleteAccountData } from '../lib/sync';
 import { toast } from '../lib/toast';
 import { setAuthReturnPath } from '../lib/authReturnPath';
 
@@ -31,6 +33,7 @@ export function SettingsPage() {
   const location = useLocation();
   const authPromptHandled = useRef(false);
   const progress = useProgress();
+  const { isLoggedIn: signedIn } = useAuth();
   const [theme, setTheme] = useState(progress.settings.theme);
   const [savingPrefs, setSavingPrefs] = useState(false);
 
@@ -111,6 +114,23 @@ export function SettingsPage() {
       toast.warning(messages.progress.reset);
     } catch (err) {
       toast.error(formatError(err, messages.progress.resetFailed));
+    }
+  };
+
+  const handleDeleteAccountData = async () => {
+    const confirmed = await confirmAction({
+      ...messages.confirm.deleteAccountData,
+      confirmLabel: messages.confirm.deleteAccountData.confirm,
+      cancelLabel: messages.confirm.deleteAccountData.cancel,
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
+    try {
+      await deleteAccountData();
+      toast.warning('Account data deleted on this device and in the cloud.');
+    } catch (err) {
+      toast.error(formatError(err, messages.errors.generic));
     }
   };
 
@@ -222,6 +242,16 @@ export function SettingsPage() {
 
       <GroupsSettingsSection />
 
+      <section className="stitch-card min-w-0 overflow-hidden p-gutter">
+        <h2 className="mb-2 font-display text-headline-md text-primary">Privacy & data</h2>
+        <p className="text-wrap-anywhere text-body-md text-on-surface-variant">
+          Journals, check-ins, and meal photos are stored on this device (browser storage and
+          IndexedDB). When you sign in, progress syncs to your account and meal photos upload to
+          private cloud storage. Use Export to download a portable copy. Reset clears this device
+          only; Delete account data also removes cloud progress and photos for the signed-in user.
+        </p>
+      </section>
+
       <section className="stitch-card overflow-hidden border-l-4 border-error">
         <div className="border-b border-surface-variant px-gutter py-4">
           <h2 className="label-caps text-error">DANGER ZONE</h2>
@@ -234,6 +264,16 @@ export function SettingsPage() {
           <Icon name="delete_forever" />
           Reset All Progress
         </button>
+        {signedIn && (
+          <button
+            type="button"
+            onClick={() => void handleDeleteAccountData()}
+            className="flex w-full items-center gap-4 border-t border-surface-variant p-gutter text-body-md text-error transition-colors hover:bg-error-container/30"
+          >
+            <Icon name="person_off" />
+            Delete Account Data
+          </button>
+        )}
       </section>
 
       <section className="stitch-card min-w-0 overflow-hidden p-gutter">

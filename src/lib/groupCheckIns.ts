@@ -21,16 +21,6 @@ export function commitmentValueMet(
   return false;
 }
 
-export function computeCommitmentHonored(
-  definition: CommitmentDefinition,
-  result: Pick<CommitmentResult, 'honored' | 'value'> | undefined,
-): boolean {
-  if (definition.shape === 'yes_no') {
-    return Boolean(result?.honored);
-  }
-  return commitmentValueMet(definition, result?.value);
-}
-
 export function isCommitmentHonored(
   definition: CommitmentDefinition,
   result: CommitmentResult | undefined,

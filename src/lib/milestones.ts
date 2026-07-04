@@ -2,6 +2,11 @@ import { getPhaseMilestonesForPhase } from '../data/phaseAchievements';
 import { getPhaseById } from '../data/fastingPlan';
 import { getPhaseBadgeDefinitions } from './badges';
 
+export function formatMilestoneDayLabel(threshold: number | 'complete'): string {
+  if (threshold === 'complete') return 'Complete';
+  return `Day ${threshold}`;
+}
+
 export function getPhaseMilestoneContext(phaseId: number, today: string) {
   const phase = getPhaseById(phaseId);
   if (!phase) return null;
