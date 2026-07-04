@@ -1,7 +1,10 @@
 import type { UserProgress } from '../types';
 import { formatAuthError, isNetworkError, withNetworkRetry } from './authErrors';
+import { copyScope, GUEST_IMAGE_SCOPE, imageScopeKey } from './imageStore';
+import { uploadPendingImages } from './mealImageSync';
 import { messages } from './messages';
 import {
+  ensureMealImageMigration,
   getProgress,
   migrateLegacyStorage,
   persistFromCloud,
@@ -118,13 +121,17 @@ export async function pushProgressToCloud(data: UserProgress): Promise<void> {
   setStatus({ state: 'syncing', error: null });
 
   try {
-    const updatedAt = data.updatedAt ?? new Date().toISOString();
+    await ensureMealImageMigration();
+    await uploadPendingImages(userId);
+
+    const progress = getProgress();
+    const updatedAt = progress.updatedAt ?? data.updatedAt ?? new Date().toISOString();
     const { error } = await getSupabase()
       .from(PROGRESS_TABLE)
       .upsert(
         {
           user_id: userId,
-          data,
+          data: progress,
           updated_at: updatedAt,
         },
         { onConflict: 'user_id' },
@@ -184,6 +191,8 @@ export async function reconcileWithCloud(options?: {
     const local = getProgress();
     const remote = await pullProgressFromCloud();
 
+    const userId = await getCurrentUserId();
+
     if (!remote) {
       if (hasLocalProgress(local)) {
         await pushProgressToCloud(local);
@@ -191,7 +200,11 @@ export async function reconcileWithCloud(options?: {
         return;
       }
       if (guestFallback && hasLocalProgress(guestFallback)) {
+        if (userId) {
+          await copyScope(GUEST_IMAGE_SCOPE, imageScopeKey(userId));
+        }
         persistFromCloud(guestFallback);
+        await ensureMealImageMigration();
         await pushProgressToCloud(getProgress());
         clearPendingGuestMigration();
         return;
@@ -202,6 +215,7 @@ export async function reconcileWithCloud(options?: {
 
     if (!hasLocalProgress(local)) {
       persistFromCloud(remote);
+      await ensureMealImageMigration();
       clearPendingGuestMigration();
       setStatus({
         state: 'synced',
@@ -213,6 +227,7 @@ export async function reconcileWithCloud(options?: {
 
     if (progressTimestamp(remote) >= progressTimestamp(local)) {
       persistFromCloud(remote);
+      await ensureMealImageMigration();
     } else {
       await pushProgressToCloud(local);
       clearPendingGuestMigration();
@@ -277,6 +292,7 @@ export function initAuthSync(): void {
 
   if (!isSyncConfigured()) {
     switchStorageScope(null);
+    void ensureMealImageMigration();
     return;
   }
 
@@ -285,6 +301,7 @@ export function initAuthSync(): void {
 
     if (data.session?.user?.id) {
       switchStorageScope(data.session.user.id);
+      await ensureMealImageMigration();
       if (navigator.onLine) {
         void reconcileWithCloud().catch(() => {
           /* status updated in reconcileWithCloud */
@@ -296,6 +313,7 @@ export function initAuthSync(): void {
     }
 
     switchStorageScope(null);
+    await ensureMealImageMigration();
   })();
 }
 

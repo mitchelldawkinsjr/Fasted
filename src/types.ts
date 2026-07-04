@@ -160,7 +160,7 @@ export type ContentSimpleJournalEntry = JournalEntryBase & {
 
 export type FoodMealKey = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
-/** Up to four Base64 data URLs per meal section on a food journal entry. */
+/** Up to four meal image IDs per section (blobs in IndexedDB / Supabase Storage). */
 export type MealSectionImages = Partial<Record<FoodMealKey, string[]>>;
 
 export const MAX_MEAL_IMAGES_PER_SECTION = 4;

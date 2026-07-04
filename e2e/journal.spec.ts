@@ -266,7 +266,30 @@ test('saves meal photos with a food entry', async ({ page }) => {
 
   const entryId = stored.journalEntries[0].id;
   expect(stored.mealImages[entryId].breakfast).toHaveLength(1);
-  expect(stored.mealImages[entryId].breakfast[0]).toMatch(/^data:image\//);
+  const imageId = stored.mealImages[entryId].breakfast[0] as string;
+  expect(imageId).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  );
+  expect(imageId.startsWith('data:')).toBe(false);
+
+  const hasBlob = await page.evaluate(async (id) => {
+    const openDb = () =>
+      new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('fasted-images', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    const db = await openDb();
+    const record = await new Promise<unknown>((resolve, reject) => {
+      const tx = db.transaction('blobs', 'readonly');
+      const req = tx.objectStore('blobs').get(`guest:${id}`);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return Boolean(record);
+  }, imageId);
+  expect(hasBlob).toBe(true);
 
   await page.getByRole('button', { name: /View reflection from/i }).click();
   await expect(page.getByRole('img', { name: /breakfast photo 1/i })).toBeVisible();
