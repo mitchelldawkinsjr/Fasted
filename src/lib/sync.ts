@@ -15,6 +15,7 @@ import {
   isSyncConfigured,
   PROGRESS_TABLE,
 } from './supabase';
+import { reportError } from './telemetry';
 
 export type AuthResult = {
   syncWarning?: string;
@@ -148,6 +149,7 @@ export async function pushProgressToCloud(data: UserProgress): Promise<void> {
       error: null,
     });
   } catch (err) {
+    reportError(err, { source: 'pushProgressToCloud' });
     const message = err instanceof Error ? err.message : 'Sync failed';
     setStatus({ state: 'error', error: message });
     throw err;
@@ -362,6 +364,7 @@ export async function reconcileWithCloud(options?: {
       error: null,
     });
   } catch (err) {
+    reportError(err, { source: 'reconcileWithCloud' });
     const message = err instanceof Error ? err.message : 'Sync failed';
     setStatus({ state: 'error', error: message });
     throw err;
