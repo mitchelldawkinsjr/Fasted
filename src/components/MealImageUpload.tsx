@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Icon } from './Icon';
-import { MealImageThumb } from './MealImageThumb';
+import { MealImageThumb } from '../hooks/useMealImageSrc';
 import { appendMealImages, MEAL_IMAGE_ACCEPT } from '../lib/mealImages';
 import { formatError } from '../lib/messages';
 import { getStorageScope } from '../lib/storage';

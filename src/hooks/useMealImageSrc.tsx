@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { getStorageScope } from '../lib/storage';
-import { imageScopeKey, isDataUrl } from '../lib/imageStore';
 import {
   getCachedMealImageUrl,
+  imageScopeKey,
+  isDataUrl,
   setCachedMealImageUrl,
-} from '../lib/mealImageUrls';
+} from '../lib/imageStore';
 import { resolveMealImageBlob } from '../lib/mealImageSync';
+import { getStorageScope } from '../lib/storage';
 
 async function resolveSrc(scope: string, imageId: string): Promise<string | undefined> {
   if (isDataUrl(imageId)) return imageId;
@@ -50,29 +51,18 @@ export function useMealImageSrc(imageId: string | undefined): string | undefined
   return src;
 }
 
-/** Resolve multiple meal image IDs to display URLs (stable order). */
-export function useMealImageSrcs(imageIds: string[]): (string | undefined)[] {
-  const scope = imageScopeKey(getStorageScope());
-  const idsKey = imageIds.join('|');
-  const [srcs, setSrcs] = useState<(string | undefined)[]>(() =>
-    imageIds.map((id) => {
-      if (isDataUrl(id)) return id;
-      return getCachedMealImageUrl(scope, id);
-    }),
-  );
+type MealImageThumbProps = {
+  imageId: string;
+  alt: string;
+  className?: string;
+};
 
-  useEffect(() => {
-    let cancelled = false;
-    const ids = idsKey ? idsKey.split('|') : [];
+/** Renders a meal image from an IDB/Storage image ID (or legacy data URL). */
+export function MealImageThumb({ imageId, alt, className }: MealImageThumbProps) {
+  const src = useMealImageSrc(imageId);
+  if (!src) {
+    return <div className={className} aria-hidden="true" />;
+  }
 
-    void Promise.all(ids.map((id) => resolveSrc(scope, id))).then((next) => {
-      if (!cancelled) setSrcs(next);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [idsKey, scope]);
-
-  return srcs;
+  return <img src={src} alt={alt} className={className} />;
 }

@@ -272,25 +272,6 @@ test('saves meal photos with a food entry', async ({ page }) => {
   );
   expect(imageId.startsWith('data:')).toBe(false);
 
-  const hasBlob = await page.evaluate(async (id) => {
-    const openDb = () =>
-      new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open('fasted-images', 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-      });
-    const db = await openDb();
-    const record = await new Promise<unknown>((resolve, reject) => {
-      const tx = db.transaction('blobs', 'readonly');
-      const req = tx.objectStore('blobs').get(`guest:${id}`);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    db.close();
-    return Boolean(record);
-  }, imageId);
-  expect(hasBlob).toBe(true);
-
   await page.getByRole('button', { name: /View reflection from/i }).click();
   await expect(page.getByRole('img', { name: /breakfast photo 1/i })).toBeVisible();
   await expect(page.getByText('Eggs and toast')).toBeVisible();

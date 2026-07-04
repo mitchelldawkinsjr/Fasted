@@ -31,7 +31,6 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'key' });
         store.createIndex('scope', 'scope', { unique: false });
-        store.createIndex('scope_synced', ['scope', 'synced'], { unique: false });
       }
     };
   });
@@ -82,15 +81,6 @@ export async function getImage(scope: string, id: string): Promise<ImageRecord |
   await transactionDone(tx);
   db.close();
   return (record as ImageRecord | undefined) ?? null;
-}
-
-export async function deleteImage(scope: string, id: string): Promise<void> {
-  const db = await openDb();
-  const tx = db.transaction(STORE_NAME, 'readwrite');
-  const store = tx.objectStore(STORE_NAME);
-  store.delete(recordKey(scope, id));
-  await transactionDone(tx);
-  db.close();
 }
 
 export async function deleteImages(scope: string, ids: string[]): Promise<void> {
@@ -185,4 +175,30 @@ export async function blobToDataUrl(blob: Blob): Promise<string> {
     reader.onerror = () => reject(new Error('Could not encode image.'));
     reader.readAsDataURL(blob);
   });
+}
+
+/** Object-URL cache for resolved meal images (display only). */
+const urlCache = new Map<string, string>();
+
+function urlCacheKey(scope: string, id: string): string {
+  return `${scope}:${id}`;
+}
+
+export function getCachedMealImageUrl(scope: string, id: string): string | undefined {
+  return urlCache.get(urlCacheKey(scope, id));
+}
+
+export function setCachedMealImageUrl(scope: string, id: string, url: string): void {
+  urlCache.set(urlCacheKey(scope, id), url);
+}
+
+export function invalidateMealImageSrcs(scope: string, ids: string[]): void {
+  for (const id of ids) {
+    const key = urlCacheKey(scope, id);
+    const url = urlCache.get(key);
+    if (url) {
+      URL.revokeObjectURL(url);
+      urlCache.delete(key);
+    }
+  }
 }

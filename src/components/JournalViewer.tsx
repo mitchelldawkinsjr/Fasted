@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { JournalTypeBadge } from './JournalTypePicker';
-import { MealImageThumb } from './MealImageThumb';
+import { MealImageThumb } from '../hooks/useMealImageSrc';
 import { MoodBadge } from './MoodPicker';
 import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 import { formatDisplayDate } from '../lib/dateUtils';
