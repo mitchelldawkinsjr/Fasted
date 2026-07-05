@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { useAuth } from '../../hooks/useAuth';
 import { useProgress } from '../../hooks/useProgress';
 import { markPageTourSeen, markTourSeen, migrateLegacyTourFlag } from '../../lib/storage';
 import { getPageTourForPath, PAGE_TOURS, type PageTourId } from './pageTours';
@@ -151,6 +152,7 @@ type Props = { children: ReactNode };
 export function TourProvider({ children }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { initialized: authInitialized } = useAuth();
   const progress = useProgress();
   const [activeTour, setActiveTour] = useState<ActiveTour | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
@@ -181,16 +183,18 @@ export function TourProvider({ children }: Props) {
     const pageId = getPageTourForPath(location.pathname);
     if (!pageId) return;
     if (progress.pageToursSeen?.[pageId]) return;
+    if (pageId === 'groups' && !authInitialized) return;
 
+    const tourPageId = pageId;
     let cancelled = false;
     let attemptTimer = 0;
     let startTimer = 0;
-    const firstTarget = PAGE_TOURS[pageId][0]?.target;
+    const firstTarget = PAGE_TOURS[tourPageId][0]?.target;
     const MAX_TARGET_WAIT_ATTEMPTS = 40;
 
     function beginTour() {
       if (cancelled) return;
-      setActiveTour({ kind: 'page', id: pageId });
+      setActiveTour({ kind: 'page', id: tourPageId });
       setStepIndex(0);
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
@@ -212,7 +216,7 @@ export function TourProvider({ children }: Props) {
       window.clearTimeout(startTimer);
       window.clearTimeout(attemptTimer);
     };
-  }, [location.pathname, progress.pageToursSeen, manualStart, activeTour]);
+  }, [location.pathname, progress.pageToursSeen, manualStart, activeTour, authInitialized]);
 
   const completeTour = useCallback(() => {
     if (activeTour?.kind === 'main') {

@@ -309,9 +309,11 @@ export function TourOverlay() {
 
   if (!active || !currentStep) return null;
 
-  const isCentered = currentStep.placement === 'center' || !currentStep.target;
+  const targetMissing = Boolean(currentStep.target && targetReady && !targetRect);
+  const isCentered =
+    currentStep.placement === 'center' || !currentStep.target || targetMissing;
   const isLastStep = stepIndex === totalSteps - 1;
-  const showTarget = Boolean(currentStep.target && targetReady && targetRect);
+  const showTarget = Boolean(currentStep.target && targetReady && targetRect && !targetMissing);
 
   const spotlight: Rect | null =
     showTarget && targetRect
