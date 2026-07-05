@@ -7,6 +7,12 @@ const PAD = 12;
 const MIN_TARGET_SIZE = 32;
 const MAX_MEASURE_ATTEMPTS = 40;
 const MEASURE_INTERVAL_MS = 50;
+/** Matches Layout bottom nav height — backdrop stops above this so nav stays visible. */
+const BOTTOM_NAV_INSET = 'calc(4.75rem + env(safe-area-inset-bottom))';
+
+function isNavTarget(selector: string | undefined): boolean {
+  return Boolean(selector?.includes('nav-'));
+}
 
 function readRect(el: Element): Rect {
   const r = el.getBoundingClientRect();
@@ -186,66 +192,97 @@ export function TourOverlay() {
   const stepNumber = stepIndex + 1;
   const showTooltip = isCentered || showTarget;
   const targetReadyForStep = isCentered || showTarget;
+  const navTarget = isNavTarget(currentStep.target);
+  const backdropSpotlight = spotlight && !navTarget ? spotlight : null;
 
   return (
-    <div
-      className="fixed inset-0 z-[9990]"
-      role="dialog"
-      aria-modal="true"
-      aria-label={currentStep.title}
-      aria-busy={Boolean(currentStep.target && !targetReady)}
-      data-target-ready={targetReadyForStep ? 'true' : 'false'}
-    >
-      <svg
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        style={{ zIndex: 9990 }}
+    <>
+      {/* Dim layer — excludes bottom nav so the tab bar stays visible during the tour */}
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-[9990]"
+        style={{ bottom: BOTTOM_NAV_INSET }}
         aria-hidden
       >
-        <defs>
-          <mask id="tour-spotlight-mask">
-            <rect width="100%" height="100%" fill="white" />
-            {spotlight && (
-              <rect
-                x={spotlight.x}
-                y={spotlight.y}
-                width={spotlight.width}
-                height={spotlight.height}
-                rx={14}
-                fill="black"
-              />
-            )}
-          </mask>
-        </defs>
-        <rect
-          width="100%"
-          height="100%"
-          fill="rgba(0,0,0,0.72)"
-          mask={spotlight ? 'url(#tour-spotlight-mask)' : undefined}
-        />
-      </svg>
+        <svg className="absolute inset-0 h-full w-full">
+          <defs>
+            <mask id="tour-spotlight-mask">
+              <rect width="100%" height="100%" fill="white" />
+              {backdropSpotlight && (
+                <rect
+                  x={backdropSpotlight.x}
+                  y={backdropSpotlight.y}
+                  width={backdropSpotlight.width}
+                  height={backdropSpotlight.height}
+                  rx={14}
+                  fill="black"
+                />
+              )}
+            </mask>
+          </defs>
+          <rect
+            width="100%"
+            height="100%"
+            fill="rgba(0,0,0,0.72)"
+            mask={backdropSpotlight ? 'url(#tour-spotlight-mask)' : undefined}
+          />
+        </svg>
+      </div>
 
-      {spotlight && (
-        <div
-          className="pointer-events-none absolute rounded-[14px] ring-2 ring-secondary ring-offset-0 transition-opacity duration-200"
-          style={{
-            left: spotlight.x,
-            top: spotlight.y,
-            width: spotlight.width,
-            height: spotlight.height,
-            zIndex: 9991,
-            boxShadow: '0 0 0 4px rgba(254,214,91,0.25)',
-          }}
-          aria-hidden
-        />
-      )}
-
-      {showTooltip &&
-        (isCentered ? (
+      <div
+        className="pointer-events-none fixed inset-0 z-[9991]"
+        role="dialog"
+        aria-modal="true"
+        aria-label={currentStep.title}
+        aria-busy={Boolean(currentStep.target && !targetReady)}
+        data-target-ready={targetReadyForStep ? 'true' : 'false'}
+      >
+        {spotlight && (
           <div
-            className="absolute inset-0 flex items-center justify-center px-6"
-            style={{ zIndex: 9992 }}
-          >
-            <div className="w-full max-w-sm rounded-2xl bg-surface p-8 grace-shadow animate-fade-in-up">
+            className="pointer-events-none absolute rounded-[14px] ring-2 ring-secondary ring-offset-0 transition-opacity duration-200"
+            style={{
+              left: spotlight.x,
+              top: spotlight.y,
+              width: spotlight.width,
+              height: spotlight.height,
+              boxShadow: '0 0 0 4px rgba(254,214,91,0.25)',
+            }}
+            aria-hidden
+          />
+        )}
+
+        {showTooltip &&
+          (isCentered ? (
+            <div className="absolute inset-0 flex items-center justify-center px-6">
+              <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-surface p-8 grace-shadow animate-fade-in-up">
+                <TourCard
+                  step={currentStep}
+                  stepNumber={stepNumber}
+                  totalSteps={totalSteps}
+                  isLastStep={isLastStep}
+                  onNext={nextStep}
+                  onSkip={skipTour}
+                />
+              </div>
+            </div>
+          ) : (
+            <div
+              className="pointer-events-auto absolute left-4 right-4 mx-auto max-w-sm rounded-2xl bg-surface p-5 grace-shadow animate-fade-in-up"
+              style={{
+                ...(tooltipBottom !== undefined ? { bottom: tooltipBottom } : { top: tooltipTop }),
+              }}
+            >
+              {spotlight && tooltipBottom === undefined && (
+                <div
+                  className="absolute -top-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
+                  aria-hidden
+                />
+              )}
+              {spotlight && tooltipBottom !== undefined && (
+                <div
+                  className="absolute -bottom-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
+                  aria-hidden
+                />
+              )}
               <TourCard
                 step={currentStep}
                 stepNumber={stepNumber}
@@ -255,38 +292,9 @@ export function TourOverlay() {
                 onSkip={skipTour}
               />
             </div>
-          </div>
-        ) : (
-          <div
-            className="absolute left-4 right-4 mx-auto max-w-sm rounded-2xl bg-surface p-5 grace-shadow animate-fade-in-up"
-            style={{
-              zIndex: 9992,
-              ...(tooltipBottom !== undefined ? { bottom: tooltipBottom } : { top: tooltipTop }),
-            }}
-          >
-            {spotlight && tooltipBottom === undefined && (
-              <div
-                className="absolute -top-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
-                aria-hidden
-              />
-            )}
-            {spotlight && tooltipBottom !== undefined && (
-              <div
-                className="absolute -bottom-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
-                aria-hidden
-              />
-            )}
-            <TourCard
-              step={currentStep}
-              stepNumber={stepNumber}
-              totalSteps={totalSteps}
-              isLastStep={isLastStep}
-              onNext={nextStep}
-              onSkip={skipTour}
-            />
-          </div>
-        ))}
-    </div>
+          ))}
+      </div>
+    </>
   );
 }
 

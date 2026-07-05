@@ -8,6 +8,7 @@ import { PwaUpdatePrompt } from './PwaUpdatePrompt';
 import { SyncToastWatcher } from './SyncToastWatcher';
 import { ToastHost } from './ToastHost';
 import { TourOverlay } from './Tour/TourOverlay';
+import { useTour } from './Tour/TourContext';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 
 const baseNavItems = [
@@ -35,6 +36,7 @@ const pageTitles: Record<string, string> = {
 export function Layout() {
   const { pathname } = useLocation();
   const { journey } = useActiveJourney();
+  const { active: tourActive } = useTour();
   const pageTitle = pathname.startsWith('/progress/milestones/')
     ? 'Milestone'
     : (pageTitles[pathname] ?? DEFAULT_HEADER_TITLE);
@@ -57,10 +59,11 @@ export function Layout() {
       <ConfirmModal />
       <InstallPromptToast />
       <PwaUpdatePrompt />
-      <TourOverlay />
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-xl bg-surface-container-lowest px-1 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-grace-up"
+        className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-xl bg-surface-container-lowest px-1 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-grace-up${
+          tourActive ? ' pointer-events-none' : ''
+        }`}
         aria-label="Main navigation"
       >
         <div className="mx-auto flex w-full max-w-lg">
@@ -71,6 +74,7 @@ export function Layout() {
               end={item.to === '/'}
               title={item.label}
               data-tour={item.tourId}
+              tabIndex={tourActive ? -1 : undefined}
               className={({ isActive }) =>
                 `flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg px-0.5 py-1 transition-all active:scale-95 ${
                   isActive
@@ -91,6 +95,8 @@ export function Layout() {
           ))}
         </div>
       </nav>
+
+      <TourOverlay />
     </div>
   );
 }
