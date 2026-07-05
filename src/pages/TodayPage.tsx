@@ -62,7 +62,7 @@ export function TodayPage() {
           )}
         </section>
 
-        <VerseOfTheDay date={today} />
+        <VerseOfTheDay date={viewDate} />
 
         <img
           src="/assets/fasting-plan-all-phases.png"

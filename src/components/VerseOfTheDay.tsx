@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
 import { trackEvent } from '../lib/analytics';
 import { scriptureReferenceToBibleComUrl } from '../lib/bibleComUrl';
 import { getLocalDateString } from '../lib/dateUtils';
-import { getVerseOfTheDay } from '../lib/storage';
+import { resolveVerseForDate } from '../lib/verseOfTheDay';
 import { Icon } from './Icon';
 
 type Props = {
@@ -11,7 +10,7 @@ type Props = {
 
 export function VerseOfTheDay({ date }: Props) {
   const viewDate = date ?? getLocalDateString();
-  const verse = useMemo(() => getVerseOfTheDay(viewDate), [viewDate]);
+  const verse = resolveVerseForDate(viewDate);
   const url = scriptureReferenceToBibleComUrl(verse.reference);
 
   return (

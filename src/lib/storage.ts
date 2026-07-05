@@ -1,4 +1,3 @@
-import { VERSES, type DailyVerse } from '../data/verses';
 import type {
   AppSettings,
   Badge,
@@ -29,20 +28,10 @@ import { deleteRemoteImages, resolveMealImageBlob } from './mealImageSync';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
 import { computeCheckInStreak } from './streaks';
-import { resolveVerseForDate } from './verseOfTheDay';
-
 /** Legacy key — migrated to {@link GUEST_STORAGE_KEY} on first load. */
 export const LEGACY_STORAGE_KEY = 'fasted-calendar-progress';
 
 export const GUEST_STORAGE_KEY = 'fasted-calendar-progress:guest';
-
-/** Cached verse-of-the-day entry (date + id) for offline reuse. */
-export const VERSE_OF_DAY_CACHE_KEY = 'fasted-calendar-verse-of-the-day';
-
-type VerseOfDayCache = {
-  date: string;
-  verseId: string;
-};
 
 export function userStorageKey(userId: string): string {
   return `fasted-calendar-progress:${userId}`;
@@ -613,39 +602,4 @@ ${e.content}
 `;
     })
     .join('\n---\n\n');
-}
-
-function readVerseOfDayCache(): VerseOfDayCache | null {
-  try {
-    const raw = localStorage.getItem(VERSE_OF_DAY_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as VerseOfDayCache;
-    if (typeof parsed.date === 'string' && typeof parsed.verseId === 'string') {
-      return parsed;
-    }
-  } catch {
-    // Ignore corrupt cache.
-  }
-  return null;
-}
-
-function writeVerseOfDayCache(cache: VerseOfDayCache): void {
-  try {
-    localStorage.setItem(VERSE_OF_DAY_CACHE_KEY, JSON.stringify(cache));
-  } catch {
-    // Offline verse still works from in-memory resolution.
-  }
-}
-
-/** Verse for a calendar date — deterministic, cached in localStorage for offline use. */
-export function getVerseOfTheDay(dateStr: string): DailyVerse {
-  const cached = readVerseOfDayCache();
-  if (cached?.date === dateStr) {
-    const fromCache = VERSES.find((verse) => verse.id === cached.verseId);
-    if (fromCache) return fromCache;
-  }
-
-  const verse = resolveVerseForDate(dateStr);
-  writeVerseOfDayCache({ date: dateStr, verseId: verse.id });
-  return verse;
 }
