@@ -103,7 +103,6 @@ type PhaseDurationDaysFieldProps = {
   durationDays: number;
   onChange: (durationDays: number) => void;
   onInvalid: () => void;
-  inputClass: string;
 };
 
 function PhaseDurationDaysField({
@@ -111,7 +110,6 @@ function PhaseDurationDaysField({
   durationDays,
   onChange,
   onInvalid,
-  inputClass,
 }: PhaseDurationDaysFieldProps) {
   const [draft, setDraft] = useState(() => String(durationDays));
   const [error, setError] = useState<string | null>(null);
@@ -120,6 +118,15 @@ function PhaseDurationDaysField({
     setDraft(String(durationDays));
     setError(null);
   }, [phaseId]);
+
+  const getCurrentValue = () => parsePhaseDurationDays(draft).value ?? durationDays;
+
+  const applyValue = (value: number) => {
+    const next = Math.max(1, value);
+    setDraft(String(next));
+    setError(null);
+    onChange(next);
+  };
 
   const commitDraft = (raw: string) => {
     const parsed = parsePhaseDurationDays(raw);
@@ -133,23 +140,54 @@ function PhaseDurationDaysField({
     onChange(parsed.value ?? 1);
   };
 
+  const stepDuration = (delta: 1 | -1) => {
+    applyValue(getCurrentValue() + delta);
+  };
+
+  const currentValue = getCurrentValue();
+
   return (
     <div className="flex flex-col gap-1">
-      <input
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        aria-label="Duration (days)"
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${phaseId}-duration-error` : undefined}
-        value={draft}
-        onChange={(e) => {
-          setDraft(e.target.value.replace(/\D/g, ''));
-          if (error) setError(null);
-        }}
-        onBlur={() => commitDraft(draft)}
-        className={`${inputClass} min-h-11`}
-      />
+      <div
+        className={`flex overflow-hidden rounded-xl border bg-surface-container-low focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary ${
+          error ? 'border-error' : 'border-outline-variant'
+        }`}
+      >
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          aria-label="Duration (days)"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${phaseId}-duration-error` : undefined}
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value.replace(/\D/g, ''));
+            if (error) setError(null);
+          }}
+          onBlur={() => commitDraft(draft)}
+          className="min-h-11 flex-1 border-0 bg-transparent px-4 py-3 text-body-md focus:outline-none"
+        />
+        <div className="flex flex-col border-l border-outline-variant">
+          <button
+            type="button"
+            aria-label="Increase duration by 1 day"
+            onClick={() => stepDuration(1)}
+            className="flex min-h-[22px] min-w-11 flex-1 items-center justify-center hover:bg-surface-container"
+          >
+            <Icon name="arrow_upward" size={18} />
+          </button>
+          <button
+            type="button"
+            aria-label="Decrease duration by 1 day"
+            onClick={() => stepDuration(-1)}
+            disabled={currentValue <= 1}
+            className="flex min-h-[22px] min-w-11 flex-1 items-center justify-center border-t border-outline-variant hover:bg-surface-container disabled:opacity-40"
+          >
+            <Icon name="arrow_downward" size={18} />
+          </button>
+        </div>
+      </div>
       {error && (
         <span id={`${phaseId}-duration-error`} className="text-label-caps text-error">
           {error}
@@ -684,7 +722,6 @@ export function JourneyBuilder({
                           updatePhase(activePhaseIndex, { durationDays })
                         }
                         onInvalid={() => updatePhase(activePhaseIndex, { durationDays: 0 })}
-                        inputClass={inputClass}
                       />
                     </div>
                     <label className="block">
