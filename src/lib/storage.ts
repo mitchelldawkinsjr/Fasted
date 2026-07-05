@@ -43,7 +43,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
   scriptureNote:
     'Scripture text uses NLT (New Living Translation) wording where available. Some phases use a brief summary when multiple readings are assigned.',
-  journalFocusMode: true,
 };
 
 const DEFAULT_PROGRESS: UserProgress = {
