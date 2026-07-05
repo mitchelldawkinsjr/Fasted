@@ -43,9 +43,27 @@ function waitForPaint(): Promise<void> {
   });
 }
 
+/** Visible viewport between fixed header and bottom nav (matches Layout.tsx). */
+const TOUR_HEADER_OFFSET_PX = 72;
+const TOUR_NAV_OFFSET_PX = 76;
+
+function scrollTargetToVisibleCenter(el: Element): void {
+  const rect = el.getBoundingClientRect();
+  const visibleTop = TOUR_HEADER_OFFSET_PX;
+  const visibleBottom = window.innerHeight - TOUR_NAV_OFFSET_PX;
+  const visibleCenter = visibleTop + (visibleBottom - visibleTop) / 2;
+  const elementCenter = rect.top + rect.height / 2;
+  const delta = elementCenter - visibleCenter;
+
+  if (Math.abs(delta) < 8) return;
+
+  window.scrollBy({ top: delta, behavior: 'instant' });
+}
+
 function useTargetRect(
   selector: string | undefined,
   stepIndex: number,
+  scroll: TourStep['scroll'],
 ): { rect: Rect | null; ready: boolean } {
   const [rect, setRect] = useState<Rect | null>(null);
   const [ready, setReady] = useState(() => !selector);
@@ -63,6 +81,7 @@ function useTargetRect(
     let cancelled = false;
     let observer: ResizeObserver | null = null;
     let retryTimer = 0;
+    let scrolled = false;
 
     function applyRect(el: Element) {
       const next = readRect(el);
@@ -98,6 +117,11 @@ function useTargetRect(
         await waitForPaint();
         const el = measure();
         if (el) {
+          if (scroll === 'center' && !scrolled) {
+            scrollTargetToVisibleCenter(el);
+            scrolled = true;
+            await waitForPaint();
+          }
           const next = readRect(el);
           if (isStableTarget(el, next)) {
             applyRect(el);
@@ -113,6 +137,10 @@ function useTargetRect(
       if (cancelled) return;
       const el = measure();
       if (el) {
+        if (scroll === 'center' && !scrolled) {
+          scrollTargetToVisibleCenter(el);
+          await waitForPaint();
+        }
         applyRect(el);
         attachObserver(el);
       } else {
@@ -127,7 +155,7 @@ function useTargetRect(
       window.clearTimeout(retryTimer);
       observer?.disconnect();
     };
-  }, [selector, stepIndex]);
+  }, [selector, stepIndex, scroll]);
 
   return { rect, ready };
 }
@@ -135,7 +163,11 @@ function useTargetRect(
 export function TourOverlay() {
   const { active, currentStep, stepIndex, totalSteps, nextStep, skipTour } = useTour();
   const [vh, setVh] = useState(window.innerHeight);
-  const { rect: targetRect, ready: targetReady } = useTargetRect(currentStep?.target, stepIndex);
+  const { rect: targetRect, ready: targetReady } = useTargetRect(
+    currentStep?.target,
+    stepIndex,
+    currentStep?.scroll,
+  );
 
   useEffect(() => {
     if (!active) return;

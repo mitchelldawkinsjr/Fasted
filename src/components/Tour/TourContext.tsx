@@ -18,6 +18,8 @@ export type TourStep = {
   title: string;
   body: string;
   placement?: 'top' | 'bottom' | 'center';
+  /** Scroll the target into the visible viewport center before spotlighting. */
+  scroll?: 'center';
   /** Label for the primary action button */
   nextLabel?: string;
 };
@@ -42,7 +44,8 @@ export const TOUR_STEPS: TourStep[] = [
     target: '[data-tour="checkin-btn"]',
     title: 'Daily Check-in',
     body: 'After you fast and pray, log your check-in here. Streaks and sacred milestones unlock as you stay consistent.',
-    placement: 'bottom',
+    placement: 'top',
+    scroll: 'center',
   },
   {
     id: 'nav-journal',
@@ -144,6 +147,7 @@ export function TourProvider({ children }: Props) {
     setManualStart(true);
     navigate('/');
     setStepIndex(0);
+    window.scrollTo({ top: 0, behavior: 'instant' });
     window.setTimeout(() => setActive(true), 300);
   }, [navigate]);
 
