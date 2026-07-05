@@ -36,13 +36,15 @@ export function TodayPage() {
   const existingCheckIn = getCheckIn(viewDate);
   const [showCheckIn, setShowCheckIn] = useState(false);
 
+  const phaseId = plan?.phaseId;
+
   useEffect(() => {
-    if (!inPlan || !plan) return;
+    if (!inPlan || !phaseId) return;
     trackEvent('phase_day_viewed', {
-      phase_id: plan.phaseId,
+      phase_id: phaseId,
       is_preview: previewDate != null && previewDate !== today,
     });
-  }, [inPlan, plan, previewDate, today]);
+  }, [inPlan, phaseId, viewDate, previewDate, today]);
 
   if (!inPlan || !plan) {
     const beforePlan = viewDate < planStart;

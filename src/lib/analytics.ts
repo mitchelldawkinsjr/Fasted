@@ -31,13 +31,19 @@ export function initAnalytics(): void {
   document.head.appendChild(script);
 }
 
-export function trackPageView(path: string, title?: string): void {
+/** Strip invite codes and other sensitive path segments before sending to GA4. */
+function sanitizeAnalyticsPath(path: string): string {
+  return path.replace(/^\/join\/[^/?#]+/, '/join/:code');
+}
+
+export function trackPageView(path: string): void {
   if (!isEnabled()) return;
 
+  const sanitizedPath = sanitizeAnalyticsPath(path);
   window.gtag!('event', 'page_view', {
-    page_path: path,
-    page_location: window.location.href,
-    page_title: title ?? document.title,
+    page_path: sanitizedPath,
+    page_location: `${window.location.origin}${sanitizedPath}`,
+    page_title: document.title,
   });
 }
 

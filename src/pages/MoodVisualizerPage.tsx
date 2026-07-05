@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { PhaseMoodChart } from '../components/PhaseMoodChart';
@@ -34,16 +34,13 @@ export function MoodVisualizerPage() {
   );
   const [monthKey, setMonthKey] = useState(initialMonth);
   const totalEntries = getMoodEntries().length;
-  const trackedInitialView = useRef(false);
 
   useEffect(() => {
-    if (trackedInitialView.current) return;
-    trackedInitialView.current = true;
     trackEvent('mood_chart_viewed', {
       initial_view: searchParams.get('view') === 'phase' ? 'phase' : 'monthly',
       has_entries: totalEntries > 0,
     });
-  }, [searchParams, totalEntries]);
+  }, []);
 
   const changeView = (nextView: ViewMode) => {
     if (nextView === view) return;

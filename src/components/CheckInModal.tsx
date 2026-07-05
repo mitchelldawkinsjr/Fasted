@@ -64,11 +64,6 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
     });
   }, [existing, phase?.id]);
 
-  const handleCancel = () => {
-    trackEvent('check_in_cancelled', { phase_id: phase?.id ?? 'unknown' });
-    onClose();
-  };
-
   const dismissCelebration = () => {
     onCompleteRef.current(earnedBadges);
     onCloseRef.current();
@@ -339,7 +334,15 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
             </div>
 
             <div className="flex shrink-0 gap-2 border-t border-surface-variant p-3 pt-4 sm:gap-3 sm:p-stack-lg">
-              <LoadingButton type="button" onClick={handleCancel} variant="secondary" className="flex-1">
+              <LoadingButton
+                type="button"
+                onClick={() => {
+                  trackEvent('check_in_cancelled', { phase_id: phase?.id ?? 'unknown' });
+                  onClose();
+                }}
+                variant="secondary"
+                className="flex-1"
+              >
                 Cancel
               </LoadingButton>
               <LoadingButton

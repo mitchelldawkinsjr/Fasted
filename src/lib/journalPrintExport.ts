@@ -10,12 +10,11 @@ export function openJournalPrintView(
   entryCount = 0,
 ): boolean {
   const source = returnTo === '/settings' ? 'settings' : 'journal';
-  trackEvent('journal_pdf_export', { source, entry_count: entryCount });
-
   const printPath = `/journal/print?return=${encodeURIComponent(returnTo)}`;
 
   if (isRunningAsInstalledPwa()) {
     navigate(printPath);
+    trackEvent('journal_pdf_export', { source, entry_count: entryCount });
     return true;
   }
 
@@ -25,6 +24,7 @@ export function openJournalPrintView(
   }
 
   printWindow.opener = null;
+  trackEvent('journal_pdf_export', { source, entry_count: entryCount });
   return true;
 }
 
