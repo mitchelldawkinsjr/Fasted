@@ -111,10 +111,12 @@ const STEP_NAMES = [
   'step-1-welcome',
   'step-2-today-card',
   'step-3-checkin',
-  'step-4-journal',
-  'step-5-progress',
-  'step-6-groups',
-  'step-7-done',
+  'step-4-scripture',
+  'step-5-prayer-focus',
+  'step-6-journal',
+  'step-7-progress',
+  'step-8-groups',
+  'step-9-done',
 ];
 
 test.describe('Tour flow', () => {

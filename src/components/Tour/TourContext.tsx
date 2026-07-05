@@ -48,6 +48,22 @@ export const TOUR_STEPS: TourStep[] = [
     scroll: 'center',
   },
   {
+    id: 'scripture-card',
+    target: '[data-tour="scripture-card"]',
+    title: "Today's Scripture",
+    body: 'Each day includes a verse and reference tied to your current phase — tap to read on Bible.com.',
+    placement: 'top',
+    scroll: 'center',
+  },
+  {
+    id: 'prayer-focus',
+    target: '[data-tour="prayer-focus"]',
+    title: 'Prayer Focus',
+    body: 'Guided prayer points help you stay centered on what matters each day of the fast.',
+    placement: 'top',
+    scroll: 'center',
+  },
+  {
     id: 'nav-journal',
     target: '[data-tour="nav-journal"]',
     title: 'Journal Your Journey',

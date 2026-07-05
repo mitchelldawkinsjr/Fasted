@@ -34,6 +34,7 @@ export function ScriptureCard({ phaseId, references }: Props) {
     <section
       className="stitch-card flex flex-col justify-center border-l-4 border-gold p-stack-lg"
       aria-labelledby="scripture-heading"
+      data-tour="scripture-card"
     >
       <div className="mb-4 flex items-center gap-2">
         <Icon name="auto_stories" className="text-secondary" />
