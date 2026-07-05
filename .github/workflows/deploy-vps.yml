@@ -109,7 +109,7 @@ jobs:
           DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
           SUPABASE_DIR: ${{ vars.SUPABASE_DIR }}
           DOCKER_NETWORK: ${{ vars.DOCKER_NETWORK }}
-          VITE_GA_MEASUREMENT_ID: ${{ vars.VITE_GA_MEASUREMENT_ID || 'G-8J4VTB50CC' }}
+          VITE_GA_MEASUREMENT_ID: ${{ vars.VITE_GA_MEASUREMENT_ID }}
         run: |
           VPS_REMOTE="${VPS_USER}@${VPS_HOST}" bash scripts/deploy-vps.sh
 
