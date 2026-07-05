@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REMOTE="${VPS_REMOTE:?Set VPS_REMOTE to user@host}"
 DEPLOY_DIR="${DEPLOY_DIR:-/opt/apps/fasted-calendar}"
 SUPABASE_DIR="${SUPABASE_DIR:-/opt/apps/supabase}"
-GA_MEASUREMENT_ID="${VITE_GA_MEASUREMENT_ID:-G-8J4VTB50CC}"
+GA_MEASUREMENT_ID="${VITE_GA_MEASUREMENT_ID:-G-BHRDQXDTBH}"
 APP_PORT="${APP_PUBLISH_PORT:-8022}"
 NETWORK="${DOCKER_NETWORK:-fasted-network}"
 
