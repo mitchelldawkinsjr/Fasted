@@ -25,6 +25,8 @@ describe('VerseOfTheDay', () => {
     expect(screen.getByRole('heading', { name: 'Verse of the Day' })).toBeTruthy();
     expect(screen.getByText(new RegExp(verse.text.slice(0, 24)))).toBeTruthy();
     expect(screen.getByRole('link', { name: new RegExp(verse.reference) })).toBeTruthy();
+    const link = screen.getByRole('link', { name: new RegExp(verse.reference) });
+    expect(link.getAttribute('href')).toMatch(/biblegateway\.com\/passage/);
   });
 
   it('resolves and displays a verse when no cache exists', () => {

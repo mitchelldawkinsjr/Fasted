@@ -1,6 +1,5 @@
-/** YouVersion Bible.com — NLT (version id 116). */
-const BIBLE_COM_VERSION_ID = 116;
-const BIBLE_COM_VERSION_CODE = 'NLT';
+/** Bible Gateway — NLT. */
+const BIBLE_GATEWAY_VERSION = 'NLT';
 
 type BookMeta = { code: string; abbrev: string };
 
@@ -92,26 +91,28 @@ function parseScriptureReference(reference: string) {
   return { fullBookName, bookCode: book.code, chapter, verses };
 }
 
-/** Turn "Daniel 1:12" or "Psalm 23" into a Bible.com NLT URL. */
-export function scriptureReferenceToBibleComUrl(reference: string): string | null {
-  const parsed = parseScriptureReference(reference);
-  if (!parsed) return null;
+function scriptureReferenceToBibleGatewayUrl(reference: string, chapterOnly = false): string | null {
+  const trimmed = reference.trim();
+  if (!trimmed) return null;
 
-  const { bookCode, chapter, verses } = parsed;
-  const path = verses
-    ? `${bookCode}.${chapter}.${verses}.${BIBLE_COM_VERSION_CODE}`
-    : `${bookCode}.${chapter}.${BIBLE_COM_VERSION_CODE}`;
+  const parsed = parseScriptureReference(trimmed);
+  const search = parsed
+    ? parsed.verses && !chapterOnly
+      ? `${parsed.fullBookName} ${parsed.chapter}:${parsed.verses}`
+      : `${parsed.fullBookName} ${parsed.chapter}`
+    : trimmed;
 
-  return `https://www.bible.com/bible/${BIBLE_COM_VERSION_ID}/${path}`;
+  return `https://www.biblegateway.com/passage/?search=${encodeURIComponent(search)}&version=${BIBLE_GATEWAY_VERSION}`;
 }
 
-/** Link to the full chapter on Bible.com (ignores verse numbers). */
-export function scriptureReferenceToChapterUrl(reference: string): string | null {
-  const parsed = parseScriptureReference(reference);
-  if (!parsed) return null;
+/** Turn "Daniel 1:12" or "Psalm 23" into a Bible Gateway NLT URL. */
+export function scriptureReferenceToBibleComUrl(reference: string): string | null {
+  return scriptureReferenceToBibleGatewayUrl(reference);
+}
 
-  const { bookCode, chapter } = parsed;
-  return `https://www.bible.com/bible/${BIBLE_COM_VERSION_ID}/${bookCode}.${chapter}.${BIBLE_COM_VERSION_CODE}`;
+/** Link to the full chapter on Bible Gateway (ignores verse numbers). */
+export function scriptureReferenceToChapterUrl(reference: string): string | null {
+  return scriptureReferenceToBibleGatewayUrl(reference, true);
 }
 
 /** Abbreviate "Genesis 1:1" to "Gen 1:1". */

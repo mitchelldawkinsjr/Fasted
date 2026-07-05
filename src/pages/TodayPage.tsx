@@ -7,7 +7,6 @@ import { EncouragementCard } from '../components/EncouragementCard';
 import { InfoBanner } from '../components/InfoBanner';
 import { PrayerPointsCard } from '../components/PrayerPointsCard';
 import { SafetyNote } from '../components/SafetyNote';
-import { ScriptureCard } from '../components/ScriptureCard';
 import { VerseOfTheDay } from '../components/VerseOfTheDay';
 import { TodayFastCard } from '../components/TodayFastCard';
 import { Icon } from '../components/Icon';
@@ -103,8 +102,6 @@ export function TodayPage() {
         </InfoBanner>
       )}
 
-      <VerseOfTheDay date={viewDate} />
-
       <TodayFastCard plan={plan} />
 
       <DailyCommitmentCard
@@ -114,7 +111,7 @@ export function TodayPage() {
       />
 
       <section className="grid grid-cols-1 gap-gutter md:grid-cols-2">
-        <ScriptureCard phaseId={plan.phaseId} references={plan.scriptureReferences} />
+        <VerseOfTheDay date={viewDate} />
         <PrayerPointsCard
           points={plan.prayerPoints}
           encouragement="You are setting this time apart for something greater. Breathe and reflect."

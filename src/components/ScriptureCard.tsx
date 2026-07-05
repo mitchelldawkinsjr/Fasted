@@ -18,7 +18,7 @@ function ScriptureReferenceLink({ reference }: { reference: string }) {
       rel="noopener noreferrer"
       onClick={() => trackEvent('scripture_link_clicked', { source: 'today_card' })}
       className="underline decoration-outline/40 underline-offset-2 transition hover:text-primary"
-      aria-label={`${reference} (opens on Bible.com in a new tab)`}
+      aria-label={`${reference} (opens on Bible Gateway in a new tab)`}
     >
       {reference}
     </a>

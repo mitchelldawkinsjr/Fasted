@@ -223,9 +223,9 @@ test('morning reflection tag links to filtered journal', async ({ page }) => {
 
 test('shows verse of the day chapter link in daily reflection form', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
-  const chapterLink = page.getByRole('link', { name: /read full chapter on Bible.com/i });
+  const chapterLink = page.getByRole('link', { name: /read on Bible Gateway/i });
   await expect(chapterLink).toBeVisible();
-  await expect(chapterLink).toHaveAttribute('href', /bible\.com\/bible\/116\/.+\.NLT$/);
+  await expect(chapterLink).toHaveAttribute('href', /biblegateway\.com\/passage\/\?search=.+&version=NLT$/);
 });
 
 test('opens a read-only view of a saved entry', async ({ page }) => {
