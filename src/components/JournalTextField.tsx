@@ -1,6 +1,5 @@
 type Props = {
   value: string;
-  onChange: (value: string) => void;
   placeholder: string;
   ariaLabel: string;
   inputClass: string;

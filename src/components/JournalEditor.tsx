@@ -419,7 +419,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
               )}
               <JournalTextField
                 value={field.value}
-                onChange={field.set}
                 placeholder={
                   field.key === 'prayerFocus' ? 'Write your reflection…' : `${field.label}…`
                 }
@@ -440,7 +439,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
               </span>
               <JournalTextField
                 value={field.value}
-                onChange={field.set}
                 placeholder={`${field.label}…`}
                 ariaLabel={field.label}
                 inputClass={inputClass}
@@ -462,7 +460,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           </span>
           <JournalTextField
             value={content}
-            onChange={setContent}
             placeholder={`${simpleContentLabel}…`}
             ariaLabel={simpleContentLabel}
             inputClass={inputClass}
