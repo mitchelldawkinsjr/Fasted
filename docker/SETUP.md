@@ -76,6 +76,7 @@ Copy `ANON_KEY` from `${SUPABASE_DIR}/.env` into the app `.env`:
 ```bash
 VITE_SUPABASE_URL=https://api.example.com
 VITE_SUPABASE_ANON_KEY=<anon-key-from-supabase-env>
+VITE_GA_MEASUREMENT_ID=G-8J4VTB50CC
 APP_PUBLISH_PORT=8022
 ```
 

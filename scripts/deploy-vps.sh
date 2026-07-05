@@ -31,15 +31,16 @@ ssh "$REMOTE" "
 
   ANON_KEY=\$(grep '^ANON_KEY=' '${SUPABASE_DIR}/.env' | cut -d= -f2-)
   API_URL=\$(grep '^API_EXTERNAL_URL=' '${SUPABASE_DIR}/.env' | cut -d= -f2-)
+  GA_MEASUREMENT_ID=\${VITE_GA_MEASUREMENT_ID:-G-8J4VTB50CC}
 
   if [ -z \"\$ANON_KEY\" ] || [ -z \"\$API_URL\" ]; then
     echo 'ERROR: Could not read ANON_KEY / API_EXTERNAL_URL from ${SUPABASE_DIR}/.env'
     exit 1
   fi
 
-  printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nAPP_PUBLISH_PORT=%s\n' \
-    \"\$API_URL\" \"\$ANON_KEY\" '${APP_PORT}' > .env
-  echo \".env written (VITE_SUPABASE_URL=\$API_URL)\"
+  printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nVITE_GA_MEASUREMENT_ID=%s\nAPP_PUBLISH_PORT=%s\n' \
+    \"\$API_URL\" \"\$ANON_KEY\" \"\$GA_MEASUREMENT_ID\" '${APP_PORT}' > .env
+  echo \".env written (VITE_SUPABASE_URL=\$API_URL, VITE_GA_MEASUREMENT_ID=\$GA_MEASUREMENT_ID)\"
 
   if ! docker ps --format '{{.Names}}' | grep -qx supabase-db; then
     echo 'ERROR: supabase-db is not running; cannot apply SQL migrations'
@@ -51,11 +52,13 @@ ssh "$REMOTE" "
 
   export VITE_SUPABASE_URL=\"\$API_URL\"
   export VITE_SUPABASE_ANON_KEY=\"\$ANON_KEY\"
+  export VITE_GA_MEASUREMENT_ID=\"\$GA_MEASUREMENT_ID\"
   export DOCKER_NETWORK='${NETWORK}'
 
   docker compose -f docker-compose.prod.yml build --no-cache \
     --build-arg VITE_SUPABASE_URL=\"\$API_URL\" \
-    --build-arg VITE_SUPABASE_ANON_KEY=\"\$ANON_KEY\"
+    --build-arg VITE_SUPABASE_ANON_KEY=\"\$ANON_KEY\" \
+    --build-arg VITE_GA_MEASUREMENT_ID=\"\$GA_MEASUREMENT_ID\"
 
   docker compose -f docker-compose.prod.yml up -d
 

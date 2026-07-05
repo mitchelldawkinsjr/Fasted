@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { CommitmentDefinition, GroupPrivacy, Journey } from '../types';
 import { createCommitmentPreset } from '../data/commitmentPresets';
 import { formatGroupError } from '../lib/authErrors';
+import { trackEvent } from '../lib/analytics';
 import { createGroup } from '../lib/groups';
 import { CommitmentEditor } from './CommitmentEditor';
 import { JourneyBuilder } from './JourneyBuilder';
@@ -43,6 +44,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
         displayName: displayName.trim() || undefined,
         commitments,
       });
+      trackEvent('group_created', { privacy, journey_type: 'built-in' });
       onCreated(group.id);
       onClose();
       setName('');
@@ -71,6 +73,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
         displayName: displayName.trim() || undefined,
         commitments,
       });
+      trackEvent('group_created', { privacy, journey_type: 'custom' });
       setBuilderOpen(false);
       onCreated(group.id);
       onClose();

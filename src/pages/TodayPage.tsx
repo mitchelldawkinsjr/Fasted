@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckInModal } from '../components/CheckInModal';
 import { DailyCommitmentCard } from '../components/DailyCommitmentCard';
@@ -11,6 +11,7 @@ import { TodayFastCard } from '../components/TodayFastCard';
 import { Icon } from '../components/Icon';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { useProgress } from '../hooks/useProgress';
+import { trackEvent } from '../lib/analytics';
 import { getDailyPlan } from '../lib/dailyPlan';
 import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/dateUtils';
 import {
@@ -34,6 +35,14 @@ export function TodayPage() {
   const progress = useProgress();
   const existingCheckIn = getCheckIn(viewDate);
   const [showCheckIn, setShowCheckIn] = useState(false);
+
+  useEffect(() => {
+    if (!inPlan || !plan) return;
+    trackEvent('phase_day_viewed', {
+      phase_id: plan.phaseId,
+      is_preview: previewDate != null && previewDate !== today,
+    });
+  }, [inPlan, plan, previewDate, today]);
 
   if (!inPlan || !plan) {
     const beforePlan = viewDate < planStart;

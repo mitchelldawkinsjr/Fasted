@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { useMealImageSrc } from '../hooks/useMealImageSrc';
 import { appendMealImages, MEAL_IMAGE_ACCEPT } from '../lib/mealImages';
+import { trackEvent } from '../lib/analytics';
 import { formatError, messages } from '../lib/messages';
 import { getStorageScope } from '../lib/storage';
 import { imageScopeKey } from '../lib/imageStore';
@@ -46,6 +47,13 @@ export function MealImageUpload({ images, onChange, sectionName }: Props) {
       const next = await appendMealImages(images, files, scope);
       onChange(next);
       const added = next.length - images.length;
+      if (added > 0) {
+        trackEvent('meal_image_uploaded', {
+          section: sectionName.toLowerCase(),
+          images_added: added,
+          total_in_section: next.length,
+        });
+      }
       if (selectedCount > added) {
         toast.error(messages.errors.mealImageSomeSkipped(added, MAX_MEAL_IMAGES_PER_SECTION));
       }

@@ -9,6 +9,7 @@ import {
   leavePrintView,
   withSuppressedPrintFooter,
 } from '../lib/journalPrintExport';
+import { trackEvent } from '../lib/analytics';
 import { getStorageScope } from '../lib/storage';
 
 const BACK_NAV_CLASS =
@@ -70,6 +71,7 @@ export function JournalPrintPage() {
       if (cancelled || printedStampRef.current === progressStamp) return;
 
       printedStampRef.current = progressStamp;
+      trackEvent('journal_pdf_print_dialog', { entry_count: entryCount });
       withSuppressedPrintFooter(() => window.print());
     };
 

@@ -6,6 +6,7 @@ import { MoodPicker } from './MoodPicker';
 import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
+import { trackEvent } from '../lib/analytics';
 import { deleteImages, imageScopeKey, invalidateMealImageSrcs } from '../lib/imageStore';
 import {
   DEFAULT_JOURNAL_ENTRY_TYPE,
@@ -246,6 +247,10 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       }
       saveJournalEntryWithMealImages(saved, entryType === 'food' ? imagesToSave : undefined);
       savedSuccessfully.current = true;
+      trackEvent('journal_entry_saved', {
+        entry_type: entryType,
+        is_update: Boolean(entry),
+      });
       toast.success(entry ? messages.save.journalUpdated : messages.save.journal);
       onSave();
     } catch (err) {

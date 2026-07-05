@@ -10,6 +10,7 @@ import {
   previewGroupByCode,
   signMemberCovenant,
 } from '../lib/groups';
+import { trackEvent } from '../lib/analytics';
 import type { CommitmentDefinition } from '../types';
 import { toast } from '../lib/toast';
 
@@ -57,6 +58,7 @@ export function JoinGroupPage() {
         existingCovenant &&
         commitmentsMatch(existingCovenant.commitments_snapshot, groupCommitments)
       ) {
+        trackEvent('group_joined', { privacy: preview.privacy });
         toast.success('Joined group');
         navigate(`/groups/${joinedGroupId}`);
         return;
@@ -75,6 +77,9 @@ export function JoinGroupPage() {
   const handleSignCovenant = async (signature: string) => {
     if (!groupId) return;
     await signMemberCovenant(groupId, signature);
+    if (preview) {
+      trackEvent('group_joined', { privacy: preview.privacy });
+    }
     toast.success('Covenant signed');
     navigate(`/groups/${groupId}`);
   };

@@ -1,4 +1,5 @@
 import type { NavigateFunction } from 'react-router-dom';
+import { trackEvent } from './analytics';
 import { isRunningAsInstalledPwa } from './pwaInstall';
 
 export type JournalPrintReturnTo = '/journal' | '/settings';
@@ -6,7 +7,11 @@ export type JournalPrintReturnTo = '/journal' | '/settings';
 export function openJournalPrintView(
   navigate: NavigateFunction,
   returnTo: JournalPrintReturnTo = '/journal',
+  entryCount = 0,
 ): boolean {
+  const source = returnTo === '/settings' ? 'settings' : 'journal';
+  trackEvent('journal_pdf_export', { source, entry_count: entryCount });
+
   const printPath = `/journal/print?return=${encodeURIComponent(returnTo)}`;
 
   if (isRunningAsInstalledPwa()) {

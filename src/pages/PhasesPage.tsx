@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useActiveJourney } from '../hooks/useActiveJourney';
+import { trackEvent } from '../lib/analytics';
 import { formatDisplayDate } from '../lib/dateUtils';
 import { Icon } from '../components/Icon';
 
@@ -36,6 +37,7 @@ export function PhasesPage() {
           <Link
             key={phase.id}
             to={`/?date=${phase.startDate}`}
+            onClick={() => trackEvent('phase_preview_opened', { phase_id: phase.id })}
             className="group relative block min-h-[220px] overflow-hidden rounded-xl grace-shadow transition-transform active:scale-[0.98] md:min-h-[260px]"
           >
             <img

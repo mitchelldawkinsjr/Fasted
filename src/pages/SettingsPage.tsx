@@ -211,7 +211,7 @@ export function SettingsPage() {
             type="button"
             disabled={progress.journalEntries.length === 0}
             onClick={() => {
-              if (!openJournalPrintView(navigate, '/settings')) {
+              if (!openJournalPrintView(navigate, '/settings', progress.journalEntries.length)) {
                 toast.warning(messages.export.journalPdfBlocked);
                 return;
               }

@@ -104,7 +104,7 @@ export function JournalPage() {
       toast.info(messages.export.journalPdfEmpty);
       return;
     }
-    if (!openJournalPrintView(navigate, '/journal')) {
+    if (!openJournalPrintView(navigate, '/journal', progress.journalEntries.length)) {
       toast.warning(messages.export.journalPdfBlocked);
       return;
     }

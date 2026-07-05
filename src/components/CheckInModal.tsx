@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
+import { trackEvent } from '../lib/analytics';
 import { getGroupCommitments, getMyCovenant, listMyGroups } from '../lib/groups';
 import { formatError, messages } from '../lib/messages';
 import { getGroupCheckIn, getJournalEntryByDate, saveCheckInWithGroupCheckIns } from '../lib/storage';
@@ -55,6 +56,18 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
 
   onCompleteRef.current = onComplete;
   onCloseRef.current = onClose;
+
+  useEffect(() => {
+    trackEvent('check_in_started', {
+      phase_id: phase?.id ?? 'unknown',
+      is_edit: Boolean(existing),
+    });
+  }, [existing, phase?.id]);
+
+  const handleCancel = () => {
+    trackEvent('check_in_cancelled', { phase_id: phase?.id ?? 'unknown' });
+    onClose();
+  };
 
   const dismissCelebration = () => {
     onCompleteRef.current(earnedBadges);
@@ -173,6 +186,16 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
     setMessage(getCelebrationMessage(date));
     setCelebrating(true);
     setSaving(false);
+
+    trackEvent('check_in_completed', {
+      phase_id: phase?.id ?? 'unknown',
+      followed_plan: followedPlan,
+      prayed_focus: prayedFocus,
+      read_scripture: readScripture,
+      journaled: checkIn.journaled,
+      badges_earned: earned.length,
+      streak: nextStreak,
+    });
 
     confetti({
       particleCount: earned.length > 0 ? 120 : 80,
@@ -316,7 +339,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
             </div>
 
             <div className="flex shrink-0 gap-2 border-t border-surface-variant p-3 pt-4 sm:gap-3 sm:p-stack-lg">
-              <LoadingButton type="button" onClick={onClose} variant="secondary" className="flex-1">
+              <LoadingButton type="button" onClick={handleCancel} variant="secondary" className="flex-1">
                 Cancel
               </LoadingButton>
               <LoadingButton

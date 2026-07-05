@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { PhaseMoodChart } from '../components/PhaseMoodChart';
 import { MoodPhaseGrid } from '../components/mood-visualizer/MoodPhaseGrid';
 import { MoodWheel } from '../components/mood-visualizer/MoodWheel';
 import { useActiveJourney } from '../hooks/useActiveJourney';
+import { trackEvent } from '../lib/analytics';
 import {
   clampMonthKey,
   formatMonthLabel,
@@ -32,11 +33,27 @@ export function MoodVisualizerPage() {
     searchParams.get('view') === 'phase' ? 'phase' : 'monthly',
   );
   const [monthKey, setMonthKey] = useState(initialMonth);
+  const totalEntries = getMoodEntries().length;
+  const trackedInitialView = useRef(false);
+
+  useEffect(() => {
+    if (trackedInitialView.current) return;
+    trackedInitialView.current = true;
+    trackEvent('mood_chart_viewed', {
+      initial_view: searchParams.get('view') === 'phase' ? 'phase' : 'monthly',
+      has_entries: totalEntries > 0,
+    });
+  }, [searchParams, totalEntries]);
+
+  const changeView = (nextView: ViewMode) => {
+    if (nextView === view) return;
+    setView(nextView);
+    trackEvent('mood_chart_view_changed', { view: nextView });
+  };
 
   const monthIndex = planMonths.indexOf(monthKey);
   const canGoPrev = monthIndex > 0;
   const canGoNext = monthIndex >= 0 && monthIndex < planMonths.length - 1;
-  const totalEntries = getMoodEntries().length;
   const monthMoodSummary = useMemo(() => getMonthMoodSummary(monthKey), [monthKey]);
 
   function shiftMonth(delta: number) {
@@ -67,7 +84,7 @@ export function MoodVisualizerPage() {
       <div className="flex justify-center gap-2">
         <button
           type="button"
-          onClick={() => setView('monthly')}
+          onClick={() => changeView('monthly')}
           className={`rounded-full px-4 py-2 text-label-caps transition-all ${
             view === 'monthly'
               ? 'bg-secondary-container text-on-secondary-container'
@@ -78,7 +95,7 @@ export function MoodVisualizerPage() {
         </button>
         <button
           type="button"
-          onClick={() => setView('phase')}
+          onClick={() => changeView('phase')}
           className={`rounded-full px-4 py-2 text-label-caps transition-all ${
             view === 'phase'
               ? 'bg-secondary-container text-on-secondary-container'
