@@ -8,6 +8,7 @@ import { InfoBanner } from '../components/InfoBanner';
 import { PrayerPointsCard } from '../components/PrayerPointsCard';
 import { SafetyNote } from '../components/SafetyNote';
 import { ScriptureCard } from '../components/ScriptureCard';
+import { VerseOfTheDay } from '../components/VerseOfTheDay';
 import { TodayFastCard } from '../components/TodayFastCard';
 import { Icon } from '../components/Icon';
 import { useActiveJourney } from '../hooks/useActiveJourney';
@@ -61,6 +62,8 @@ export function TodayPage() {
           )}
         </section>
 
+        <VerseOfTheDay date={today} />
+
         <img
           src="/assets/fasting-plan-all-phases.png"
           alt="Overview of all eight fasting phases"
@@ -99,6 +102,8 @@ export function TodayPage() {
           </Link>
         </InfoBanner>
       )}
+
+      <VerseOfTheDay date={viewDate} />
 
       <TodayFastCard plan={plan} />
 
