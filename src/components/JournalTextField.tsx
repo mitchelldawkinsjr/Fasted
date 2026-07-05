@@ -6,7 +6,6 @@ type Props = {
   inputClass: string;
   focusModeEnabled: boolean;
   isActive: boolean;
-  onPrepareOpen: () => void;
   onOpen: () => void;
   rows?: number;
 };
@@ -19,7 +18,6 @@ export function JournalTextField({
   inputClass,
   focusModeEnabled,
   isActive,
-  onPrepareOpen,
   onOpen,
   rows = 2,
 }: Props) {
@@ -39,9 +37,11 @@ export function JournalTextField({
   return (
     <button
       type="button"
-      onPointerDown={onPrepareOpen}
+      onPointerDown={onOpen}
       onMouseDown={(event) => event.preventDefault()}
-      onClick={onOpen}
+      onClick={(event) => {
+        if (event.detail === 0) onOpen();
+      }}
       aria-label={value.trim() ? `${ariaLabel}: ${value}` : ariaLabel}
       aria-current={isActive ? 'true' : undefined}
       aria-hidden={isActive || undefined}

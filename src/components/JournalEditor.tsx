@@ -135,27 +135,16 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   }, [entryType, journalFocusMode]);
 
   useLayoutEffect(() => {
+    if (focusFieldKey !== null) return;
+
     const saved = savedScrollTopRef.current;
+    if (saved === null) return;
+
     const scrollArea = scrollAreaRef.current;
-    if (saved === null || !scrollArea) return;
-
-    const restore = () => {
-      if (scrollArea.scrollTop !== saved) {
-        scrollArea.scrollTop = saved;
-      }
-    };
-
-    restore();
-    scrollArea.addEventListener('scroll', restore, { passive: true });
-    const frame = window.requestAnimationFrame(restore);
-    const timeout = window.setTimeout(restore, 0);
-
-    return () => {
-      scrollArea.removeEventListener('scroll', restore);
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(timeout);
-      restore();
-    };
+    savedScrollTopRef.current = null;
+    if (scrollArea) {
+      scrollArea.scrollTop = saved;
+    }
   }, [focusFieldKey]);
 
   const clearSimpleFields = () => {
@@ -380,23 +369,13 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             },
           ];
 
-  const prepareOpenFocusField = () => {
-    savedScrollTopRef.current = scrollAreaRef.current?.scrollTop ?? 0;
-  };
-
   const openFocusField = (key: string) => {
-    if (savedScrollTopRef.current === null) {
-      savedScrollTopRef.current = scrollAreaRef.current?.scrollTop ?? 0;
-    }
+    savedScrollTopRef.current = scrollAreaRef.current?.scrollTop ?? 0;
     setFocusFieldKey(key);
   };
 
-  const closeFocusField = () => {
-    setFocusFieldKey(null);
-  };
-
   const handleFocusModeToggle = (enabled: boolean) => {
-    if (!enabled) closeFocusField();
+    if (!enabled) setFocusFieldKey(null);
     saveSettings({ journalFocusMode: enabled });
     trackEvent('journal_focus_mode_toggled', { enabled });
   };
@@ -458,7 +437,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                 inputClass={inputClass}
                 focusModeEnabled={journalFocusMode}
                 isActive={focusFieldKey === field.key}
-                onPrepareOpen={prepareOpenFocusField}
                 onOpen={() => openFocusField(field.key)}
               />
             </label>
@@ -479,7 +457,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                 inputClass={inputClass}
                 focusModeEnabled={journalFocusMode}
                 isActive={focusFieldKey === field.key}
-                onPrepareOpen={prepareOpenFocusField}
                 onOpen={() => openFocusField(field.key)}
               />
             </label>
@@ -503,7 +480,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             inputClass={inputClass}
             focusModeEnabled={journalFocusMode}
             isActive={focusFieldKey === 'content'}
-            onPrepareOpen={prepareOpenFocusField}
             onOpen={() => openFocusField('content')}
             rows={entryType === 'fitness' ? 4 : 6}
           />
@@ -516,7 +492,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           fields={focusFields}
           activeKey={focusFieldKey}
           onNavigate={setFocusFieldKey}
-          onClose={closeFocusField}
+          onClose={() => setFocusFieldKey(null)}
           date={date}
           entryType={entryType}
         />

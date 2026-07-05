@@ -134,6 +134,15 @@ test('preserves journal editor scroll position after closing focus lightbox', as
     () => document.querySelector('form .overflow-y-auto')?.scrollTop ?? 0,
   );
   expect(scrollAfter).toBe(scrollBefore);
+
+  await page.evaluate(() => {
+    const scrollArea = document.querySelector('form .overflow-y-auto');
+    if (scrollArea) scrollArea.scrollTop = 200;
+  });
+  const scrollAfterUserScroll = await page.evaluate(
+    () => document.querySelector('form .overflow-y-auto')?.scrollTop ?? 0,
+  );
+  expect(scrollAfterUserScroll).toBe(200);
 });
 
 test('focus mode toggle off uses inline textareas', async ({ page }) => {
