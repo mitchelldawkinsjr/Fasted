@@ -236,6 +236,8 @@ export type UserProgress = {
   journeys: Journey[];
   /** Daily group commitment honor results keyed by group id. */
   groupCheckIns?: Record<string, GroupCheckIn[]>;
+  /** Whether the first-run product tour has been completed or skipped. */
+  hasSeenTour?: boolean;
   /** ISO timestamp — used to reconcile local vs cloud copies when signed in. */
   updatedAt?: string;
 };

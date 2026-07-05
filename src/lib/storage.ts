@@ -416,6 +416,21 @@ export function saveSettings(settings: Partial<AppSettings>): void {
   });
 }
 
+const LEGACY_TOUR_KEY = 'fasted-tour-v1';
+
+/** Migrate the pre-v1 localStorage tour flag into {@link UserProgress}. */
+export function migrateLegacyTourFlag(): void {
+  if (localStorage.getItem(LEGACY_TOUR_KEY) !== 'done') return;
+  localStorage.removeItem(LEGACY_TOUR_KEY);
+  markTourSeen();
+}
+
+export function markTourSeen(): void {
+  const progress = getProgress();
+  if (progress.hasSeenTour) return;
+  persist({ ...progress, hasSeenTour: true });
+}
+
 export function saveJourney(journey: Journey): void {
   const progress = getProgress();
   const normalizedJourney = normalizeJourney(journey);

@@ -268,6 +268,7 @@ export function mergeUserProgress(account: UserProgress, guest: UserProgress): U
     badges: Array.from(badges.values()),
     journeys: Array.from(journeys.values()),
     groupCheckIns,
+    hasSeenTour: account.hasSeenTour || guest.hasSeenTour,
     updatedAt: new Date().toISOString(),
   };
 }
