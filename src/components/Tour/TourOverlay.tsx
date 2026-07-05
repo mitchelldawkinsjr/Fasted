@@ -8,9 +8,9 @@ const MIN_TARGET_SIZE = 32;
 const MAX_MEASURE_ATTEMPTS = 40;
 const MEASURE_INTERVAL_MS = 50;
 /** Matches Layout bottom nav height — backdrop stops above this so nav stays visible. */
-const BOTTOM_NAV_INSET = 'calc(4.75rem + env(safe-area-inset-bottom))';
+export const TOUR_BOTTOM_NAV_INSET = 'calc(4.75rem + env(safe-area-inset-bottom))';
 
-function isNavTarget(selector: string | undefined): boolean {
+export function isNavTourTarget(selector: string | undefined): boolean {
   return Boolean(selector?.includes('nav-'));
 }
 
@@ -192,7 +192,7 @@ export function TourOverlay() {
   const stepNumber = stepIndex + 1;
   const showTooltip = isCentered || showTarget;
   const targetReadyForStep = isCentered || showTarget;
-  const navTarget = isNavTarget(currentStep.target);
+  const navTarget = isNavTourTarget(currentStep.target);
   const backdropSpotlight = spotlight && !navTarget ? spotlight : null;
 
   return (
@@ -200,7 +200,7 @@ export function TourOverlay() {
       {/* Dim layer — excludes bottom nav so the tab bar stays visible during the tour */}
       <div
         className="pointer-events-none fixed inset-x-0 top-0 z-[9990]"
-        style={{ bottom: BOTTOM_NAV_INSET }}
+        style={{ bottom: TOUR_BOTTOM_NAV_INSET }}
         aria-hidden
       >
         <svg className="absolute inset-0 h-full w-full">
@@ -228,61 +228,32 @@ export function TourOverlay() {
         </svg>
       </div>
 
-      <div
-        className="pointer-events-none fixed inset-0 z-[9991]"
-        role="dialog"
-        aria-modal="true"
-        aria-label={currentStep.title}
-        aria-busy={Boolean(currentStep.target && !targetReady)}
-        data-target-ready={targetReadyForStep ? 'true' : 'false'}
-      >
-        {spotlight && (
-          <div
-            className="pointer-events-none absolute rounded-[14px] ring-2 ring-secondary ring-offset-0 transition-opacity duration-200"
-            style={{
-              left: spotlight.x,
-              top: spotlight.y,
-              width: spotlight.width,
-              height: spotlight.height,
-              boxShadow: '0 0 0 4px rgba(254,214,91,0.25)',
-            }}
-            aria-hidden
-          />
-        )}
+      {spotlight && (
+        <div
+          className="pointer-events-none fixed z-[9994] rounded-[14px] ring-2 ring-secondary ring-offset-0 transition-opacity duration-200"
+          style={{
+            left: spotlight.x,
+            top: spotlight.y,
+            width: spotlight.width,
+            height: spotlight.height,
+            boxShadow: '0 0 0 4px rgba(254,214,91,0.25)',
+          }}
+          aria-hidden
+        />
+      )}
 
-        {showTooltip &&
-          (isCentered ? (
-            <div className="absolute inset-0 flex items-center justify-center px-6">
-              <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-surface p-8 grace-shadow animate-fade-in-up">
-                <TourCard
-                  step={currentStep}
-                  stepNumber={stepNumber}
-                  totalSteps={totalSteps}
-                  isLastStep={isLastStep}
-                  onNext={nextStep}
-                  onSkip={skipTour}
-                />
-              </div>
-            </div>
-          ) : (
-            <div
-              className="pointer-events-auto absolute left-4 right-4 mx-auto max-w-sm rounded-2xl bg-surface p-5 grace-shadow animate-fade-in-up"
-              style={{
-                ...(tooltipBottom !== undefined ? { bottom: tooltipBottom } : { top: tooltipTop }),
-              }}
-            >
-              {spotlight && tooltipBottom === undefined && (
-                <div
-                  className="absolute -top-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
-                  aria-hidden
-                />
-              )}
-              {spotlight && tooltipBottom !== undefined && (
-                <div
-                  className="absolute -bottom-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
-                  aria-hidden
-                />
-              )}
+      {showTooltip &&
+        (isCentered ? (
+          <div
+            className="fixed inset-x-0 top-0 z-[9995] flex items-center justify-center px-6"
+            style={{ bottom: TOUR_BOTTOM_NAV_INSET }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={currentStep.title}
+            aria-busy={Boolean(currentStep.target && !targetReady)}
+            data-target-ready={targetReadyForStep ? 'true' : 'false'}
+          >
+            <div className="pointer-events-auto w-full max-w-sm rounded-2xl bg-surface p-8 grace-shadow animate-fade-in-up">
               <TourCard
                 step={currentStep}
                 stepNumber={stepNumber}
@@ -292,8 +263,41 @@ export function TourOverlay() {
                 onSkip={skipTour}
               />
             </div>
-          ))}
-      </div>
+          </div>
+        ) : (
+          <div
+            className="pointer-events-auto fixed left-4 right-4 z-[9995] mx-auto max-w-sm rounded-2xl bg-surface p-5 grace-shadow animate-fade-in-up"
+            role="dialog"
+            aria-modal="true"
+            aria-label={currentStep.title}
+            aria-busy={Boolean(currentStep.target && !targetReady)}
+            data-target-ready={targetReadyForStep ? 'true' : 'false'}
+            style={{
+              ...(tooltipBottom !== undefined ? { bottom: tooltipBottom } : { top: tooltipTop }),
+            }}
+          >
+            {spotlight && tooltipBottom === undefined && (
+              <div
+                className="absolute -top-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
+                aria-hidden
+              />
+            )}
+            {spotlight && tooltipBottom !== undefined && (
+              <div
+                className="absolute -bottom-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
+                aria-hidden
+              />
+            )}
+            <TourCard
+              step={currentStep}
+              stepNumber={stepNumber}
+              totalSteps={totalSteps}
+              isLastStep={isLastStep}
+              onNext={nextStep}
+              onSkip={skipTour}
+            />
+          </div>
+        ))}
     </>
   );
 }

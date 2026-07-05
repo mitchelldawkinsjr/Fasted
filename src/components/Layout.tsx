@@ -36,7 +36,7 @@ const pageTitles: Record<string, string> = {
 export function Layout() {
   const { pathname } = useLocation();
   const { journey } = useActiveJourney();
-  const { active: tourActive } = useTour();
+  const { active: tourActive, highlightTarget } = useTour();
   const pageTitle = pathname.startsWith('/progress/milestones/')
     ? 'Milestone'
     : (pageTitles[pathname] ?? DEFAULT_HEADER_TITLE);
@@ -61,8 +61,8 @@ export function Layout() {
       <PwaUpdatePrompt />
 
       <nav
-        className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-xl bg-surface-container-lowest px-1 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-grace-up${
-          tourActive ? ' pointer-events-none' : ''
+        className={`fixed bottom-0 left-0 right-0 rounded-t-xl bg-surface-container-lowest px-1 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 shadow-grace-up${
+          tourActive ? ' z-[9993] pointer-events-none' : ' z-50'
         }`}
         aria-label="Main navigation"
       >
@@ -75,13 +75,15 @@ export function Layout() {
               title={item.label}
               data-tour={item.tourId}
               tabIndex={tourActive ? -1 : undefined}
-              className={({ isActive }) =>
-                `flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg px-0.5 py-1 transition-all active:scale-95 ${
+              className={({ isActive }) => {
+                const highlighted =
+                  tourActive && highlightTarget === `[data-tour="${item.tourId}"]`;
+                return `relative flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg px-0.5 py-1 transition-all active:scale-95 ${
                   isActive
                     ? 'bg-secondary-container text-on-secondary-container'
                     : 'text-on-surface-variant hover:bg-surface-variant'
-                }`
-              }
+                }${highlighted ? ' z-[9994]' : ''}`;
+              }}
             >
               {({ isActive }) => (
                 <>
