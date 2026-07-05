@@ -150,7 +150,7 @@ async function cmdDocs(args) {
     console.log(`\n---\nDocumentation checklist for issue #${issueNumber}`);
     console.log("- Review PR for user-facing changes");
     console.log("- Update README / release notes / .env.example as needed");
-    console.log("- Verify artifacts/issue-" + issueNumber + "/ screenshots");
+    console.log("- Verify artifacts/issue-" + issueNumber + "/ screenshots (npm run capture:issue-screenshots -- " + issueNumber + ")");
   }
 }
 

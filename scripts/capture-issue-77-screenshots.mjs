@@ -1,3 +1,7 @@
+/**
+ * Legacy one-off capture for issue #77 (Journey Together / groups UI).
+ * Prefer npm run capture:issue-screenshots with a registered scenario when possible.
+ */
 import { chromium } from '@playwright/test';
 import { spawn } from 'child_process';
 import * as fs from 'fs';

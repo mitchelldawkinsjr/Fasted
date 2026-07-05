@@ -11,7 +11,7 @@ prompt:
   postImplementReminders: |
     Leave the PR as a **draft** — do NOT run `gh pr ready`. Bugbot + Ponytail run when the PR opens (automatic via `.github/workflows/pr-review.yml`).
     UI changes REQUIRE screenshots committed under `artifacts/issue-{N}/` and linked in the issue completion comment.
-    Run `npm run compress:artifacts` before committing screenshot PNGs.
+    Capture UI screenshots with `npm run capture:issue-screenshots -- {N}` (compresses automatically). If capturing manually, run `npm run compress:artifacts` before commit.
     When the PR is opened with `Fixes #{N}`, GitHub Actions clears `agent-working` and starts review — do NOT swap labels yourself.
     You MUST post the issue completion comment before stopping. Do not stop right after opening the PR.
   agentStartedComment: |

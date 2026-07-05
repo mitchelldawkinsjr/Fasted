@@ -154,7 +154,8 @@ npm run test:e2e              # Blocking CI suite
 npm run test:audit            # Full viewport overflow matrix (advisory)
 npm run test:visual           # Visual regression
 npm run test:visual:update    # Update baselines + compress
-npm run compress:artifacts    # Before committing screenshots
+npm run capture:issue-screenshots -- {N}  # PR screenshots (captures + compresses)
+npm run compress:artifacts    # Manual screenshot compression only
 ```
 
 ## E2E fixtures

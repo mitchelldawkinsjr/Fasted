@@ -155,7 +155,8 @@ Requires `CURSOR_API_KEY`, `GH_TOKEN`, and repo checkout.
 | `npm run test:e2e`                 | Desktop + mobile Playwright (blocking CI)  |
 | `npm run test:audit`               | Full viewport overflow audit (advisory CI) |
 | `npm run test:visual`              | Visual regression baselines                |
-| `npm run compress:artifacts`       | Compress screenshot PNGs/JPEGs             |
+| `npm run capture:issue-screenshots -- {N}` | Capture + compress PR screenshots under `artifacts/issue-{N}/` |
+| `npm run compress:artifacts`       | Compress screenshot PNGs/JPEGs (manual captures) |
 | `npm run compress:artifacts:check` | CI drift check for artifacts               |
 
 
@@ -374,7 +375,8 @@ npm run test:e2e              # Blocking CI suite
 npm run test:audit            # Full viewport overflow matrix (advisory)
 npm run test:visual           # Visual regression
 npm run test:visual:update    # Update baselines + compress
-npm run compress:artifacts    # Before committing screenshots
+npm run capture:issue-screenshots -- {N}  # PR screenshots (captures + compresses)
+npm run compress:artifacts    # Manual screenshot compression only
 ```
 
 ## E2E fixtures

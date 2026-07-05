@@ -1,3 +1,7 @@
+/**
+ * Legacy one-off capture for issue #81 (journal PDF export).
+ * Prefer npm run capture:issue-screenshots with a registered scenario when possible.
+ */
 import { chromium } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';

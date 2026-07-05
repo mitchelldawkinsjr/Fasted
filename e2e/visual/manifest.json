@@ -26,9 +26,10 @@
     "mobileOverlay": "npx playwright test e2e/overlay-scroll.spec.ts --project=mobile",
     "visual": "npm run test:visual",
     "updateSnapshots": "npm run test:visual:update",
-    "compressArtifacts": "npm run compress:artifacts"
+    "compressArtifacts": "npm run compress:artifacts",
+    "captureIssueScreenshots": "npm run capture:issue-screenshots -- {issue}"
   },
-  "imagePolicy": "Run npm run compress:artifacts before committing PNG/JPEG under artifacts/, docs/, or e2e/visual/. Visual baselines use viewport (not full-page) PNGs.",
+  "imagePolicy": "Prefer npm run capture:issue-screenshots -- {issue} for artifacts/issue-{N}/ (captures + compresses). Otherwise run npm run compress:artifacts before committing PNG/JPEG under artifacts/, docs/, or e2e/visual/. Visual baselines use viewport (not full-page) PNGs.",
   "overlayChecks": [
     "Bottom nav hidden while aria-modal dialog is open",
     "Journal Save Entry visible in viewport without scroll (iphone-se)",

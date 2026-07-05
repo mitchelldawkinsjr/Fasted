@@ -17,6 +17,7 @@
     "test:visual:update": "playwright test e2e/visual --project=visual-mobile --project=visual-tablet --project=visual-desktop --update-snapshots && npm run compress:artifacts",
     "compress:artifacts": "node scripts/compress-artifacts.mjs",
     "compress:artifacts:check": "node scripts/compress-artifacts.mjs --check",
+    "capture:issue-screenshots": "node scripts/capture-issue-screenshots.mjs",
     "agent:compose": "node scripts/lib/compose-context.mjs",
     "agent:issue": "node scripts/agent-cli.mjs issue",
     "agent:review": "node scripts/agent-cli.mjs review",

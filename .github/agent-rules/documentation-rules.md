@@ -12,8 +12,8 @@
 
 ## Issue screenshots (mandatory for UI changes)
 
-1. Capture PNGs under `artifacts/issue-{N}/`
-2. Run `npm run compress:artifacts` before commit
+1. Capture PNGs under `artifacts/issue-{N}/` with `npm run capture:issue-screenshots -- {N}` (compresses automatically)
+2. Or capture manually, then run `npm run compress:artifacts` before commit
 3. Commit PNGs to branch for stable GitHub raw URLs
 4. Link in issue completion comment:
 
