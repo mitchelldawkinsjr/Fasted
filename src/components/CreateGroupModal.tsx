@@ -4,7 +4,7 @@ import type { CommitmentDefinition, GroupPrivacy, Journey } from '../types';
 import { createCommitmentPreset } from '../data/commitmentPresets';
 import { formatGroupError } from '../lib/authErrors';
 import { createGroup } from '../lib/groups';
-import { CommitmentEditor, getCommitmentDurationErrors } from './CommitmentEditor';
+import { CommitmentEditor } from './CommitmentEditor';
 import { JourneyBuilder } from './JourneyBuilder';
 import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
@@ -36,18 +36,12 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
     trackEvent('group_created', { privacy, journey_type: type });
   };
 
-  const validateCommitments = (): boolean => {
-    const durationErrors = getCommitmentDurationErrors(commitments);
-    if (durationErrors.length > 0) {
-      setError(durationErrors[0] ?? 'Fix commitment duration values before creating the group.');
-      return false;
-    }
-    return true;
-  };
+  const hasInvalidDurationCommitments = commitments.some(
+    (c) => c.shape === 'duration' && c.target == null,
+  );
 
   const handleCreateBuiltIn = async () => {
-    if (!name.trim()) return;
-    if (!validateCommitments()) return;
+    if (!name.trim() || hasInvalidDurationCommitments) return;
     setBusy(true);
     setError(null);
     try {
@@ -72,7 +66,9 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
   };
 
   const handleCustomJourney = async (journey: Journey) => {
-    if (!validateCommitments()) return;
+    if (hasInvalidDurationCommitments) {
+      throw new Error('Fix commitment duration values before creating the group.');
+    }
     setBusy(true);
     setError(null);
     try {
@@ -186,7 +182,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
               <LoadingButton
                 type="button"
                 loading={busy}
-                disabled={!name.trim() || getCommitmentDurationErrors(commitments).length > 0}
+                disabled={!name.trim() || hasInvalidDurationCommitments}
                 className="w-full"
                 onClick={() => void handleCreateBuiltIn()}
               >
@@ -195,7 +191,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
             ) : (
               <LoadingButton
                 type="button"
-                disabled={!name.trim()}
+                disabled={!name.trim() || hasInvalidDurationCommitments}
                 className="w-full"
                 onClick={() => setBuilderOpen(true)}
               >

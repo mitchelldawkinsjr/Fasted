@@ -21,38 +21,16 @@ const SHAPES: { value: CommitmentShape; label: string }[] = [
 
 const DEFAULT_DURATION_TARGET = 1;
 
-function formatDurationDraft(target: number | undefined): string {
-  return target != null ? String(target) : String(DEFAULT_DURATION_TARGET);
-}
-
 function parsePositiveInt(raw: string): { value: number | null; error: string | null } {
   const trimmed = raw.trim();
   if (!trimmed) {
     return { value: null, error: 'Enter a positive number of minutes.' };
-  }
-  if (!/^\d+$/.test(trimmed)) {
-    return { value: null, error: 'Use whole minutes only (positive integer).' };
   }
   const value = Number(trimmed);
   if (!Number.isInteger(value) || value < 1) {
     return { value: null, error: 'Duration must be at least 1 minute.' };
   }
   return { value, error: null };
-}
-
-export function getCommitmentDurationErrors(commitments: CommitmentDefinition[]): string[] {
-  return commitments.flatMap((commitment, index) => {
-    if (commitment.shape !== 'duration') return [];
-    const label = commitment.label || `Commitment ${index + 1}`;
-    if (commitment.target == null) {
-      return [`"${label}" — Enter a positive number of minutes.`];
-    }
-    const parsed = parsePositiveInt(String(commitment.target));
-    if (parsed.error) {
-      return [`"${label}" — ${parsed.error}`];
-    }
-    return [];
-  });
 }
 
 type DurationTargetFieldProps = {
@@ -62,11 +40,13 @@ type DurationTargetFieldProps = {
 };
 
 function DurationTargetField({ commitmentId, target, onChange }: DurationTargetFieldProps) {
-  const [draft, setDraft] = useState(() => formatDurationDraft(target));
+  const [draft, setDraft] = useState(() =>
+    target != null ? String(target) : String(DEFAULT_DURATION_TARGET),
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setDraft(formatDurationDraft(target));
+    setDraft(target != null ? String(target) : String(DEFAULT_DURATION_TARGET));
     setError(null);
   }, [commitmentId]);
 
@@ -125,14 +105,7 @@ export function CommitmentEditor({ commitments, onChange }: Props) {
   };
 
   const handleShapeChange = (index: number, shape: CommitmentShape) => {
-    if (shape === 'duration') {
-      updateCommitment(index, {
-        shape,
-        target: commitments[index]?.target ?? DEFAULT_DURATION_TARGET,
-      });
-      return;
-    }
-    updateCommitment(index, { shape, target: undefined });
+    updateCommitment(index, { shape });
   };
 
   return (
