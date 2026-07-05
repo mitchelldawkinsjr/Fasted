@@ -20,6 +20,7 @@ export function sanitizeAnalyticsPath(path: string): string {
 
 export function initAnalytics(): void {
   if (!isEnabled()) return;
+  if (window.gtag) return;
 
   window.dataLayer = window.dataLayer || [];
   window.gtag = function gtag(...args: unknown[]) {

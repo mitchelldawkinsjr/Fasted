@@ -1,10 +1,32 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+
+function injectGoogleAnalytics(): Plugin {
+  return {
+    name: 'inject-google-analytics',
+    transformIndexHtml(html) {
+      const gaId = process.env.VITE_GA_MEASUREMENT_ID;
+      if (!gaId) return html;
+
+      const snippet = `<!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '${gaId}', { send_page_view: false });
+    </script>`;
+
+      return html.replace('</head>', `${snippet}\n  </head>`);
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
     react(),
+    injectGoogleAnalytics(),
     VitePWA({
       registerType: 'prompt',
       includeManifestIcons: false,
