@@ -16,8 +16,8 @@
     @apply min-h-screen;
   }
 
-  /* Bottom nav conflicts with sheet modals — hide while any modal is open. */
-  body:has([aria-modal='true']) nav[aria-label='Main navigation'] {
+  /* Bottom nav conflicts with sheet modals — hide while a modal is open (not the product tour). */
+  body:has([aria-modal='true']:not([data-tour-dialog])) nav[aria-label='Main navigation'] {
     visibility: hidden;
     pointer-events: none;
   }

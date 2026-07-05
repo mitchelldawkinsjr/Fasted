@@ -99,6 +99,14 @@ async function waitForTourTarget(page: Page) {
   });
 }
 
+async function assertNavVisible(page: Page) {
+  const visibility = await page.evaluate(() => {
+    const nav = document.querySelector('nav[aria-label="Main navigation"]');
+    return nav ? getComputedStyle(nav).visibility : null;
+  });
+  expect(visibility).toBe('visible');
+}
+
 async function screenshot(page: Page, name: string) {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
   const filePath = path.join(SCREENSHOT_DIR, `${name}.png`);
@@ -133,6 +141,9 @@ test.describe('Tour flow', () => {
 
     for (let i = 0; i < STEP_NAMES.length; i++) {
       await waitForTourTarget(page);
+      if (STEP_NAMES[i].includes('journal') || STEP_NAMES[i].includes('progress') || STEP_NAMES[i].includes('groups')) {
+        await assertNavVisible(page);
+      }
       await screenshot(page, STEP_NAMES[i]);
 
       if (i < STEP_NAMES.length - 1) {

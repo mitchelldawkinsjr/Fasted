@@ -98,8 +98,6 @@ type TourContextValue = {
   stepIndex: number;
   currentStep: TourStep | null;
   totalSteps: number;
-  /** CSS selector for the active spotlight target, if any. */
-  highlightTarget: string | undefined;
   startTour: () => void;
   nextStep: () => void;
   skipTour: () => void;
@@ -168,7 +166,6 @@ export function TourProvider({ children }: Props) {
   }, [navigate]);
 
   const currentStep = active ? (TOUR_STEPS[stepIndex] ?? null) : null;
-  const highlightTarget = currentStep?.target;
 
   return (
     <TourContext.Provider
@@ -177,7 +174,6 @@ export function TourProvider({ children }: Props) {
         stepIndex,
         currentStep,
         totalSteps: TOUR_STEPS.length,
-        highlightTarget,
         startTour,
         nextStep,
         skipTour,

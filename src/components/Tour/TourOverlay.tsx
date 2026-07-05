@@ -60,6 +60,16 @@ function scrollTargetToVisibleCenter(el: Element): void {
   window.scrollBy({ top: delta, behavior: 'instant' });
 }
 
+function scrollForTourTarget(el: Element, selector: string | undefined, scroll: TourStep['scroll']): void {
+  if (isNavTourTarget(selector)) {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    return;
+  }
+  if (scroll === 'center') {
+    scrollTargetToVisibleCenter(el);
+  }
+}
+
 function useTargetRect(
   selector: string | undefined,
   stepIndex: number,
@@ -117,8 +127,8 @@ function useTargetRect(
         await waitForPaint();
         const el = measure();
         if (el) {
-          if (scroll === 'center' && !scrolled) {
-            scrollTargetToVisibleCenter(el);
+          if (!scrolled) {
+            scrollForTourTarget(el, selector, scroll);
             scrolled = true;
             await waitForPaint();
           }
@@ -137,8 +147,8 @@ function useTargetRect(
       if (cancelled) return;
       const el = measure();
       if (el) {
-        if (scroll === 'center' && !scrolled) {
-          scrollTargetToVisibleCenter(el);
+        if (!scrolled) {
+          scrollForTourTarget(el, selector, scroll);
           await waitForPaint();
         }
         applyRect(el);
@@ -205,14 +215,23 @@ export function TourOverlay() {
         }
       : null;
 
+  const stepNumber = stepIndex + 1;
+  const showTooltip = isCentered || showTarget;
+  const targetReadyForStep = isCentered || showTarget;
+  const navTarget = isNavTourTarget(currentStep.target);
+  const backdropSpotlight = spotlight && !navTarget ? spotlight : null;
+  const navTooltipBottom = navTarget
+    ? `calc(${TOUR_BOTTOM_NAV_INSET} + 3.5rem)`
+    : undefined;
+
   let tooltipTop = 0;
   let tooltipBottom: number | undefined;
-  const TOOLTIP_MARGIN = 16;
 
-  if (spotlight) {
+  if (spotlight && !navTarget) {
     const spBottom = spotlight.y + spotlight.height;
     const spaceBelow = vh - spBottom;
     const spaceAbove = spotlight.y;
+    const TOOLTIP_MARGIN = 16;
 
     if (currentStep.placement === 'top' || spaceAbove > spaceBelow) {
       tooltipBottom = vh - spotlight.y + TOOLTIP_MARGIN;
@@ -220,12 +239,6 @@ export function TourOverlay() {
       tooltipTop = spBottom + TOOLTIP_MARGIN;
     }
   }
-
-  const stepNumber = stepIndex + 1;
-  const showTooltip = isCentered || showTarget;
-  const targetReadyForStep = isCentered || showTarget;
-  const navTarget = isNavTourTarget(currentStep.target);
-  const backdropSpotlight = spotlight && !navTarget ? spotlight : null;
 
   return (
     <>
@@ -281,6 +294,7 @@ export function TourOverlay() {
             style={{ bottom: TOUR_BOTTOM_NAV_INSET }}
             role="dialog"
             aria-modal="true"
+            data-tour-dialog
             aria-label={currentStep.title}
             aria-busy={Boolean(currentStep.target && !targetReady)}
             data-target-ready={targetReadyForStep ? 'true' : 'false'}
@@ -301,20 +315,25 @@ export function TourOverlay() {
             className="pointer-events-auto fixed left-4 right-4 z-[9995] mx-auto max-w-sm rounded-2xl bg-surface p-5 grace-shadow animate-fade-in-up"
             role="dialog"
             aria-modal="true"
+            data-tour-dialog
             aria-label={currentStep.title}
             aria-busy={Boolean(currentStep.target && !targetReady)}
             data-target-ready={targetReadyForStep ? 'true' : 'false'}
             style={{
-              ...(tooltipBottom !== undefined ? { bottom: tooltipBottom } : { top: tooltipTop }),
+              ...(navTooltipBottom
+                ? { bottom: navTooltipBottom }
+                : tooltipBottom !== undefined
+                  ? { bottom: tooltipBottom }
+                  : { top: tooltipTop }),
             }}
           >
-            {spotlight && tooltipBottom === undefined && (
+            {spotlight && !navTooltipBottom && tooltipBottom === undefined && (
               <div
                 className="absolute -top-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
                 aria-hidden
               />
             )}
-            {spotlight && tooltipBottom !== undefined && (
+            {spotlight && (navTooltipBottom || tooltipBottom !== undefined) && (
               <div
                 className="absolute -bottom-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
                 aria-hidden
