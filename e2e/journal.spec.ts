@@ -145,30 +145,6 @@ test('preserves journal editor scroll position after closing focus lightbox', as
   expect(scrollAfterUserScroll).toBe(200);
 });
 
-test('focus mode toggle off uses inline textareas', async ({ page }) => {
-  await page.getByRole('button', { name: '+ New' }).click();
-  await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByRole('switch', { name: 'Focus mode' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-
-  await page.getByLabel('Victory today').fill('Inline victory note');
-  await page.getByRole('button', { name: 'Save Entry' }).click();
-
-  await expect(page.getByRole('listitem').filter({ hasText: 'Inline victory note' })).toBeVisible();
-
-  const stored = await page.evaluate((key) => {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  }, STORAGE_KEY);
-
-  expect(stored.settings.journalFocusMode).toBe(false);
-  expect(
-    stored.journalEntries.some(
-      (entry: { victory?: string }) => entry.victory === 'Inline victory note',
-    ),
-  ).toBe(true);
-});
-
 test('saves a simple prayer entry in one text box', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Prayer');

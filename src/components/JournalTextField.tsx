@@ -4,36 +4,18 @@ type Props = {
   placeholder: string;
   ariaLabel: string;
   inputClass: string;
-  focusModeEnabled: boolean;
   isActive: boolean;
   onOpen: () => void;
-  rows?: number;
 };
 
 export function JournalTextField({
   value,
-  onChange,
   placeholder,
   ariaLabel,
   inputClass,
-  focusModeEnabled,
   isActive,
   onOpen,
-  rows = 2,
 }: Props) {
-  if (!focusModeEnabled) {
-    return (
-      <textarea
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        rows={rows}
-        placeholder={placeholder}
-        className={inputClass}
-        aria-label={ariaLabel}
-      />
-    );
-  }
-
   return (
     <button
       type="button"

@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { trackEvent } from '../lib/analytics';
 import { JournalFocusLightbox } from './JournalFocusLightbox';
 import { JournalTextField } from './JournalTextField';
-import { useProgress } from '../hooks/useProgress';
 import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
 import { MealImageUpload } from './MealImageUpload';
@@ -32,7 +31,6 @@ import {
   getMealImages,
   getStorageScope,
   saveJournalEntryWithMealImages,
-  saveSettings,
 } from '../lib/storage';
 import { toast } from '../lib/toast';
 import type {
@@ -54,8 +52,6 @@ type Props = {
 };
 
 export function JournalEditor({ entry, defaultDate, initialType, onSave, onCancel }: Props) {
-  const progress = useProgress();
-  const journalFocusMode = progress.settings.journalFocusMode !== false;
   const { planStart, planEnd } = useActiveJourney();
   const initialDate = clampDateToPlan(entry?.date ?? defaultDate ?? getDefaultJournalDate());
   const [date, setDate] = useState(initialDate);
@@ -132,7 +128,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   useEffect(() => {
     setFocusFieldKey(null);
     savedScrollTopRef.current = null;
-  }, [entryType, journalFocusMode]);
+  }, [entryType]);
 
   useLayoutEffect(() => {
     if (focusFieldKey !== null) return;
@@ -374,12 +370,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     setFocusFieldKey(key);
   };
 
-  const handleFocusModeToggle = (enabled: boolean) => {
-    if (!enabled) setFocusFieldKey(null);
-    saveSettings({ journalFocusMode: enabled });
-    trackEvent('journal_focus_mode_toggled', { enabled });
-  };
-
   return (
     <form
       onSubmit={handleSubmit}
@@ -435,7 +425,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                 }
                 ariaLabel={field.label}
                 inputClass={inputClass}
-                focusModeEnabled={journalFocusMode}
                 isActive={focusFieldKey === field.key}
                 onOpen={() => openFocusField(field.key)}
               />
@@ -455,7 +444,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                 placeholder={`${field.label}…`}
                 ariaLabel={field.label}
                 inputClass={inputClass}
-                focusModeEnabled={journalFocusMode}
                 isActive={focusFieldKey === field.key}
                 onOpen={() => openFocusField(field.key)}
               />
@@ -478,16 +466,14 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             placeholder={`${simpleContentLabel}…`}
             ariaLabel={simpleContentLabel}
             inputClass={inputClass}
-            focusModeEnabled={journalFocusMode}
             isActive={focusFieldKey === 'content'}
             onOpen={() => openFocusField('content')}
-            rows={entryType === 'fitness' ? 4 : 6}
           />
         </label>
       )}
       </div>
 
-      {journalFocusMode && focusFieldKey && (
+      {focusFieldKey && (
         <JournalFocusLightbox
           fields={focusFields}
           activeKey={focusFieldKey}
@@ -498,30 +484,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         />
       )}
 
-      <div className="flex shrink-0 flex-col border-t border-outline-variant/30 bg-linen pt-2">
-        <label className="mb-2 inline-flex cursor-pointer items-center justify-center gap-2 self-center">
-          <span className="text-[11px] font-medium uppercase tracking-wide text-on-surface-variant">
-            Focus mode
-          </span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={journalFocusMode}
-            aria-label="Focus mode"
-            onClick={() => handleFocusModeToggle(!journalFocusMode)}
-            className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${
-              journalFocusMode ? 'bg-secondary' : 'bg-outline-variant/40'
-            }`}
-          >
-            <span
-              className={`absolute left-0.5 top-0.5 size-3 rounded-full bg-surface-container-lowest shadow-sm transition-transform ${
-                journalFocusMode ? 'translate-x-3.5' : 'translate-x-0'
-              }`}
-            />
-          </button>
-        </label>
-
-        <div className="flex gap-3">
+      <div className="flex shrink-0 gap-3 border-t border-outline-variant/30 bg-linen pt-2">
         {onCancel && (
           <LoadingButton type="button" onClick={onCancel} variant="secondary" className="flex-1">
             Cancel
@@ -535,7 +498,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         >
           Save Entry
         </LoadingButton>
-        </div>
       </div>
     </form>
   );
