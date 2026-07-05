@@ -86,6 +86,79 @@ function arrayToLines(value: string[] | undefined): string {
   return (value ?? []).join('\n');
 }
 
+function parsePhaseDurationDays(raw: string): { value: number | null; error: string | null } {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return { value: null, error: 'Enter a positive number of days.' };
+  }
+  const value = Number(trimmed);
+  if (!Number.isInteger(value) || value < 1) {
+    return { value: null, error: 'Duration must be at least 1 day.' };
+  }
+  return { value, error: null };
+}
+
+type PhaseDurationDaysFieldProps = {
+  phaseId: string;
+  durationDays: number;
+  onChange: (durationDays: number) => void;
+  onInvalid: () => void;
+  inputClass: string;
+};
+
+function PhaseDurationDaysField({
+  phaseId,
+  durationDays,
+  onChange,
+  onInvalid,
+  inputClass,
+}: PhaseDurationDaysFieldProps) {
+  const [draft, setDraft] = useState(() => String(durationDays));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDraft(String(durationDays));
+    setError(null);
+  }, [phaseId]);
+
+  const commitDraft = (raw: string) => {
+    const parsed = parsePhaseDurationDays(raw);
+    if (parsed.error) {
+      setError(parsed.error);
+      onInvalid();
+      return;
+    }
+    setError(null);
+    setDraft(String(parsed.value));
+    onChange(parsed.value ?? 1);
+  };
+
+  return (
+    <div className="flex flex-col gap-1">
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        aria-label="Duration (days)"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${phaseId}-duration-error` : undefined}
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value.replace(/\D/g, ''));
+          if (error) setError(null);
+        }}
+        onBlur={() => commitDraft(draft)}
+        className={`${inputClass} min-h-11`}
+      />
+      {error && (
+        <span id={`${phaseId}-duration-error`} className="text-label-caps text-error">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function defaultPhaseDraft(index = 0): PhaseDraft {
   return {
     id: createDraftId(),
@@ -361,7 +434,14 @@ export function JourneyBuilder({
 
   const draftJourney = useMemo((): Journey | null => {
     if (!name.trim() || phases.length === 0) return null;
-    if (phases.some((phase) => !phase.title.trim() || linesToArray(phase.prayerFocus).length === 0)) {
+    if (
+      phases.some(
+        (phase) =>
+          !phase.title.trim() ||
+          linesToArray(phase.prayerFocus).length === 0 ||
+          phase.durationDays < 1,
+      )
+    ) {
       return null;
     }
     return {
@@ -595,20 +675,18 @@ export function JourneyBuilder({
                   </label>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <label className="block">
+                    <div className="block">
                       <span className="mb-1 block text-body-md text-on-surface">Duration (days)</span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={activePhase.durationDays}
-                        onChange={(e) =>
-                          updatePhase(activePhaseIndex, {
-                            durationDays: Math.max(1, Number(e.target.value) || 1),
-                          })
+                      <PhaseDurationDaysField
+                        phaseId={activePhase.id}
+                        durationDays={activePhase.durationDays}
+                        onChange={(durationDays) =>
+                          updatePhase(activePhaseIndex, { durationDays })
                         }
-                        className={inputClass}
+                        onInvalid={() => updatePhase(activePhaseIndex, { durationDays: 0 })}
+                        inputClass={inputClass}
                       />
-                    </label>
+                    </div>
                     <label className="block">
                       <span className="mb-1 block text-body-md text-on-surface">Theme color</span>
                       <input

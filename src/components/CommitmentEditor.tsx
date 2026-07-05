@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import type { CommitmentDefinition, CommitmentShape } from '../types';
 import {
   COMMITMENT_PRESET_LABELS,
@@ -19,75 +18,6 @@ const SHAPES: { value: CommitmentShape; label: string }[] = [
   { value: 'text_note', label: 'Short note' },
 ];
 
-const DEFAULT_DURATION_TARGET = 1;
-
-function parsePositiveInt(raw: string): { value: number | null; error: string | null } {
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    return { value: null, error: 'Enter a positive number of minutes.' };
-  }
-  const value = Number(trimmed);
-  if (!Number.isInteger(value) || value < 1) {
-    return { value: null, error: 'Duration must be at least 1 minute.' };
-  }
-  return { value, error: null };
-}
-
-type DurationTargetFieldProps = {
-  commitmentId: string;
-  target: number | undefined;
-  onChange: (target: number | undefined) => void;
-};
-
-function DurationTargetField({ commitmentId, target, onChange }: DurationTargetFieldProps) {
-  const [draft, setDraft] = useState(() =>
-    target != null ? String(target) : String(DEFAULT_DURATION_TARGET),
-  );
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setDraft(target != null ? String(target) : String(DEFAULT_DURATION_TARGET));
-    setError(null);
-  }, [commitmentId]);
-
-  const commitDraft = (raw: string) => {
-    const parsed = parsePositiveInt(raw);
-    if (parsed.error) {
-      setError(parsed.error);
-      onChange(undefined);
-      return;
-    }
-    setError(null);
-    setDraft(String(parsed.value));
-    onChange(parsed.value ?? undefined);
-  };
-
-  return (
-    <div className="flex min-w-[7rem] flex-1 flex-col gap-1 sm:max-w-[8.5rem] sm:flex-none">
-      <input
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        aria-label="Duration in minutes"
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${commitmentId}-duration-error` : undefined}
-        value={draft}
-        onChange={(e) => {
-          setDraft(e.target.value.replace(/\D/g, ''));
-          if (error) setError(null);
-        }}
-        onBlur={() => commitDraft(draft)}
-        className="min-h-11 w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
-      />
-      {error && (
-        <span id={`${commitmentId}-duration-error`} className="text-label-caps text-error">
-          {error}
-        </span>
-      )}
-    </div>
-  );
-}
-
 export function CommitmentEditor({ commitments, onChange }: Props) {
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-low px-3 py-2 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
@@ -102,10 +32,6 @@ export function CommitmentEditor({ commitments, onChange }: Props) {
 
   const removeCommitment = (index: number) => {
     onChange(commitments.filter((_, i) => i !== index));
-  };
-
-  const handleShapeChange = (index: number, shape: CommitmentShape) => {
-    updateCommitment(index, { shape });
   };
 
   return (
@@ -155,11 +81,13 @@ export function CommitmentEditor({ commitments, onChange }: Props) {
                 <Icon name="delete" size={18} />
               </button>
             </div>
-            <div className="flex flex-wrap items-start gap-2">
+            <div className="flex flex-wrap gap-2">
               <select
                 value={commitment.shape}
-                onChange={(e) => handleShapeChange(index, e.target.value as CommitmentShape)}
-                className="min-h-11 rounded-lg border border-outline-variant bg-surface-container-lowest px-2 py-2 text-label-caps"
+                onChange={(e) =>
+                  updateCommitment(index, { shape: e.target.value as CommitmentShape })
+                }
+                className="rounded-lg border border-outline-variant bg-surface-container-lowest px-2 py-1 text-label-caps"
               >
                 {SHAPES.map((shape) => (
                   <option key={shape.value} value={shape.value}>
@@ -168,10 +96,17 @@ export function CommitmentEditor({ commitments, onChange }: Props) {
                 ))}
               </select>
               {commitment.shape === 'duration' && (
-                <DurationTargetField
-                  commitmentId={commitment.id}
-                  target={commitment.target}
-                  onChange={(nextTarget) => updateCommitment(index, { target: nextTarget })}
+                <input
+                  type="number"
+                  min={1}
+                  value={commitment.target ?? ''}
+                  onChange={(e) =>
+                    updateCommitment(index, {
+                      target: e.target.value ? Number(e.target.value) : undefined,
+                    })
+                  }
+                  placeholder="Target"
+                  className="w-24 rounded-lg border border-outline-variant bg-surface-container-lowest px-2 py-1 text-body-md"
                 />
               )}
             </div>

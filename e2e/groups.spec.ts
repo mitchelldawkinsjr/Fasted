@@ -92,12 +92,12 @@ test.describe('Groups', () => {
     await expect(page.getByText("Could not find the table 'public.group_commitments'")).toHaveCount(0);
   });
 
-  test('allows editing commitment duration minutes in create group modal', async ({ page }) => {
-    let savedCommitments: Array<{ label: string; shape: string; target?: number }> = [];
+  test('allows editing custom journey phase duration when creating a group', async ({ page }) => {
+    let savedJourney: { phases?: Array<{ startDate: string; endDate: string }> } = {};
     await mockGroupsApi(page, {
       myMemberships: [],
-      onCommitmentsCreated: (commitments) => {
-        savedCommitments = commitments as Array<{ label: string; shape: string; target?: number }>;
+      onJourneyCreated: (journey) => {
+        savedJourney = journey as typeof savedJourney;
       },
     });
 
@@ -105,34 +105,32 @@ test.describe('Groups', () => {
     await page.goto('/groups');
     await page.getByRole('button', { name: 'Create Group' }).click();
     const dialog = page.getByRole('dialog', { name: 'Create Group' });
-    await dialog.getByPlaceholder('Summer Fast Cohort').fill('Duration Test Group');
+    await dialog.getByPlaceholder('Summer Fast Cohort').fill('Custom Duration Group');
+    await dialog.getByRole('radio', { name: 'Custom journey' }).check();
+    await dialog.getByRole('button', { name: 'Configure Custom Journey' }).click();
 
-    const moveDuration = dialog.getByRole('textbox', { name: 'Duration in minutes' }).first();
-    await moveDuration.click();
-    await moveDuration.fill('');
-    await moveDuration.fill('45');
-    await moveDuration.blur();
-    await expect(moveDuration).toHaveValue('45');
+    const builder = page.getByRole('dialog', { name: 'Group Journey' });
+    await builder.getByLabel('Journey name').fill('Summer Cohort Journey');
+    await builder.getByRole('textbox', { name: 'Start date', exact: true }).fill('2026-08-01');
+    await builder.getByRole('button', { name: 'Next' }).click();
 
-    await dialog.getByRole('button', { name: 'Add commitment' }).click();
-    const customRow = dialog.locator('li').last();
-    await customRow.locator('select').selectOption('duration');
-    const customDuration = customRow.getByRole('textbox', { name: 'Duration in minutes' });
-    await expect(customDuration).toHaveValue('1');
-    await customDuration.fill('20');
-    await customDuration.blur();
-    await expect(customDuration).toHaveValue('20');
+    const duration = builder.getByRole('textbox', { name: 'Duration (days)' });
+    await duration.click();
+    await duration.fill('');
+    await duration.fill('14');
+    await duration.blur();
+    await expect(duration).toHaveValue('14');
 
-    await dialog.getByRole('button', { name: 'Create Group' }).click();
+    await builder.getByRole('button', { name: 'Review' }).click();
+    await builder.getByRole('button', { name: 'Create Group' }).click();
+
     await expect(page).toHaveURL(new RegExp(`/groups/${GROUP_ID}$`));
-
-    const moveCommitment = savedCommitments.find((item) => item.label === 'Move body daily');
-    expect(moveCommitment?.target).toBe(45);
-    const customCommitment = savedCommitments.find((item) => item.label === '');
-    expect(customCommitment?.target).toBe(20);
+    const phase = savedJourney.phases?.[0];
+    expect(phase?.startDate).toBe('2026-08-01');
+    expect(phase?.endDate).toBe('2026-08-14');
   });
 
-  test('shows validation feedback for invalid commitment duration', async ({ page }) => {
+  test('shows validation feedback for invalid custom journey phase duration', async ({ page }) => {
     await mockGroupsApi(page, { myMemberships: [] });
 
     await page.setViewportSize({ width: 390, height: 844 });
@@ -140,12 +138,19 @@ test.describe('Groups', () => {
     await page.getByRole('button', { name: 'Create Group' }).click();
     const dialog = page.getByRole('dialog', { name: 'Create Group' });
     await dialog.getByPlaceholder('Summer Fast Cohort').fill('Invalid Duration Group');
+    await dialog.getByRole('radio', { name: 'Custom journey' }).check();
+    await dialog.getByRole('button', { name: 'Configure Custom Journey' }).click();
 
-    const moveDuration = dialog.getByRole('textbox', { name: 'Duration in minutes' }).first();
-    await moveDuration.fill('');
-    await moveDuration.blur();
+    const builder = page.getByRole('dialog', { name: 'Group Journey' });
+    await builder.getByLabel('Journey name').fill('Invalid Journey');
+    await builder.getByRole('textbox', { name: 'Start date', exact: true }).fill('2026-08-01');
+    await builder.getByRole('button', { name: 'Next' }).click();
 
-    await expect(dialog.getByText('Enter a positive number of minutes.')).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Create Group' })).toBeDisabled();
+    const duration = builder.getByRole('textbox', { name: 'Duration (days)' });
+    await duration.fill('');
+    await duration.blur();
+
+    await expect(builder.getByText('Enter a positive number of days.')).toBeVisible();
+    await expect(builder.getByRole('button', { name: 'Review' })).toBeDisabled();
   });
 });

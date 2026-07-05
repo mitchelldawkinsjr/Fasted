@@ -36,12 +36,8 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
     trackEvent('group_created', { privacy, journey_type: type });
   };
 
-  const hasInvalidDurationCommitments = commitments.some(
-    (c) => c.shape === 'duration' && c.target == null,
-  );
-
   const handleCreateBuiltIn = async () => {
-    if (!name.trim() || hasInvalidDurationCommitments) return;
+    if (!name.trim()) return;
     setBusy(true);
     setError(null);
     try {
@@ -66,9 +62,6 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
   };
 
   const handleCustomJourney = async (journey: Journey) => {
-    if (hasInvalidDurationCommitments) {
-      throw new Error('Fix commitment duration values before creating the group.');
-    }
     setBusy(true);
     setError(null);
     try {
@@ -182,7 +175,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
               <LoadingButton
                 type="button"
                 loading={busy}
-                disabled={!name.trim() || hasInvalidDurationCommitments}
+                disabled={!name.trim()}
                 className="w-full"
                 onClick={() => void handleCreateBuiltIn()}
               >
@@ -191,7 +184,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
             ) : (
               <LoadingButton
                 type="button"
-                disabled={!name.trim() || hasInvalidDurationCommitments}
+                disabled={!name.trim()}
                 className="w-full"
                 onClick={() => setBuilderOpen(true)}
               >
