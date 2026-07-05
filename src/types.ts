@@ -189,6 +189,8 @@ export type AppSettings = {
   reminderTime: string;
   theme: 'light' | 'dark' | 'system';
   scriptureNote: string;
+  /** When false, journal fields use inline textareas instead of the focus lightbox. */
+  journalFocusMode?: boolean;
 };
 
 export type BadgeId = string;
