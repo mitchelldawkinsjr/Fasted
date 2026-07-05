@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { trackEvent } from '../lib/analytics';
 import { JournalFocusLightbox } from './JournalFocusLightbox';
 import { JournalTextField } from './JournalTextField';
@@ -119,6 +119,8 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   );
   const [saving, setSaving] = useState(false);
   const [focusFieldKey, setFocusFieldKey] = useState<string | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const savedScrollTopRef = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
@@ -129,7 +131,32 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
   useEffect(() => {
     setFocusFieldKey(null);
+    savedScrollTopRef.current = null;
   }, [entryType, journalFocusMode]);
+
+  useLayoutEffect(() => {
+    const saved = savedScrollTopRef.current;
+    const scrollArea = scrollAreaRef.current;
+    if (saved === null || !scrollArea) return;
+
+    const restore = () => {
+      if (scrollArea.scrollTop !== saved) {
+        scrollArea.scrollTop = saved;
+      }
+    };
+
+    restore();
+    scrollArea.addEventListener('scroll', restore, { passive: true });
+    const frame = window.requestAnimationFrame(restore);
+    const timeout = window.setTimeout(restore, 0);
+
+    return () => {
+      scrollArea.removeEventListener('scroll', restore);
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+      restore();
+    };
+  }, [focusFieldKey]);
 
   const clearSimpleFields = () => {
     setContent('');
@@ -353,8 +380,23 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             },
           ];
 
+  const prepareOpenFocusField = () => {
+    savedScrollTopRef.current = scrollAreaRef.current?.scrollTop ?? 0;
+  };
+
+  const openFocusField = (key: string) => {
+    if (savedScrollTopRef.current === null) {
+      savedScrollTopRef.current = scrollAreaRef.current?.scrollTop ?? 0;
+    }
+    setFocusFieldKey(key);
+  };
+
+  const closeFocusField = () => {
+    setFocusFieldKey(null);
+  };
+
   const handleFocusModeToggle = (enabled: boolean) => {
-    if (!enabled) setFocusFieldKey(null);
+    if (!enabled) closeFocusField();
     saveSettings({ journalFocusMode: enabled });
     trackEvent('journal_focus_mode_toggled', { enabled });
   };
@@ -365,7 +407,10 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       className="flex min-h-0 min-w-0 flex-1 flex-col gap-stack-md"
       noValidate
     >
-      <div className="min-h-0 min-w-0 flex-1 space-y-stack-md overflow-y-auto overscroll-contain pb-2">
+      <div
+        ref={scrollAreaRef}
+        className="min-h-0 min-w-0 flex-1 space-y-stack-md overflow-y-auto overscroll-contain"
+      >
       <section className="stitch-card space-y-stack-md overflow-hidden p-stack-md">
         <label className="block min-w-0">
           <span className="mb-1 block text-body-md font-medium text-on-surface">Date</span>
@@ -413,7 +458,8 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                 inputClass={inputClass}
                 focusModeEnabled={journalFocusMode}
                 isActive={focusFieldKey === field.key}
-                onOpen={() => setFocusFieldKey(field.key)}
+                onPrepareOpen={prepareOpenFocusField}
+                onOpen={() => openFocusField(field.key)}
               />
             </label>
           ))}
@@ -433,7 +479,8 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                 inputClass={inputClass}
                 focusModeEnabled={journalFocusMode}
                 isActive={focusFieldKey === field.key}
-                onOpen={() => setFocusFieldKey(field.key)}
+                onPrepareOpen={prepareOpenFocusField}
+                onOpen={() => openFocusField(field.key)}
               />
             </label>
             <MealImageUpload
@@ -456,7 +503,8 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             inputClass={inputClass}
             focusModeEnabled={journalFocusMode}
             isActive={focusFieldKey === 'content'}
-            onOpen={() => setFocusFieldKey('content')}
+            onPrepareOpen={prepareOpenFocusField}
+            onOpen={() => openFocusField('content')}
             rows={entryType === 'fitness' ? 4 : 6}
           />
         </label>
@@ -468,14 +516,14 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           fields={focusFields}
           activeKey={focusFieldKey}
           onNavigate={setFocusFieldKey}
-          onClose={() => setFocusFieldKey(null)}
+          onClose={closeFocusField}
           date={date}
           entryType={entryType}
         />
       )}
 
-      <div className="flex shrink-0 justify-center pb-2">
-        <label className="inline-flex cursor-pointer items-center gap-2">
+      <div className="flex shrink-0 flex-col border-t border-outline-variant/30 bg-linen pt-2">
+        <label className="mb-2 inline-flex cursor-pointer items-center justify-center gap-2 self-center">
           <span className="text-[11px] font-medium uppercase tracking-wide text-on-surface-variant">
             Focus mode
           </span>
@@ -496,9 +544,8 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             />
           </button>
         </label>
-      </div>
 
-      <div className="flex shrink-0 gap-3 border-t border-outline-variant/30 bg-linen pt-3">
+        <div className="flex gap-3">
         {onCancel && (
           <LoadingButton type="button" onClick={onCancel} variant="secondary" className="flex-1">
             Cancel
@@ -512,6 +559,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         >
           Save Entry
         </LoadingButton>
+        </div>
       </div>
     </form>
   );

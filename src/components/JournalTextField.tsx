@@ -6,6 +6,7 @@ type Props = {
   inputClass: string;
   focusModeEnabled: boolean;
   isActive: boolean;
+  onPrepareOpen: () => void;
   onOpen: () => void;
   rows?: number;
 };
@@ -18,6 +19,7 @@ export function JournalTextField({
   inputClass,
   focusModeEnabled,
   isActive,
+  onPrepareOpen,
   onOpen,
   rows = 2,
 }: Props) {
@@ -37,14 +39,14 @@ export function JournalTextField({
   return (
     <button
       type="button"
+      onPointerDown={onPrepareOpen}
+      onMouseDown={(event) => event.preventDefault()}
       onClick={onOpen}
       aria-label={value.trim() ? `${ariaLabel}: ${value}` : ariaLabel}
       aria-current={isActive ? 'true' : undefined}
       aria-hidden={isActive || undefined}
       tabIndex={isActive ? -1 : 0}
-      className={`${inputClass} min-h-[4.5rem] cursor-text text-left ${
-        isActive ? 'border-l-4 border-l-secondary pl-3' : ''
-      }`}
+      className={`${inputClass} min-h-[4.5rem] cursor-text text-left`}
     >
       <span
         className={`block whitespace-pre-wrap text-wrap-anywhere ${
