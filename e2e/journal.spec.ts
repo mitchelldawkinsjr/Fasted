@@ -106,6 +106,45 @@ test('dismisses focus lightbox when clicking the backdrop', async ({ page }) => 
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
+test('preserves journal editor scroll position after closing focus lightbox', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+
+  await page.evaluate(() => {
+    const scrollArea = document.querySelector('form .overflow-y-auto');
+    if (scrollArea) scrollArea.scrollTop = 120;
+  });
+
+  const scrollBefore = await page.evaluate(
+    () => document.querySelector('form .overflow-y-auto')?.scrollTop ?? 0,
+  );
+
+  await page.evaluate(() => {
+    const button = document.querySelector('[aria-label="Verse of the Day"]');
+    button?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    button?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  const scrollAfter = await page.evaluate(
+    () => document.querySelector('form .overflow-y-auto')?.scrollTop ?? 0,
+  );
+  expect(scrollAfter).toBe(scrollBefore);
+
+  await page.evaluate(() => {
+    const scrollArea = document.querySelector('form .overflow-y-auto');
+    if (scrollArea) scrollArea.scrollTop = 200;
+  });
+  const scrollAfterUserScroll = await page.evaluate(
+    () => document.querySelector('form .overflow-y-auto')?.scrollTop ?? 0,
+  );
+  expect(scrollAfterUserScroll).toBe(200);
+});
+
 test('focus mode toggle off uses inline textareas', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
