@@ -1,9 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import { INSTALL_TOAST_KEY, STORAGE_KEY, TOUR_DISMISSED } from './fixtures/constants';
 import { expectDateInputContained } from './fixtures/overflow';
 import { AUDIT_VIEWPORTS } from './fixtures/viewports';
-
-const STORAGE_KEY = 'fasted-calendar-progress:guest';
-const INSTALL_TOAST_KEY = 'fasted-calendar-install-toast-dismissed';
 
 function formatDate(date: Date): string {
   return [
@@ -33,17 +31,21 @@ async function seedProgress(page: Page, progress: Record<string, unknown>) {
       localStorage.setItem(key, JSON.stringify(seededProgress));
       localStorage.setItem(installToastKey, '1');
     },
-    { key: STORAGE_KEY, installToastKey: INSTALL_TOAST_KEY, seededProgress: progress },
+    { key: STORAGE_KEY, installToastKey: INSTALL_TOAST_KEY, seededProgress: { ...TOUR_DISMISSED, ...progress } },
   );
 }
 
 test.describe('custom journey builder', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/settings');
-    await page.evaluate((key) => {
-      localStorage.removeItem(key);
-      localStorage.setItem('fasted-calendar-install-toast-dismissed', '1');
-    }, STORAGE_KEY);
+    await page.evaluate(
+      ({ key, installKey, tourFlags }) => {
+        localStorage.removeItem(key);
+        localStorage.setItem(installKey, '1');
+        localStorage.setItem(key, JSON.stringify(tourFlags));
+      },
+      { key: STORAGE_KEY, installKey: INSTALL_TOAST_KEY, tourFlags: TOUR_DISMISSED },
+    );
     await page.reload();
   });
 
