@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { trackEvent } from '../lib/analytics';
-import { JournalFocusLightbox, type FocusField } from './JournalFocusLightbox';
+import { JournalFocusLightbox } from './JournalFocusLightbox';
 import { JournalTextField } from './JournalTextField';
-import { FocusModeToggle } from './FocusModeToggle';
 import { useProgress } from '../hooks/useProgress';
 import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
@@ -281,9 +280,19 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     tomorrowIntention: [tomorrowIntention, setTomorrowIntention] as const,
   };
 
+  const dailyStripLabels: Record<string, string> = {
+    prayerFocus: 'Verse',
+    prayedAbout: 'Prayed',
+    godTeaching: 'Teaching',
+    hungerNotes: 'Feeling',
+    victory: 'Victory',
+    tomorrowIntention: 'Tomorrow',
+  };
+
   const dailyFields = DAILY_REFLECTION_FIELDS.map(({ key, label }) => ({
     key,
     label,
+    stripLabel: dailyStripLabels[key] ?? label,
     value: dailyFieldState[key][0],
     set: dailyFieldState[key][1],
   }));
@@ -306,6 +315,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   const foodFields = FOOD_JOURNAL_FIELDS.map(({ key, label, sectionName }) => ({
     key,
     label,
+    stripLabel: sectionName,
     sectionName,
     value: foodFieldState[key][0],
     set: foodFieldState[key][1],
@@ -316,89 +326,32 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md grace-shadow focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
 
-  const focusFields = useMemo((): FocusField[] => {
-    if (entryType === 'daily-reflection') {
-      const stripLabels: Record<string, string> = {
-        prayerFocus: 'Verse',
-        prayedAbout: 'Prayed',
-        godTeaching: 'Teaching',
-        hungerNotes: 'Feeling',
-        victory: 'Victory',
-        tomorrowIntention: 'Tomorrow',
-      };
-      return DAILY_REFLECTION_FIELDS.map(({ key, label }) => ({
-        key,
-        label,
-        ariaLabel: label,
-        stripLabel: stripLabels[key] ?? label,
-      }));
-    }
-    if (entryType === 'food') {
-      return FOOD_JOURNAL_FIELDS.map(({ key, label, sectionName }) => ({
-        key,
-        label,
-        ariaLabel: label,
-        stripLabel: sectionName,
-      }));
-    }
-    return [
-      {
-        key: 'content',
-        label: simpleContentLabel,
-        ariaLabel: simpleContentLabel,
-        stripLabel: simpleContentLabel,
-      },
-    ];
-  }, [entryType, simpleContentLabel]);
-
-  const focusValues = useMemo((): Record<string, string> => {
-    if (entryType === 'daily-reflection') {
-      return {
-        prayerFocus,
-        prayedAbout,
-        godTeaching,
-        hungerNotes,
-        victory,
-        tomorrowIntention,
-      };
-    }
-    if (entryType === 'food') {
-      return { breakfast, lunch, dinner, snack };
-    }
-    return { content };
-  }, [
-    breakfast,
-    content,
-    dinner,
-    entryType,
-    godTeaching,
-    hungerNotes,
-    lunch,
-    prayedAbout,
-    prayerFocus,
-    snack,
-    tomorrowIntention,
-    victory,
-  ]);
-
-  const handleFocusChange = (key: string, value: string) => {
-    if (entryType === 'daily-reflection') {
-      const setter = dailyFieldState[key as keyof typeof dailyFieldState];
-      if (setter) setter[1](value);
-      return;
-    }
-    if (entryType === 'food') {
-      const setter = foodFieldState[key as keyof typeof foodFieldState];
-      if (setter) setter[1](value);
-      return;
-    }
-    if (key === 'content') setContent(value);
-  };
-
-  const openFocusField = (key: string) => {
-    if (!journalFocusMode) return;
-    setFocusFieldKey(key);
-  };
+  const focusFields =
+    entryType === 'daily-reflection'
+      ? dailyFields.map(({ key, label, stripLabel, value, set }) => ({
+          key,
+          label,
+          stripLabel,
+          value,
+          onChange: set,
+        }))
+      : entryType === 'food'
+        ? foodFields.map(({ key, label, stripLabel, value, set }) => ({
+            key,
+            label,
+            stripLabel,
+            value,
+            onChange: set,
+          }))
+        : [
+            {
+              key: 'content',
+              label: simpleContentLabel,
+              stripLabel: simpleContentLabel,
+              value: content,
+              onChange: setContent,
+            },
+          ];
 
   const handleFocusModeToggle = (enabled: boolean) => {
     if (!enabled) setFocusFieldKey(null);
@@ -460,8 +413,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                 inputClass={inputClass}
                 focusModeEnabled={journalFocusMode}
                 isActive={focusFieldKey === field.key}
-                lightboxOpen={focusFieldKey === field.key}
-                onOpen={() => openFocusField(field.key)}
+                onOpen={() => setFocusFieldKey(field.key)}
               />
             </label>
           ))}
@@ -481,8 +433,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                 inputClass={inputClass}
                 focusModeEnabled={journalFocusMode}
                 isActive={focusFieldKey === field.key}
-                lightboxOpen={focusFieldKey === field.key}
-                onOpen={() => openFocusField(field.key)}
+                onOpen={() => setFocusFieldKey(field.key)}
               />
             </label>
             <MealImageUpload
@@ -505,8 +456,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
             inputClass={inputClass}
             focusModeEnabled={journalFocusMode}
             isActive={focusFieldKey === 'content'}
-            lightboxOpen={focusFieldKey === 'content'}
-            onOpen={() => openFocusField('content')}
+            onOpen={() => setFocusFieldKey('content')}
             rows={entryType === 'fitness' ? 4 : 6}
           />
         </label>
@@ -517,8 +467,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         <JournalFocusLightbox
           fields={focusFields}
           activeKey={focusFieldKey}
-          values={focusValues}
-          onChange={handleFocusChange}
           onNavigate={setFocusFieldKey}
           onClose={() => setFocusFieldKey(null)}
           date={date}
@@ -527,7 +475,27 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       )}
 
       <div className="flex shrink-0 justify-center pb-2">
-        <FocusModeToggle enabled={journalFocusMode} onChange={handleFocusModeToggle} />
+        <label className="inline-flex cursor-pointer items-center gap-2">
+          <span className="text-[11px] font-medium uppercase tracking-wide text-on-surface-variant">
+            Focus mode
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={journalFocusMode}
+            aria-label="Focus mode"
+            onClick={() => handleFocusModeToggle(!journalFocusMode)}
+            className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${
+              journalFocusMode ? 'bg-secondary' : 'bg-outline-variant/40'
+            }`}
+          >
+            <span
+              className={`absolute left-0.5 top-0.5 size-3 rounded-full bg-surface-container-lowest shadow-sm transition-transform ${
+                journalFocusMode ? 'translate-x-3.5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </label>
       </div>
 
       <div className="flex shrink-0 gap-3 border-t border-outline-variant/30 bg-linen pt-3">

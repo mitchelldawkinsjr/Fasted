@@ -6,32 +6,23 @@ import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 export type FocusField = {
   key: string;
   label: string;
-  ariaLabel: string;
   stripLabel: string;
+  value: string;
+  onChange: (value: string) => void;
 };
 
 type Props = {
   fields: FocusField[];
   activeKey: string;
-  values: Record<string, string>;
-  onChange: (key: string, value: string) => void;
   onNavigate: (key: string) => void;
   onClose: () => void;
   date: string;
   entryType: string;
 };
 
-function wordCount(text: string): number {
-  const trimmed = text.trim();
-  if (!trimmed) return 0;
-  return trimmed.split(/\s+/).length;
-}
-
 export function JournalFocusLightbox({
   fields,
   activeKey,
-  values,
-  onChange,
   onNavigate,
   onClose,
   date,
@@ -39,10 +30,8 @@ export function JournalFocusLightbox({
 }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const labelId = useId();
-  const openedAtRef = useRef(Date.now());
   const activeIndex = fields.findIndex((field) => field.key === activeKey);
   const activeField = fields[activeIndex];
-  const value = values[activeKey] ?? '';
   const showFieldNav = fields.length > 1;
   const prevKey = activeIndex > 0 ? fields[activeIndex - 1]?.key : null;
   const nextKey =
@@ -51,11 +40,7 @@ export function JournalFocusLightbox({
       : null;
 
   useEffect(() => {
-    openedAtRef.current = Date.now();
-    trackEvent('journal_focus_mode_opened', {
-      field_key: activeKey,
-      entry_type: entryType,
-    });
+    trackEvent('journal_focus_mode_opened', { entry_type: entryType });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- track once on mount
   }, []);
 
@@ -64,11 +49,7 @@ export function JournalFocusLightbox({
   }, [activeKey]);
 
   const handleClose = () => {
-    trackEvent('journal_focus_mode_closed', {
-      field_key: activeKey,
-      entry_type: entryType,
-      duration_ms: Date.now() - openedAtRef.current,
-    });
+    trackEvent('journal_focus_mode_closed', { entry_type: entryType });
     onClose();
   };
   const handleCloseRef = useRef(handleClose);
@@ -94,17 +75,11 @@ export function JournalFocusLightbox({
     };
   }, []);
 
-  const handleNavigate = (key: string) => {
-    if (key === activeKey) return;
-    trackEvent('journal_focus_mode_navigated', {
-      from_key: activeKey,
-      to_key: key,
-      entry_type: entryType,
-    });
-    onNavigate(key);
-  };
-
   if (!activeField) return null;
+
+  const wordCount = activeField.value.trim()
+    ? activeField.value.trim().split(/\s+/).length
+    : 0;
 
   return createPortal(
     <div
@@ -154,7 +129,7 @@ export function JournalFocusLightbox({
                   <button
                     key={field.key}
                     type="button"
-                    onClick={() => handleNavigate(field.key)}
+                    onClick={() => onNavigate(field.key)}
                     aria-current={selected ? 'true' : undefined}
                     className={`journal-focus-sans shrink-0 rounded px-2 py-1 text-[12px] font-medium transition ${
                       selected
@@ -171,9 +146,9 @@ export function JournalFocusLightbox({
 
           <textarea
             ref={textareaRef}
-            value={value}
-            onChange={(event) => onChange(activeKey, event.target.value)}
-            aria-label={activeField.ariaLabel}
+            value={activeField.value}
+            onChange={(event) => activeField.onChange(event.target.value)}
+            aria-label={activeField.label}
             className="journal-focus-serif min-h-0 w-full flex-1 resize-none border-0 border-b border-outline-variant bg-transparent pb-2 text-[17px] leading-[1.6] text-on-surface focus:border-on-surface focus:outline-none focus:ring-0"
           />
 
@@ -182,7 +157,7 @@ export function JournalFocusLightbox({
               <button
                 type="button"
                 disabled={!prevKey}
-                onClick={() => prevKey && handleNavigate(prevKey)}
+                onClick={() => prevKey && onNavigate(prevKey)}
                 className="journal-focus-sans text-[14px] font-medium text-on-surface-variant transition hover:text-on-surface disabled:opacity-40"
               >
                 Previous
@@ -190,7 +165,7 @@ export function JournalFocusLightbox({
               <button
                 type="button"
                 disabled={!nextKey}
-                onClick={() => nextKey && handleNavigate(nextKey)}
+                onClick={() => nextKey && onNavigate(nextKey)}
                 className="journal-focus-sans text-[14px] font-medium text-on-surface-variant transition hover:text-on-surface disabled:opacity-40"
               >
                 Next
@@ -200,7 +175,7 @@ export function JournalFocusLightbox({
         </div>
 
         <footer className="journal-focus-sans shrink-0 border-t border-outline-variant/30 px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-center text-[12px] font-medium text-on-surface-variant">
-          {wordCount(value) === 1 ? '1 word' : `${wordCount(value)} words`}
+          {wordCount === 1 ? '1 word' : `${wordCount} words`}
         </footer>
       </div>
     </div>,
