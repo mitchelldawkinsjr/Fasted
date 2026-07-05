@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { trackEvent } from '../lib/analytics';
 import { CovenantModal } from '../components/CovenantModal';
 import { LoadingButton } from '../components/LoadingButton';
 import { RequireAuth } from '../components/RequireAuth';
@@ -48,6 +49,7 @@ export function JoinGroupPage() {
     setBusy(true);
     try {
       const joinedGroupId = await joinGroupByCode(code, displayName);
+      trackEvent('group_joined', { privacy: preview.privacy });
       const [existingCovenant, groupCommitments] = await Promise.all([
         getMyCovenant(joinedGroupId),
         getGroupCommitments(joinedGroupId),

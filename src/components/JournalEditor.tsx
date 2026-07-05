@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { trackEvent } from '../lib/analytics';
 import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
 import { MealImageUpload } from './MealImageUpload';
@@ -246,6 +247,10 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       }
       saveJournalEntryWithMealImages(saved, entryType === 'food' ? imagesToSave : undefined);
       savedSuccessfully.current = true;
+      trackEvent('journal_entry_saved', {
+        entry_type: entryType,
+        is_update: Boolean(entry),
+      });
       toast.success(entry ? messages.save.journalUpdated : messages.save.journal);
       onSave();
     } catch (err) {

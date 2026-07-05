@@ -1,6 +1,7 @@
 import confetti from 'canvas-confetti';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { trackEvent } from '../lib/analytics';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
@@ -52,9 +53,29 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
   const [groupResults, setGroupResults] = useState<Record<string, CommitmentResult[]>>({});
   const onCompleteRef = useRef(onComplete);
   const onCloseRef = useRef(onClose);
+  const completedRef = useRef(false);
+  const openedForEditRef = useRef(Boolean(existing));
 
   onCompleteRef.current = onComplete;
   onCloseRef.current = onClose;
+
+  useEffect(() => {
+    completedRef.current = false;
+    openedForEditRef.current = Boolean(existing);
+    trackEvent('check_in_started', {
+      phase_id: phase?.id ?? 'unknown',
+      is_edit: openedForEditRef.current,
+    });
+    // Track once per modal open (date), not when existing updates after save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only for this date
+  }, [date]);
+
+  const handleCancel = () => {
+    if (!completedRef.current) {
+      trackEvent('check_in_cancelled', { phase_id: phase?.id ?? 'unknown' });
+    }
+    onCloseRef.current();
+  };
 
   const dismissCelebration = () => {
     onCompleteRef.current(earnedBadges);
@@ -165,10 +186,15 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
       return;
     }
 
+    completedRef.current = true;
     const nextStreak = getCurrentStreak(date);
-    setSavedStreak(nextStreak);
-
     const earned = evaluateBadges(date);
+    trackEvent('check_in_completed', {
+      phase_id: phase?.id ?? 'unknown',
+      streak: nextStreak,
+    });
+
+    setSavedStreak(nextStreak);
     setEarnedBadges(earned);
     setMessage(getCelebrationMessage(date));
     setCelebrating(true);
@@ -316,7 +342,7 @@ export function CheckInModal({ date, existing, onClose, onComplete }: Props) {
             </div>
 
             <div className="flex shrink-0 gap-2 border-t border-surface-variant p-3 pt-4 sm:gap-3 sm:p-stack-lg">
-              <LoadingButton type="button" onClick={onClose} variant="secondary" className="flex-1">
+              <LoadingButton type="button" onClick={handleCancel} variant="secondary" className="flex-1">
                 Cancel
               </LoadingButton>
               <LoadingButton

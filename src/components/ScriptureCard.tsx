@@ -1,4 +1,5 @@
 import { useActiveJourney } from '../hooks/useActiveJourney';
+import { trackEvent } from '../lib/analytics';
 import { scriptureReferenceToBibleComUrl } from '../lib/bibleComUrl';
 import { Icon } from './Icon';
 
@@ -15,6 +16,7 @@ function ScriptureReferenceLink({ reference }: { reference: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => trackEvent('scripture_link_clicked', { source: 'today_card' })}
       className="underline decoration-outline/40 underline-offset-2 transition hover:text-primary"
       aria-label={`${reference} (opens on Bible.com in a new tab)`}
     >

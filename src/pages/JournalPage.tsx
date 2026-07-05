@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { trackEvent } from '../lib/analytics';
 import { EmptyState } from '../components/EmptyState';
 import { JournalEditor } from '../components/JournalEditor';
 import { JournalViewer } from '../components/JournalViewer';
@@ -121,6 +122,9 @@ export function JournalPage() {
   };
 
   const openNewEntry = () => {
+    const entryType =
+      filter !== 'all' ? filter : initialType ?? DEFAULT_JOURNAL_ENTRY_TYPE;
+    trackEvent('journal_compose_started', { entry_type: entryType, source: 'journal_page' });
     setEditing('new');
   };
 
@@ -149,6 +153,9 @@ export function JournalPage() {
 
   const applyFilter = (nextFilter: JournalFilter) => {
     setFilter(nextFilter);
+    if (nextFilter !== 'all') {
+      trackEvent('journal_type_filtered', { entry_type: nextFilter, source: 'journal_page' });
+    }
     const next = clearJournalSearchParams(searchParams);
     if (nextFilter !== 'all') {
       next.set('type', nextFilter);
