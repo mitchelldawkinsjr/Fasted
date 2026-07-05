@@ -538,6 +538,7 @@ function TourCard({
   return (
     <>
       <div
+        role="group"
         className="mb-4 flex items-center gap-1.5"
         aria-label={`Step ${stepNumber} of ${totalSteps}`}
       >
@@ -579,7 +580,12 @@ function TourCard({
             </button>
           )}
         </div>
-        <button type="button" onClick={onNext} className="btn-stitch-primary" autoFocus>
+        <button
+          type="button"
+          onClick={onNext}
+          className="rounded-lg bg-primary px-8 py-3 font-body text-body-lg font-semibold text-on-primary shadow-lg transition-all hover:opacity-90 active:scale-95"
+          autoFocus
+        >
           {step.nextLabel ?? (isLastStep ? 'Done' : 'Next')}
         </button>
       </div>

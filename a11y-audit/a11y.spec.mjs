@@ -4,6 +4,16 @@ import AxeBuilder from "@axe-core/playwright";
 const BASE = process.env.A11Y_BASE_URL || "http://127.0.0.1:4173";
 const STORAGE_KEY = "fasted-calendar-progress:guest";
 
+const TOUR_DISMISSED = {
+  hasSeenTour: true,
+  pageToursSeen: {
+    settings: true,
+    calendar: true,
+    progress: true,
+    groups: true,
+  },
+};
+
 const PAGES = [
   { name: "today", path: "/" },
   { name: "calendar", path: "/calendar" },
@@ -19,11 +29,14 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 async function seedPage(page, routePath) {
   await page.goto(`${BASE}${routePath}`, { waitUntil: "networkidle" });
   await page.evaluate(
-    (key) => {
-      localStorage.setItem(key, JSON.stringify({ version: 1, checkIns: [], journal: [] }));
+    ({ key, tourFlags }) => {
+      localStorage.setItem(
+        key,
+        JSON.stringify({ version: 1, checkIns: [], journal: [], ...tourFlags }),
+      );
       localStorage.setItem("fasted-calendar-install-toast-dismissed", "1");
     },
-    STORAGE_KEY
+    { key: STORAGE_KEY, tourFlags: TOUR_DISMISSED },
   );
   await page.reload({ waitUntil: "networkidle" });
 }
