@@ -28,53 +28,55 @@ export function TodayFastCard({ plan }: Props) {
 
   return (
     <section className="space-y-stack-lg animate-fade-in-up">
-      <header>
-        <span className="label-caps text-secondary">
-          Phase {plan.phaseId}: {phase?.title}
-        </span>
-        <h2 className="mt-1 font-display text-headline-lg-mobile text-primary">
-          {formatDisplayDate(plan.date)}
-        </h2>
-      </header>
+      <div className="space-y-stack-lg" data-tour="today-card">
+        <header>
+          <span className="label-caps text-secondary">
+            Phase {plan.phaseId}: {phase?.title}
+          </span>
+          <h2 className="mt-1 font-display text-headline-lg-mobile text-primary">
+            {formatDisplayDate(plan.date)}
+          </h2>
+        </header>
 
-      <button
-        type="button"
-        onClick={() => phase?.imagePath && setLightboxOpen(true)}
-        className="group relative block h-64 w-full cursor-pointer overflow-hidden rounded-xl grace-shadow text-left transition-transform active:scale-[0.99] md:h-72"
-        aria-label={`View ${phase?.title ?? 'phase'} image`}
-      >
-        {phase?.imagePath && (
-          <img
-            src={phase.imagePath}
-            alt=""
+        <button
+          type="button"
+          onClick={() => phase?.imagePath && setLightboxOpen(true)}
+          className="group relative block h-64 w-full cursor-pointer overflow-hidden rounded-xl grace-shadow text-left transition-transform active:scale-[0.99] md:h-72"
+          aria-label={`View ${phase?.title ?? 'phase'} image`}
+        >
+          {phase?.imagePath && (
+            <img
+              src={phase.imagePath}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 h-full w-full object-cover object-top"
+            />
+          )}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(135deg, ${phase?.themeColor ?? '#173d00'}88 0%, #173d00 50%, #092100 100%)`,
+            }}
             aria-hidden
-            className="absolute inset-0 h-full w-full object-cover object-top"
           />
-        )}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(135deg, ${phase?.themeColor ?? '#173d00'}88 0%, #173d00 50%, #092100 100%)`,
-          }}
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-white/10"
-          aria-hidden
-        />
-        <div className="absolute bottom-6 left-6 right-6 text-white">
-          <p className="label-caps mb-1 opacity-90">CURRENT STATUS</p>
-          <p className="font-display text-headline-md">{FAST_TYPE_LABELS[plan.fastType]}</p>
-        </div>
-        <div className="absolute right-4 top-4 flex items-start gap-2">
-          <span className="rounded-full bg-black/30 p-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-            <Icon name="zoom_in" size={20} className="text-white" />
-          </span>
-          <span className="opacity-30">
-            <Icon name={plan.isFastDay ? 'water_drop' : 'eco'} size={64} />
-          </span>
-        </div>
-      </button>
+          <div
+            className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-white/10"
+            aria-hidden
+          />
+          <div className="absolute bottom-6 left-6 right-6 text-white">
+            <p className="label-caps mb-1 opacity-90">CURRENT STATUS</p>
+            <p className="font-display text-headline-md">{FAST_TYPE_LABELS[plan.fastType]}</p>
+          </div>
+          <div className="absolute right-4 top-4 flex items-start gap-2">
+            <span className="rounded-full bg-black/30 p-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+              <Icon name="zoom_in" size={20} className="text-white" />
+            </span>
+            <span className="opacity-30">
+              <Icon name={plan.isFastDay ? 'water_drop' : 'eco'} size={64} />
+            </span>
+          </div>
+        </button>
+      </div>
 
       {lightboxOpen && phase?.imagePath && (
         <ImageLightbox

@@ -25,7 +25,7 @@ export function StreakWidget({ today }: Props) {
   ] as const;
 
   return (
-    <section className="grid grid-cols-4 gap-2" aria-label="Progress summary">
+    <section className="grid grid-cols-4 gap-2" aria-label="Progress summary" data-tour="progress-streak">
       {stats.map((stat) => (
         <div
           key={stat.label}

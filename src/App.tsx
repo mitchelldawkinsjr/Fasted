@@ -3,6 +3,7 @@ import { AuthProvider } from './components/AuthProvider';
 import { Layout } from './components/Layout';
 import { ScrollToTop } from './components/ScrollToTop';
 import { ThemeProvider } from './components/ThemeProvider';
+import { TourProvider } from './components/Tour/TourContext';
 import { CalendarPage } from './pages/CalendarPage';
 import { GroupDetailPage } from './pages/GroupDetailPage';
 import { GroupsHubPage } from './pages/GroupsHubPage';
@@ -23,8 +24,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider>
-          <ScrollToTop />
-          <Routes>
+          <TourProvider>
+            <ScrollToTop />
+            <Routes>
           <Route path="journal/print" element={<JournalPrintPage />} />
           <Route element={<Layout />}>
             <Route index element={<TodayPage />} />
@@ -42,6 +44,7 @@ export default function App() {
             <Route path="settings" element={<SettingsPage />} />
           </Route>
           </Routes>
+          </TourProvider>
         </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>

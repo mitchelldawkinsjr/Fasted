@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useProgress } from '../hooks/useProgress';
 import {
   dismissInstallToast,
   isIosSafari,
@@ -6,11 +8,15 @@ import {
   wasInstallToastDismissed,
 } from '../lib/pwaInstall';
 import { dismissToast, toast } from '../lib/toast';
+import { useTour } from './Tour/TourContext';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 };
+
+const DEFAULT_DELAY_MS = 2000;
+const POST_TOUR_DELAY_MS = 800;
 
 let installToastId: string | null = null;
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
@@ -64,6 +70,15 @@ function showInstallPrompt() {
 }
 
 export function InstallPromptToast() {
+  const { active: tourActive } = useTour();
+  const { hasSeenTour } = useProgress();
+  const { pathname } = useLocation();
+  const tourWasActive = useRef(false);
+
+  useEffect(() => {
+    if (tourActive) tourWasActive.current = true;
+  }, [tourActive]);
+
   useEffect(() => {
     if (isRunningAsInstalledPwa() || wasInstallToastDismissed()) return;
 
@@ -74,13 +89,23 @@ export function InstallPromptToast() {
 
     window.addEventListener('beforeinstallprompt', onBeforeInstall);
 
-    const timer = window.setTimeout(showInstallPrompt, 2000);
-
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall);
-      window.clearTimeout(timer);
     };
   }, []);
+
+  useEffect(() => {
+    if (isRunningAsInstalledPwa() || wasInstallToastDismissed()) return;
+    if (tourActive) return;
+
+    const tourWillAutoStart = !hasSeenTour && pathname === '/';
+    if (tourWillAutoStart && !tourWasActive.current) return;
+
+    const delay = tourWasActive.current ? POST_TOUR_DELAY_MS : DEFAULT_DELAY_MS;
+    const timer = window.setTimeout(showInstallPrompt, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [tourActive, hasSeenTour, pathname]);
 
   return null;
 }

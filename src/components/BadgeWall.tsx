@@ -13,7 +13,7 @@ export function BadgeWall() {
   const earnedCount = badges.filter((b) => b.earned).length;
 
   return (
-    <section aria-labelledby="badges-heading">
+    <section aria-labelledby="badges-heading" data-tour="progress-badges">
       <div className="mb-stack-md flex items-end justify-between gap-3">
         <h2 id="badges-heading" className="font-display text-headline-md text-primary">
           Sacred Milestones

@@ -7,6 +7,7 @@ import { LoadingButton } from '../components/LoadingButton';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { SafetyNote } from '../components/SafetyNote';
 import { Icon } from '../components/Icon';
+import { useTour } from '../components/Tour/TourContext';
 import { useProgress } from '../hooks/useProgress';
 import { confirmAction } from '../lib/confirm';
 import { openJournalPrintView } from '../lib/journalPrintExport';
@@ -33,6 +34,7 @@ export function SettingsPage() {
   const location = useLocation();
   const authPromptHandled = useRef(false);
   const progress = useProgress();
+  const { startTour } = useTour();
   const { isLoggedIn: signedIn } = useAuth();
   const [theme, setTheme] = useState(progress.settings.theme);
   const [savingPrefs, setSavingPrefs] = useState(false);
@@ -241,6 +243,20 @@ export function SettingsPage() {
       <CloudSyncSection />
 
       <GroupsSettingsSection />
+
+      <section className="stitch-card overflow-hidden">
+        <div className="border-b border-surface-variant px-gutter py-4">
+          <h2 className="label-caps text-secondary">APP TOUR</h2>
+        </div>
+        <button
+          type="button"
+          onClick={startTour}
+          className="flex w-full items-center gap-4 p-gutter text-body-md transition-colors hover:bg-surface-variant"
+        >
+          <Icon name="tour" />
+          Replay App Tour
+        </button>
+      </section>
 
       <section className="stitch-card min-w-0 overflow-hidden p-gutter">
         <h2 className="mb-2 font-display text-headline-md text-primary">Privacy & data</h2>
