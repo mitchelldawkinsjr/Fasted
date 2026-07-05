@@ -91,6 +91,14 @@ async function seedAndOpenTour(page: Page) {
   await page.waitForTimeout(1500);
 }
 
+async function waitForTourTarget(page: Page) {
+  await page.waitForFunction(() => {
+    const dialog = document.querySelector('[role="dialog"][aria-modal="true"]');
+    if (!dialog) return false;
+    return dialog.getAttribute('data-target-ready') !== 'false';
+  });
+}
+
 async function screenshot(page: Page, name: string) {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
   const filePath = path.join(SCREENSHOT_DIR, `${name}.png`);
@@ -122,12 +130,12 @@ test.describe('Tour flow', () => {
     });
 
     for (let i = 0; i < STEP_NAMES.length; i++) {
+      await waitForTourTarget(page);
       await screenshot(page, STEP_NAMES[i]);
 
       if (i < STEP_NAMES.length - 1) {
         const nextBtn = page.getByRole('button', { name: /next|get started/i }).last();
         await nextBtn.click();
-        await page.waitForTimeout(500);
       }
     }
 
@@ -162,6 +170,7 @@ test.describe('Tour flow', () => {
     await expect(page.getByRole('dialog', { name: /welcome to fasted/i })).toBeVisible({
       timeout: 6000,
     });
+    await waitForTourTarget(page);
 
     await screenshot(page, 'settings-replay-tour');
   });
