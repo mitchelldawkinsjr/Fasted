@@ -46,14 +46,14 @@ export function CalendarPage() {
         ))}
       </div>
 
-      <p className="flex items-center gap-4 text-label-caps text-on-surface-variant">
+      <div data-tour="calendar-legend" className="flex flex-wrap items-center gap-x-4 gap-y-2 text-label-caps text-on-surface-variant">
         <span className="flex items-center gap-1">
           <Icon name="water_drop" className="text-phase-1" size={14} /> Fast day
         </span>
         <span className="flex items-center gap-1">
           <Icon name="check" className="text-secondary" size={14} /> Checked in
         </span>
-      </p>
+      </div>
 
       <CalendarGrid />
 

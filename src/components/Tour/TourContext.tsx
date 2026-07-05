@@ -3,13 +3,15 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { useProgress } from '../../hooks/useProgress';
-import { markTourSeen, migrateLegacyTourFlag } from '../../lib/storage';
+import { markPageTourSeen, markTourSeen, migrateLegacyTourFlag } from '../../lib/storage';
+import { getPageTourForPath, PAGE_TOURS, type PageTourId } from './pageTours';
 
 export type TourStep = {
   id: string;
@@ -64,6 +66,29 @@ export const TOUR_STEPS: TourStep[] = [
     scroll: 'center',
   },
   {
+    id: 'daily-encouragement',
+    target: '[data-tour="daily-encouragement"]',
+    title: 'Daily Encouragement',
+    body: 'A short word of motivation for your day — refreshed with each phase of the journey.',
+    placement: 'top',
+    scroll: 'center',
+  },
+  {
+    id: 'morning-reflection',
+    target: '[data-tour="morning-reflection"]',
+    title: 'Morning Reflection',
+    body: 'Jump straight into journaling from Today — daily reflection, prayer, gratitude, and more.',
+    placement: 'top',
+    scroll: 'center',
+  },
+  {
+    id: 'nav-calendar',
+    target: '[data-tour="nav-calendar"]',
+    title: 'Your Fasting Calendar',
+    body: 'See your full journey at a glance — fast days, phases, and check-ins. Tap any day to jump back to it.',
+    placement: 'top',
+  },
+  {
     id: 'nav-journal',
     target: '[data-tour="nav-journal"]',
     title: 'Journal Your Journey',
@@ -85,13 +110,22 @@ export const TOUR_STEPS: TourStep[] = [
     placement: 'top',
   },
   {
+    id: 'account-settings',
+    target: '[data-tour="account-settings"]',
+    title: 'Save Your Progress',
+    body: 'Tap the account icon to open Settings — sign in to sync check-ins, journal entries, and streaks across devices.',
+    placement: 'bottom',
+  },
+  {
     id: 'done',
     title: "You're All Set!",
-    body: 'Check in today to start your streak. Tap the account icon anytime for settings, journeys, and cloud sync.',
+    body: 'Check in today to start your streak. Replay this tour anytime from Settings.',
     placement: 'center',
     nextLabel: 'Begin the Journey',
   },
 ];
+
+type ActiveTour = { kind: 'main' } | { kind: 'page'; id: PageTourId };
 
 type TourContextValue = {
   active: boolean;
@@ -100,6 +134,7 @@ type TourContextValue = {
   totalSteps: number;
   startTour: () => void;
   nextStep: () => void;
+  prevStep: () => void;
   skipTour: () => void;
 };
 
@@ -117,41 +152,101 @@ export function TourProvider({ children }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const progress = useProgress();
-  const [active, setActive] = useState(false);
+  const [activeTour, setActiveTour] = useState<ActiveTour | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [manualStart, setManualStart] = useState(false);
+
+  const activeSteps = useMemo(() => {
+    if (!activeTour) return [];
+    return activeTour.kind === 'main' ? TOUR_STEPS : PAGE_TOURS[activeTour.id];
+  }, [activeTour]);
 
   useEffect(() => {
     migrateLegacyTourFlag();
   }, []);
 
   useEffect(() => {
-    if (manualStart || progress.hasSeenTour || location.pathname !== '/') return;
-    const timer = window.setTimeout(() => setActive(true), 800);
+    if (manualStart || activeTour !== null) return;
+    if (progress.hasSeenTour || location.pathname !== '/') return;
+    const timer = window.setTimeout(() => {
+      setActiveTour({ kind: 'main' });
+      setStepIndex(0);
+    }, 800);
     return () => window.clearTimeout(timer);
-  }, [progress.hasSeenTour, location.pathname, manualStart]);
+  }, [progress.hasSeenTour, location.pathname, manualStart, activeTour]);
+
+  useEffect(() => {
+    if (manualStart || activeTour !== null) return;
+
+    const pageId = getPageTourForPath(location.pathname);
+    if (!pageId) return;
+    if (progress.pageToursSeen?.[pageId]) return;
+
+    let cancelled = false;
+    let attemptTimer = 0;
+    let startTimer = 0;
+    const firstTarget = PAGE_TOURS[pageId][0]?.target;
+    const MAX_TARGET_WAIT_ATTEMPTS = 40;
+
+    function beginTour() {
+      if (cancelled) return;
+      setActiveTour({ kind: 'page', id: pageId });
+      setStepIndex(0);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    function waitForTarget(attemptsLeft: number) {
+      if (cancelled) return;
+      if (!firstTarget || document.querySelector(firstTarget)) {
+        beginTour();
+        return;
+      }
+      if (attemptsLeft <= 0) return;
+      attemptTimer = window.setTimeout(() => waitForTarget(attemptsLeft - 1), 100);
+    }
+
+    startTimer = window.setTimeout(() => waitForTarget(MAX_TARGET_WAIT_ATTEMPTS), 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(startTimer);
+      window.clearTimeout(attemptTimer);
+    };
+  }, [location.pathname, progress.pageToursSeen, manualStart, activeTour]);
 
   const completeTour = useCallback(() => {
-    markTourSeen();
-    setActive(false);
+    if (activeTour?.kind === 'main') {
+      markTourSeen();
+    } else if (activeTour?.kind === 'page') {
+      markPageTourSeen(activeTour.id);
+    }
+    setActiveTour(null);
     setStepIndex(0);
     setManualStart(false);
-  }, []);
+  }, [activeTour]);
 
   const nextStep = useCallback(() => {
     const next = stepIndex + 1;
-    if (next >= TOUR_STEPS.length) {
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.55 },
-        colors: ['#fed65b', '#3d7a00', '#fff8e7'],
-      });
+    if (next >= activeSteps.length) {
+      if (activeTour?.kind === 'main') {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.55 },
+          colors: ['#fed65b', '#3d7a00', '#fff8e7'],
+        });
+      }
       completeTour();
     } else {
       setStepIndex(next);
     }
-  }, [stepIndex, completeTour]);
+  }, [stepIndex, activeSteps.length, activeTour, completeTour]);
+
+  const prevStep = useCallback(() => {
+    if (stepIndex > 0) {
+      setStepIndex(stepIndex - 1);
+    }
+  }, [stepIndex]);
 
   const skipTour = useCallback(() => {
     completeTour();
@@ -159,13 +254,18 @@ export function TourProvider({ children }: Props) {
 
   const startTour = useCallback(() => {
     setManualStart(true);
+    setActiveTour(null);
     navigate('/');
     setStepIndex(0);
     window.scrollTo({ top: 0, behavior: 'instant' });
-    window.setTimeout(() => setActive(true), 300);
+    window.setTimeout(() => {
+      setActiveTour({ kind: 'main' });
+      setStepIndex(0);
+    }, 300);
   }, [navigate]);
 
-  const currentStep = active ? (TOUR_STEPS[stepIndex] ?? null) : null;
+  const active = activeTour !== null;
+  const currentStep = active ? (activeSteps[stepIndex] ?? null) : null;
 
   return (
     <TourContext.Provider
@@ -173,9 +273,10 @@ export function TourProvider({ children }: Props) {
         active,
         stepIndex,
         currentStep,
-        totalSteps: TOUR_STEPS.length,
+        totalSteps: activeSteps.length,
         startTour,
         nextStep,
+        prevStep,
         skipTour,
       }}
     >

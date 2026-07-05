@@ -9,6 +9,7 @@ export function EncouragementCard({ message }: Props) {
     <section
       className="stitch-card border border-secondary-container/40 bg-surface-container-low p-stack-lg"
       aria-labelledby="encouragement-heading"
+      data-tour="daily-encouragement"
     >
       <div className="mb-2 flex items-center gap-2">
         <Icon name="volunteer_activism" className="text-secondary" />

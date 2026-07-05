@@ -78,7 +78,11 @@ export function CloudSyncSection() {
 
   if (!isConfigured) {
     return (
-      <section className="stitch-card overflow-hidden">
+      <section
+        id="account-sign-in"
+        className="stitch-card scroll-mt-24 overflow-hidden"
+        data-tour="settings-sign-in"
+      >
         <div className="border-b border-surface-variant px-gutter py-4">
           <h2 className="label-caps text-secondary">ACCOUNT</h2>
         </div>
@@ -184,6 +188,7 @@ export function CloudSyncSection() {
       id="account-sign-in"
       ref={sectionRef}
       className="stitch-card scroll-mt-24 overflow-hidden"
+      data-tour="settings-sign-in"
     >
       <div className="border-b border-surface-variant px-gutter py-4">
         <h2 className="label-caps text-secondary">ACCOUNT</h2>

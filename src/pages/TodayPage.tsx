@@ -118,7 +118,7 @@ export function TodayPage() {
 
       <EncouragementCard message={plan.encouragement} />
 
-      <section>
+      <section data-tour="morning-reflection">
         <div className="mb-stack-md flex items-center justify-between">
           <h3 className="font-display text-headline-md text-primary">Morning Reflection</h3>
           <Link to="/journal" aria-label="Open journal">

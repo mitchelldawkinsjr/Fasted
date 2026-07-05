@@ -269,6 +269,10 @@ export function mergeUserProgress(account: UserProgress, guest: UserProgress): U
     journeys: Array.from(journeys.values()),
     groupCheckIns,
     hasSeenTour: account.hasSeenTour || guest.hasSeenTour,
+    pageToursSeen: {
+      ...(guest.pageToursSeen ?? {}),
+      ...(account.pageToursSeen ?? {}),
+    },
     updatedAt: new Date().toISOString(),
   };
 }

@@ -9,6 +9,8 @@ const MAX_MEASURE_ATTEMPTS = 40;
 const MEASURE_INTERVAL_MS = 50;
 /** Matches Layout bottom nav height — backdrop stops above this so nav stays visible. */
 export const TOUR_BOTTOM_NAV_INSET = 'calc(4.75rem + env(safe-area-inset-bottom))';
+const TOUR_NAV_TOOLTIP_GAP_PX = 12;
+const TOUR_POINTER_SIZE_PX = 12;
 
 export function isNavTourTarget(selector: string | undefined): boolean {
   return Boolean(selector?.includes('nav-'));
@@ -19,8 +21,16 @@ function readRect(el: Element): Rect {
   return { x: r.x, y: r.y, width: r.width, height: r.height };
 }
 
-function isStableTarget(el: Element, rect: Rect): boolean {
-  if (rect.width < MIN_TARGET_SIZE || rect.height < MIN_TARGET_SIZE) return false;
+function hasMinimumTargetSize(rect: Rect): boolean {
+  if (rect.width >= MIN_TARGET_SIZE && rect.height >= MIN_TARGET_SIZE) return true;
+  // Wide strips (e.g. calendar legend) or tall narrow targets still qualify.
+  return Math.max(rect.width, rect.height) >= 120 && Math.min(rect.width, rect.height) >= 12;
+}
+
+function isStableTarget(el: Element, rect: Rect, selector?: string): boolean {
+  if (!hasMinimumTargetSize(rect)) return false;
+
+  if (!isNavTourTarget(selector)) return true;
 
   const icon = el.querySelector('.material-symbols-outlined');
   if (icon) {
@@ -46,6 +56,97 @@ function waitForPaint(): Promise<void> {
 /** Visible viewport between fixed header and bottom nav (matches Layout.tsx). */
 const TOUR_HEADER_OFFSET_PX = 72;
 const TOUR_NAV_OFFSET_PX = 76;
+const TOOLTIP_MARGIN_PX = 16;
+/** Minimum vertical space needed to place the tooltip beside the target. */
+const TOOLTIP_MIN_HEIGHT_PX = 180;
+
+type TooltipPlacement = {
+  top?: number;
+  bottom?: string;
+  dockedAboveNav: boolean;
+  pointerAbove: boolean;
+};
+
+function computeTooltipPlacement(
+  spotlight: Rect,
+  placement: TourStep['placement'],
+  vh: number,
+): TooltipPlacement {
+  const safeTop = TOUR_HEADER_OFFSET_PX;
+  const safeBottom = vh - TOUR_NAV_OFFSET_PX;
+  const spTop = spotlight.y;
+  const spBottom = spotlight.y + spotlight.height;
+  const spaceAbove = spTop - safeTop - TOOLTIP_MARGIN_PX;
+  const spaceBelow = safeBottom - spBottom - TOOLTIP_MARGIN_PX;
+
+  const canFitAbove = spaceAbove >= TOOLTIP_MIN_HEIGHT_PX;
+  const canFitBelow = spaceBelow >= TOOLTIP_MIN_HEIGHT_PX;
+
+  if (placement === 'top' && canFitAbove) {
+    return {
+      bottom: `${vh - spTop + TOOLTIP_MARGIN_PX}px`,
+      dockedAboveNav: false,
+      pointerAbove: false,
+    };
+  }
+  if (placement === 'bottom' && canFitBelow) {
+    const top = Math.min(spBottom + TOOLTIP_MARGIN_PX, safeBottom - TOOLTIP_MIN_HEIGHT_PX);
+    return { top, dockedAboveNav: false, pointerAbove: true };
+  }
+  if (canFitAbove) {
+    return {
+      bottom: `${vh - spTop + TOOLTIP_MARGIN_PX}px`,
+      dockedAboveNav: false,
+      pointerAbove: false,
+    };
+  }
+  if (canFitBelow) {
+    const top = Math.min(spBottom + TOOLTIP_MARGIN_PX, safeBottom - TOOLTIP_MIN_HEIGHT_PX);
+    return { top, dockedAboveNav: false, pointerAbove: true };
+  }
+
+  return {
+    bottom: `calc(4.75rem + env(safe-area-inset-bottom) + 1rem)`,
+    dockedAboveNav: true,
+    pointerAbove: false,
+  };
+}
+
+function useNavTop(active: boolean, navTarget: boolean, stepIndex: number): number | null {
+  const [navTop, setNavTop] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (!active || !navTarget) {
+      setNavTop(null);
+      return;
+    }
+
+    function measure() {
+      const nav = document.querySelector('nav[aria-label="Main navigation"]');
+      setNavTop(nav ? nav.getBoundingClientRect().top : null);
+    }
+
+    measure();
+    window.addEventListener('resize', measure);
+    const nav = document.querySelector('nav[aria-label="Main navigation"]');
+    const observer = nav ? new ResizeObserver(measure) : null;
+    observer?.observe(nav!);
+
+    return () => {
+      window.removeEventListener('resize', measure);
+      observer?.disconnect();
+    };
+  }, [active, navTarget, stepIndex]);
+
+  return navTop;
+}
+
+function getNavPointerLeft(targetRect: Rect, tooltipLeft: number, tooltipWidth: number): number {
+  const raw = targetRect.x + targetRect.width / 2 - tooltipLeft - TOUR_POINTER_SIZE_PX / 2;
+  const min = 16;
+  const max = tooltipWidth - 16 - TOUR_POINTER_SIZE_PX;
+  return Math.min(Math.max(min, raw), max);
+}
 
 function scrollTargetToVisibleCenter(el: Element): void {
   const rect = el.getBoundingClientRect();
@@ -108,7 +209,7 @@ function useTargetRect(
       observer = new ResizeObserver(() => {
         if (cancelled) return;
         const next = readRect(el);
-        if (isStableTarget(el, next)) {
+        if (isStableTarget(el, next, selector)) {
           setRect(next);
           setReady(true);
         }
@@ -117,10 +218,14 @@ function useTargetRect(
     }
 
     async function resolveTarget() {
-      try {
-        await document.fonts?.ready;
-      } catch {
-        // Ignore font readiness errors in older browsers.
+      const needsFontReady = isNavTourTarget(selector);
+
+      if (needsFontReady) {
+        try {
+          await document.fonts?.ready;
+        } catch {
+          // Ignore font readiness errors in older browsers.
+        }
       }
 
       for (let attempt = 0; attempt < MAX_MEASURE_ATTEMPTS && !cancelled; attempt++) {
@@ -133,7 +238,7 @@ function useTargetRect(
             await waitForPaint();
           }
           const next = readRect(el);
-          if (isStableTarget(el, next)) {
+          if (isStableTarget(el, next, selector)) {
             applyRect(el);
             attachObserver(el);
             return;
@@ -171,13 +276,15 @@ function useTargetRect(
 }
 
 export function TourOverlay() {
-  const { active, currentStep, stepIndex, totalSteps, nextStep, skipTour } = useTour();
+  const { active, currentStep, stepIndex, totalSteps, nextStep, prevStep, skipTour } = useTour();
   const [vh, setVh] = useState(window.innerHeight);
   const { rect: targetRect, ready: targetReady } = useTargetRect(
     currentStep?.target,
     stepIndex,
     currentStep?.scroll,
   );
+  const navTargetActive = Boolean(active && currentStep && isNavTourTarget(currentStep.target));
+  const navTop = useNavTop(active, navTargetActive, stepIndex);
 
   useEffect(() => {
     if (!active) return;
@@ -185,11 +292,12 @@ export function TourOverlay() {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') skipTour();
       if (e.key === 'Enter' && targetReady) nextStep();
+      if (e.key === 'ArrowLeft' && stepIndex > 0) prevStep();
     }
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [active, nextStep, skipTour, targetReady]);
+  }, [active, nextStep, prevStep, skipTour, targetReady, stepIndex]);
 
   useEffect(() => {
     function onResize() {
@@ -219,35 +327,45 @@ export function TourOverlay() {
   const showTooltip = isCentered || showTarget;
   const targetReadyForStep = isCentered || showTarget;
   const navTarget = isNavTourTarget(currentStep.target);
-  const backdropSpotlight = spotlight && !navTarget ? spotlight : null;
-  const navTooltipBottom = navTarget
-    ? `calc(${TOUR_BOTTOM_NAV_INSET} + 3.5rem)`
-    : undefined;
+  const backdropSpotlight = spotlight;
 
-  let tooltipTop = 0;
-  let tooltipBottom: number | undefined;
+  const tooltipPlacement =
+    spotlight && !navTarget
+      ? computeTooltipPlacement(spotlight, currentStep.placement, vh)
+      : null;
 
-  if (spotlight && !navTarget) {
-    const spBottom = spotlight.y + spotlight.height;
-    const spaceBelow = vh - spBottom;
-    const spaceAbove = spotlight.y;
-    const TOOLTIP_MARGIN = 16;
+  const tooltipSideInsetPx = 16;
+  const tooltipWidth = Math.min(384, window.innerWidth - tooltipSideInsetPx * 2);
+  const navPointerLeft =
+    navTarget && targetRect
+      ? getNavPointerLeft(targetRect, tooltipSideInsetPx, tooltipWidth)
+      : null;
 
-    if (currentStep.placement === 'top' || spaceAbove > spaceBelow) {
-      tooltipBottom = vh - spotlight.y + TOOLTIP_MARGIN;
-    } else {
-      tooltipTop = spBottom + TOOLTIP_MARGIN;
-    }
-  }
+  const tooltipStyle = navTarget
+    ? undefined
+    : tooltipPlacement?.dockedAboveNav
+      ? { bottom: tooltipPlacement.bottom }
+      : tooltipPlacement?.bottom !== undefined
+        ? { bottom: tooltipPlacement.bottom }
+        : tooltipPlacement?.top !== undefined
+          ? { top: tooltipPlacement.top }
+          : undefined;
+
+  const showPointerBelow =
+    Boolean(spotlight && !navTarget && tooltipPlacement && !tooltipPlacement.dockedAboveNav && tooltipPlacement.top !== undefined);
+  const showPointerAbove =
+    Boolean(
+      !navTarget &&
+        spotlight &&
+        tooltipPlacement &&
+        (tooltipPlacement.dockedAboveNav || tooltipPlacement.bottom !== undefined),
+    );
+  const showNavPointer = Boolean(navTarget && targetRect && navPointerLeft !== null);
 
   return (
     <>
-      {/* Dim layer — excludes bottom nav so the tab bar stays visible during the tour */}
-      <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-[9990]"
-        style={{ bottom: TOUR_BOTTOM_NAV_INSET }}
-        aria-hidden
-      >
+      {/* Dim layer — full viewport; mask cutout reveals the highlighted target (including nav tabs). */}
+      <div className="pointer-events-none fixed inset-0 z-[9990]" aria-hidden>
         <svg className="absolute inset-0 h-full w-full">
           <defs>
             <mask id="tour-spotlight-mask">
@@ -305,7 +423,49 @@ export function TourOverlay() {
                 stepNumber={stepNumber}
                 totalSteps={totalSteps}
                 isLastStep={isLastStep}
+                canGoBack={stepIndex > 0}
                 onNext={nextStep}
+                onBack={prevStep}
+                onSkip={skipTour}
+              />
+            </div>
+          </div>
+        ) : navTarget ? (
+          <div
+            className="pointer-events-none fixed inset-x-0 z-[9995] flex flex-col justify-end px-4"
+            style={{
+              top: TOUR_HEADER_OFFSET_PX,
+              bottom: navTop !== null ? vh - navTop : TOUR_BOTTOM_NAV_INSET,
+              paddingBottom: TOUR_NAV_TOOLTIP_GAP_PX,
+            }}
+          >
+            <div
+              className="pointer-events-auto relative mx-auto w-full max-w-sm rounded-2xl bg-surface p-5 grace-shadow animate-fade-in-up"
+              role="dialog"
+              aria-modal="true"
+              data-tour-dialog
+              aria-label={currentStep.title}
+              aria-busy={Boolean(currentStep.target && !targetReady)}
+              data-target-ready={targetReadyForStep ? 'true' : 'false'}
+              style={{
+                maxHeight: `calc(100vh - ${TOUR_HEADER_OFFSET_PX}px - ${TOUR_BOTTOM_NAV_INSET} - ${TOUR_NAV_TOOLTIP_GAP_PX}px - 1rem)`,
+              }}
+            >
+              {showNavPointer && (
+                <div
+                  className="absolute -bottom-2 h-3 w-3 rotate-45 bg-surface"
+                  style={{ left: navPointerLeft! }}
+                  aria-hidden
+                />
+              )}
+              <TourCard
+                step={currentStep}
+                stepNumber={stepNumber}
+                totalSteps={totalSteps}
+                isLastStep={isLastStep}
+                canGoBack={stepIndex > 0}
+                onNext={nextStep}
+                onBack={prevStep}
                 onSkip={skipTour}
               />
             </div>
@@ -320,20 +480,17 @@ export function TourOverlay() {
             aria-busy={Boolean(currentStep.target && !targetReady)}
             data-target-ready={targetReadyForStep ? 'true' : 'false'}
             style={{
-              ...(navTooltipBottom
-                ? { bottom: navTooltipBottom }
-                : tooltipBottom !== undefined
-                  ? { bottom: tooltipBottom }
-                  : { top: tooltipTop }),
+              maxHeight: `calc(100vh - ${TOUR_HEADER_OFFSET_PX}px - ${TOUR_BOTTOM_NAV_INSET} - 1rem)`,
+              ...tooltipStyle,
             }}
           >
-            {spotlight && !navTooltipBottom && tooltipBottom === undefined && (
+            {showPointerBelow && (
               <div
                 className="absolute -top-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
                 aria-hidden
               />
             )}
-            {spotlight && (navTooltipBottom || tooltipBottom !== undefined) && (
+            {showPointerAbove && (
               <div
                 className="absolute -bottom-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-surface"
                 aria-hidden
@@ -344,7 +501,9 @@ export function TourOverlay() {
               stepNumber={stepNumber}
               totalSteps={totalSteps}
               isLastStep={isLastStep}
+              canGoBack={stepIndex > 0}
               onNext={nextStep}
+              onBack={prevStep}
               onSkip={skipTour}
             />
           </div>
@@ -358,11 +517,22 @@ type CardProps = {
   stepNumber: number;
   totalSteps: number;
   isLastStep: boolean;
+  canGoBack: boolean;
   onNext: () => void;
+  onBack: () => void;
   onSkip: () => void;
 };
 
-function TourCard({ step, stepNumber, totalSteps, isLastStep, onNext, onSkip }: CardProps) {
+function TourCard({
+  step,
+  stepNumber,
+  totalSteps,
+  isLastStep,
+  canGoBack,
+  onNext,
+  onBack,
+  onSkip,
+}: CardProps) {
   return (
     <>
       <div
@@ -387,16 +557,27 @@ function TourCard({ step, stepNumber, totalSteps, isLastStep, onNext, onSkip }: 
       <p className="mt-2 text-body-md leading-relaxed text-on-surface-variant">{step.body}</p>
 
       <div className="mt-6 flex items-center justify-between gap-3">
-        {!isLastStep && (
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-body-md text-on-surface-variant underline-offset-2 hover:underline"
-          >
-            Skip tour
-          </button>
-        )}
-        <button type="button" onClick={onNext} className="btn-stitch-primary ml-auto" autoFocus>
+        <div className="flex items-center gap-3">
+          {canGoBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="text-body-md text-on-surface-variant underline-offset-2 hover:underline"
+            >
+              Back
+            </button>
+          )}
+          {!isLastStep && (
+            <button
+              type="button"
+              onClick={onSkip}
+              className="text-body-md text-on-surface-variant underline-offset-2 hover:underline"
+            >
+              Skip tour
+            </button>
+          )}
+        </div>
+        <button type="button" onClick={onNext} className="btn-stitch-primary" autoFocus>
           {step.nextLabel ?? (isLastStep ? 'Done' : 'Next')}
         </button>
       </div>

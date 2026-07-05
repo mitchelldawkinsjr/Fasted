@@ -431,6 +431,15 @@ export function markTourSeen(): void {
   persist({ ...progress, hasSeenTour: true });
 }
 
+export function markPageTourSeen(pageId: 'settings' | 'calendar' | 'progress' | 'groups'): void {
+  const progress = getProgress();
+  if (progress.pageToursSeen?.[pageId]) return;
+  persist({
+    ...progress,
+    pageToursSeen: { ...progress.pageToursSeen, [pageId]: true },
+  });
+}
+
 export function saveJourney(journey: Journey): void {
   const progress = getProgress();
   const normalizedJourney = normalizeJourney(journey);

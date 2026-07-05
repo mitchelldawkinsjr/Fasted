@@ -30,7 +30,7 @@ export function GroupsHubPage() {
           </p>
         </section>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex flex-col gap-2 sm:flex-row" data-tour="groups-create">
           <LoadingButton type="button" className="flex-1" onClick={() => setCreateOpen(true)}>
             <span className="inline-flex items-center justify-center gap-2">
               <Icon name="group_add" size={20} />
@@ -39,7 +39,7 @@ export function GroupsHubPage() {
           </LoadingButton>
         </div>
 
-        <section className="stitch-card p-gutter space-y-3">
+        <section className="stitch-card p-gutter space-y-3" data-tour="groups-join">
           <h3 className="label-caps text-secondary">Join with invite code</h3>
           <input
             type="text"

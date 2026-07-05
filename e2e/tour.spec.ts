@@ -121,10 +121,14 @@ const STEP_NAMES = [
   'step-3-checkin',
   'step-4-scripture',
   'step-5-prayer-focus',
-  'step-6-journal',
-  'step-7-progress',
-  'step-8-groups',
-  'step-9-done',
+  'step-6-encouragement',
+  'step-7-morning-reflection',
+  'step-8-calendar',
+  'step-9-journal',
+  'step-10-progress',
+  'step-11-groups',
+  'step-12-account-settings',
+  'step-13-done',
 ];
 
 test.describe('Tour flow', () => {
@@ -141,7 +145,7 @@ test.describe('Tour flow', () => {
 
     for (let i = 0; i < STEP_NAMES.length; i++) {
       await waitForTourTarget(page);
-      if (STEP_NAMES[i].includes('journal') || STEP_NAMES[i].includes('progress') || STEP_NAMES[i].includes('groups')) {
+      if (STEP_NAMES[i].includes('calendar') || STEP_NAMES[i].includes('journal') || STEP_NAMES[i].includes('progress') || STEP_NAMES[i].includes('groups')) {
         await assertNavVisible(page);
       }
       await screenshot(page, STEP_NAMES[i]);
@@ -164,6 +168,53 @@ test.describe('Tour flow', () => {
       return raw ? (JSON.parse(raw) as { hasSeenTour?: boolean }).hasSeenTour : false;
     }, STORAGE_KEY);
     expect(stored).toBe(true);
+  });
+
+  test('today-card tooltip stays above bottom nav', async ({ page }) => {
+    await seedAndOpenTour(page);
+
+    await expect(page.getByRole('dialog', { name: /welcome to fasted/i })).toBeVisible({
+      timeout: 6000,
+    });
+
+    await page.getByRole('button', { name: /get started/i }).click();
+    await waitForTourTarget(page);
+
+    const nextBtn = page.getByRole('button', { name: /^next$/i });
+    await expect(nextBtn).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const dialog = document.querySelector('[role="dialog"][data-tour-dialog]');
+      const nav = document.querySelector('nav[aria-label="Main navigation"]');
+      if (!dialog || !nav) return null;
+      const dialogRect = dialog.getBoundingClientRect();
+      const navRect = nav.getBoundingClientRect();
+      return {
+        dialogBottom: dialogRect.bottom,
+        navTop: navRect.top,
+        dialogTop: dialogRect.top,
+      };
+    });
+
+    expect(layout).not.toBeNull();
+    expect(layout!.dialogBottom).toBeLessThanOrEqual(layout!.navTop + 2);
+    expect(layout!.dialogTop).toBeGreaterThan(40);
+  });
+
+  test('back button returns to previous step', async ({ page }) => {
+    await seedAndOpenTour(page);
+
+    await expect(page.getByRole('dialog', { name: /welcome to fasted/i })).toBeVisible({
+      timeout: 6000,
+    });
+
+    await page.getByRole('button', { name: /get started/i }).click();
+    await waitForTourTarget(page);
+    await expect(page.getByRole('dialog', { name: /your daily plan/i })).toBeVisible();
+
+    await page.getByRole('button', { name: /^back$/i }).click();
+    await expect(page.getByRole('dialog', { name: /welcome to fasted/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^back$/i })).toHaveCount(0);
   });
 
   test('replay tour from settings', async ({ page }) => {

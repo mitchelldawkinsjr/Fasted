@@ -7,6 +7,7 @@ import { expect, test } from '@playwright/test';
 import { FIXED_DATE, INSTALL_TOAST_KEY, STORAGE_KEY } from './fixtures/constants';
 
 const NAV_STEPS = [
+  { name: 'calendar', dialog: /your fasting calendar/i, tourId: 'nav-calendar' },
   { name: 'journal', dialog: /journal your journey/i, tourId: 'nav-journal' },
   { name: 'progress', dialog: /track your progress/i, tourId: 'nav-progress' },
   { name: 'groups', dialog: /fast together/i, tourId: 'nav-groups' },
@@ -96,6 +97,40 @@ test.describe('Tour nav diagnostics', () => {
 
       const iconHeight = diagnostics.link?.iconRect?.height ?? 0;
       expect(iconHeight).toBeGreaterThan(10);
+
+      const tooltipLayout = await page.evaluate(() => {
+        const dialog = document.querySelector('[role="dialog"][data-tour-dialog]');
+        const nav = document.querySelector('nav[aria-label="Main navigation"]');
+        if (!dialog || !nav) return null;
+        const dialogRect = dialog.getBoundingClientRect();
+        const navRect = nav.getBoundingClientRect();
+        return {
+          dialogBottom: dialogRect.bottom,
+          navTop: navRect.top,
+          gap: navRect.top - dialogRect.bottom,
+        };
+      });
+
+      expect(tooltipLayout).not.toBeNull();
+      expect(tooltipLayout!.dialogBottom).toBeLessThanOrEqual(tooltipLayout!.navTop - 8);
+
+      const overlayLayout = await page.evaluate(() => {
+        const overlay = document.querySelector('.fixed.inset-0.z-\\[9990\\]');
+        const overlayRect = overlay?.getBoundingClientRect();
+        const progress = document.querySelector('[data-tour="nav-progress"]');
+        const today = document.querySelector('[data-tour="nav-today"]');
+        return {
+          overlayBottom: overlayRect?.bottom ?? null,
+          innerHeight: window.innerHeight,
+          progressRect: progress?.getBoundingClientRect(),
+          todayRect: today?.getBoundingClientRect(),
+        };
+      });
+
+      expect(overlayLayout.overlayBottom).toBe(overlayLayout.innerHeight);
+      if (navStep.tourId === 'nav-progress' && overlayLayout.progressRect && overlayLayout.todayRect) {
+        expect(overlayLayout.progressRect.top).toBeGreaterThan(overlayLayout.todayRect.top - 1);
+      }
 
       await page.screenshot({
         path: `e2e/tour-screenshots/debug-${navStep.name}-nav.png`,

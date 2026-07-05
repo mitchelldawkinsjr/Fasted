@@ -238,6 +238,8 @@ export type UserProgress = {
   groupCheckIns?: Record<string, GroupCheckIn[]>;
   /** Whether the first-run product tour has been completed or skipped. */
   hasSeenTour?: boolean;
+  /** First-visit mini-tours completed or skipped per page. */
+  pageToursSeen?: Partial<Record<'settings' | 'calendar' | 'progress' | 'groups', boolean>>;
   /** ISO timestamp — used to reconcile local vs cloud copies when signed in. */
   updatedAt?: string;
 };
