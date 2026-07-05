@@ -4,7 +4,7 @@ import type { CommitmentDefinition, GroupPrivacy, Journey } from '../types';
 import { createCommitmentPreset } from '../data/commitmentPresets';
 import { formatGroupError } from '../lib/authErrors';
 import { createGroup } from '../lib/groups';
-import { CommitmentEditor } from './CommitmentEditor';
+import { CommitmentEditor, getCommitmentDurationErrors } from './CommitmentEditor';
 import { JourneyBuilder } from './JourneyBuilder';
 import { LoadingButton } from './LoadingButton';
 import { Icon } from './Icon';
@@ -36,8 +36,18 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
     trackEvent('group_created', { privacy, journey_type: type });
   };
 
+  const validateCommitments = (): boolean => {
+    const durationErrors = getCommitmentDurationErrors(commitments);
+    if (durationErrors.length > 0) {
+      setError(durationErrors[0] ?? 'Fix commitment duration values before creating the group.');
+      return false;
+    }
+    return true;
+  };
+
   const handleCreateBuiltIn = async () => {
     if (!name.trim()) return;
+    if (!validateCommitments()) return;
     setBusy(true);
     setError(null);
     try {
@@ -62,6 +72,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
   };
 
   const handleCustomJourney = async (journey: Journey) => {
+    if (!validateCommitments()) return;
     setBusy(true);
     setError(null);
     try {
@@ -175,7 +186,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
               <LoadingButton
                 type="button"
                 loading={busy}
-                disabled={!name.trim()}
+                disabled={!name.trim() || getCommitmentDurationErrors(commitments).length > 0}
                 className="w-full"
                 onClick={() => void handleCreateBuiltIn()}
               >

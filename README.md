@@ -12,7 +12,7 @@ A spiritual fasting companion for **June 13 – December 19, 2026**. Open the ap
 - **Progress** — Streaks, phase completion, badges, mood visualizer, and stats
 - **Phases** — Overview of all 8 fasting phases with artwork
 - **Journeys** — Built-in plan plus custom multi-phase journeys (Settings)
-- **Groups** — Optional community groups with shared journal, prayer requests, and leader dashboard (requires cloud sign-in)
+- **Groups** — Optional community groups with shared journal, prayer requests, and leader dashboard (requires cloud sign-in). When creating a group, leaders can customize daily commitments—including minute-based targets with validated duration inputs.
 - **Settings** — Export/import journal, cloud sync, preferences, safety notes
 - **PWA** — Installable and works offline after first load
 

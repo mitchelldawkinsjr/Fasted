@@ -91,4 +91,61 @@ test.describe('Groups', () => {
     ).toBeVisible();
     await expect(page.getByText("Could not find the table 'public.group_commitments'")).toHaveCount(0);
   });
+
+  test('allows editing commitment duration minutes in create group modal', async ({ page }) => {
+    let savedCommitments: Array<{ label: string; shape: string; target?: number }> = [];
+    await mockGroupsApi(page, {
+      myMemberships: [],
+      onCommitmentsCreated: (commitments) => {
+        savedCommitments = commitments as Array<{ label: string; shape: string; target?: number }>;
+      },
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/groups');
+    await page.getByRole('button', { name: 'Create Group' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Create Group' });
+    await dialog.getByPlaceholder('Summer Fast Cohort').fill('Duration Test Group');
+
+    const moveDuration = dialog.getByRole('textbox', { name: 'Duration in minutes' }).first();
+    await moveDuration.click();
+    await moveDuration.fill('');
+    await moveDuration.fill('45');
+    await moveDuration.blur();
+    await expect(moveDuration).toHaveValue('45');
+
+    await dialog.getByRole('button', { name: 'Add commitment' }).click();
+    const customRow = dialog.locator('li').last();
+    await customRow.locator('select').selectOption('duration');
+    const customDuration = customRow.getByRole('textbox', { name: 'Duration in minutes' });
+    await expect(customDuration).toHaveValue('1');
+    await customDuration.fill('20');
+    await customDuration.blur();
+    await expect(customDuration).toHaveValue('20');
+
+    await dialog.getByRole('button', { name: 'Create Group' }).click();
+    await expect(page).toHaveURL(new RegExp(`/groups/${GROUP_ID}$`));
+
+    const moveCommitment = savedCommitments.find((item) => item.label === 'Move body daily');
+    expect(moveCommitment?.target).toBe(45);
+    const customCommitment = savedCommitments.find((item) => item.label === '');
+    expect(customCommitment?.target).toBe(20);
+  });
+
+  test('shows validation feedback for invalid commitment duration', async ({ page }) => {
+    await mockGroupsApi(page, { myMemberships: [] });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/groups');
+    await page.getByRole('button', { name: 'Create Group' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Create Group' });
+    await dialog.getByPlaceholder('Summer Fast Cohort').fill('Invalid Duration Group');
+
+    const moveDuration = dialog.getByRole('textbox', { name: 'Duration in minutes' }).first();
+    await moveDuration.fill('');
+    await moveDuration.blur();
+
+    await expect(dialog.getByText('Enter a positive number of minutes.')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Create Group' })).toBeDisabled();
+  });
 });
