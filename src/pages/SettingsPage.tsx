@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { CloudSyncSection } from '../components/CloudSyncSection';
 import { GroupsSettingsSection } from '../components/GroupsSettingsSection';
 import { JourneySettingsSection } from '../components/JourneySettingsSection';
@@ -266,6 +266,14 @@ export function SettingsPage() {
           private cloud storage. Use Export to download a portable copy. Reset clears this device
           only; Delete account data also removes cloud progress and photos for the signed-in user.
         </p>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-body-md">
+          <Link to="/privacy" className="text-secondary underline underline-offset-2">
+            Privacy Policy
+          </Link>
+          <Link to="/data-deletion" className="text-secondary underline underline-offset-2">
+            Data Deletion Instructions
+          </Link>
+        </div>
       </section>
 
       <section className="stitch-card overflow-hidden border-l-4 border-error">

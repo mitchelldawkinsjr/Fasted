@@ -16,6 +16,8 @@ import { BadgeGalleryPage } from './pages/BadgeGalleryPage';
 import { MilestoneDetailPage } from './pages/MilestoneDetailPage';
 import { MoodVisualizerPage } from './pages/MoodVisualizerPage';
 import { ProgressPage } from './pages/ProgressPage';
+import { DataDeletionPage } from './pages/DataDeletionPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TodayPage } from './pages/TodayPage';
 
@@ -42,6 +44,8 @@ export default function App() {
             <Route path="groups/:id/dashboard" element={<LeaderDashboardPage />} />
             <Route path="join/:code" element={<JoinGroupPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="privacy" element={<PrivacyPolicyPage />} />
+            <Route path="data-deletion" element={<DataDeletionPage />} />
           </Route>
           </Routes>
           </TourProvider>

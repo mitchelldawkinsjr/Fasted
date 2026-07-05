@@ -31,6 +31,8 @@ const pageTitles: Record<string, string> = {
   '/phases': DEFAULT_HEADER_TITLE,
   '/groups': 'Your Groups',
   '/settings': DEFAULT_HEADER_TITLE,
+  '/privacy': 'Privacy Policy',
+  '/data-deletion': 'Data Deletion',
 };
 
 export function Layout() {
