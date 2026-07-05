@@ -1,5 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { trackEvent } from '../lib/analytics';
+import { JournalFocusLightbox, type FocusField } from './JournalFocusLightbox';
+import { JournalTextField } from './JournalTextField';
+import { FocusModeToggle } from './FocusModeToggle';
+import { useProgress } from '../hooks/useProgress';
 import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
 import { MealImageUpload } from './MealImageUpload';
@@ -29,6 +33,7 @@ import {
   getMealImages,
   getStorageScope,
   saveJournalEntryWithMealImages,
+  saveSettings,
 } from '../lib/storage';
 import { toast } from '../lib/toast';
 import type {
@@ -50,6 +55,8 @@ type Props = {
 };
 
 export function JournalEditor({ entry, defaultDate, initialType, onSave, onCancel }: Props) {
+  const progress = useProgress();
+  const journalFocusMode = progress.settings.journalFocusMode !== false;
   const { planStart, planEnd } = useActiveJourney();
   const initialDate = clampDateToPlan(entry?.date ?? defaultDate ?? getDefaultJournalDate());
   const [date, setDate] = useState(initialDate);
@@ -112,6 +119,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     entry && isDailyReflectionEntry(entry) ? entry.tomorrowIntention : '',
   );
   const [saving, setSaving] = useState(false);
+  const [focusFieldKey, setFocusFieldKey] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -119,6 +127,10 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       discardUnsavedMealImages(collectMealImageIds(mealImagesRef.current));
     };
   }, []);
+
+  useEffect(() => {
+    setFocusFieldKey(null);
+  }, [entryType, journalFocusMode]);
 
   const clearSimpleFields = () => {
     setContent('');
@@ -304,6 +316,96 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3 text-body-md grace-shadow focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
 
+  const focusFields = useMemo((): FocusField[] => {
+    if (entryType === 'daily-reflection') {
+      const stripLabels: Record<string, string> = {
+        prayerFocus: 'Verse',
+        prayedAbout: 'Prayed',
+        godTeaching: 'Teaching',
+        hungerNotes: 'Feeling',
+        victory: 'Victory',
+        tomorrowIntention: 'Tomorrow',
+      };
+      return DAILY_REFLECTION_FIELDS.map(({ key, label }) => ({
+        key,
+        label,
+        ariaLabel: label,
+        stripLabel: stripLabels[key] ?? label,
+      }));
+    }
+    if (entryType === 'food') {
+      return FOOD_JOURNAL_FIELDS.map(({ key, label, sectionName }) => ({
+        key,
+        label,
+        ariaLabel: label,
+        stripLabel: sectionName,
+      }));
+    }
+    return [
+      {
+        key: 'content',
+        label: simpleContentLabel,
+        ariaLabel: simpleContentLabel,
+        stripLabel: simpleContentLabel,
+      },
+    ];
+  }, [entryType, simpleContentLabel]);
+
+  const focusValues = useMemo((): Record<string, string> => {
+    if (entryType === 'daily-reflection') {
+      return {
+        prayerFocus,
+        prayedAbout,
+        godTeaching,
+        hungerNotes,
+        victory,
+        tomorrowIntention,
+      };
+    }
+    if (entryType === 'food') {
+      return { breakfast, lunch, dinner, snack };
+    }
+    return { content };
+  }, [
+    breakfast,
+    content,
+    dinner,
+    entryType,
+    godTeaching,
+    hungerNotes,
+    lunch,
+    prayedAbout,
+    prayerFocus,
+    snack,
+    tomorrowIntention,
+    victory,
+  ]);
+
+  const handleFocusChange = (key: string, value: string) => {
+    if (entryType === 'daily-reflection') {
+      const setter = dailyFieldState[key as keyof typeof dailyFieldState];
+      if (setter) setter[1](value);
+      return;
+    }
+    if (entryType === 'food') {
+      const setter = foodFieldState[key as keyof typeof foodFieldState];
+      if (setter) setter[1](value);
+      return;
+    }
+    if (key === 'content') setContent(value);
+  };
+
+  const openFocusField = (key: string) => {
+    if (!journalFocusMode) return;
+    setFocusFieldKey(key);
+  };
+
+  const handleFocusModeToggle = (enabled: boolean) => {
+    if (!enabled) setFocusFieldKey(null);
+    saveSettings({ journalFocusMode: enabled });
+    trackEvent('journal_focus_mode_toggled', { enabled });
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -348,12 +450,18 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                   {field.label}
                 </span>
               )}
-              <textarea
+              <JournalTextField
                 value={field.value}
-                onChange={(e) => field.set(e.target.value)}
-                rows={2}
-                className={inputClass}
-                aria-label={field.label}
+                onChange={field.set}
+                placeholder={
+                  field.key === 'prayerFocus' ? 'Write your reflection…' : `${field.label}…`
+                }
+                ariaLabel={field.label}
+                inputClass={inputClass}
+                focusModeEnabled={journalFocusMode}
+                isActive={focusFieldKey === field.key}
+                lightboxOpen={focusFieldKey === field.key}
+                onOpen={() => openFocusField(field.key)}
               />
             </label>
           ))}
@@ -365,12 +473,16 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
               <span className="mb-1 block text-body-md font-medium text-on-surface">
                 {field.label}
               </span>
-              <textarea
+              <JournalTextField
                 value={field.value}
-                onChange={(e) => field.set(e.target.value)}
-                rows={2}
-                className={inputClass}
-                aria-label={field.label}
+                onChange={field.set}
+                placeholder={`${field.label}…`}
+                ariaLabel={field.label}
+                inputClass={inputClass}
+                focusModeEnabled={journalFocusMode}
+                isActive={focusFieldKey === field.key}
+                lightboxOpen={focusFieldKey === field.key}
+                onOpen={() => openFocusField(field.key)}
               />
             </label>
             <MealImageUpload
@@ -385,15 +497,37 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           <span className="mb-1 block text-body-md font-medium text-on-surface">
             {simpleContentLabel}
           </span>
-          <textarea
+          <JournalTextField
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={setContent}
+            placeholder={`${simpleContentLabel}…`}
+            ariaLabel={simpleContentLabel}
+            inputClass={inputClass}
+            focusModeEnabled={journalFocusMode}
+            isActive={focusFieldKey === 'content'}
+            lightboxOpen={focusFieldKey === 'content'}
+            onOpen={() => openFocusField('content')}
             rows={entryType === 'fitness' ? 4 : 6}
-            className={inputClass}
-            aria-label={simpleContentLabel}
           />
         </label>
       )}
+      </div>
+
+      {journalFocusMode && focusFieldKey && (
+        <JournalFocusLightbox
+          fields={focusFields}
+          activeKey={focusFieldKey}
+          values={focusValues}
+          onChange={handleFocusChange}
+          onNavigate={setFocusFieldKey}
+          onClose={() => setFocusFieldKey(null)}
+          date={date}
+          entryType={entryType}
+        />
+      )}
+
+      <div className="flex shrink-0 justify-center pb-2">
+        <FocusModeToggle enabled={journalFocusMode} onChange={handleFocusModeToggle} />
       </div>
 
       <div className="flex shrink-0 gap-3 border-t border-outline-variant/30 bg-linen pt-3">

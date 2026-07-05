@@ -12,6 +12,26 @@ async function selectType(page: import('@playwright/test').Page, label: string) 
   await expect(button).toHaveAttribute('aria-pressed', 'true');
 }
 
+async function fillJournalField(
+  page: import('@playwright/test').Page,
+  label: string,
+  text: string,
+) {
+  const field = page.getByLabel(label);
+  if (await field.evaluate((element) => element.tagName === 'TEXTAREA')) {
+    await field.fill(text);
+    return;
+  }
+
+  const dialog = page.getByRole('dialog');
+  if (await dialog.isVisible()) {
+    await page.getByRole('button', { name: 'Done' }).click();
+  }
+  await field.click();
+  await dialog.getByLabel(label).fill(text);
+  await page.getByRole('button', { name: 'Done' }).click();
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/journal');
   await page.evaluate((key) => {
@@ -30,8 +50,8 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
     'true',
   );
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Verse of the Day').fill('Morning prayer focus');
-  await page.getByLabel('Victory today').fill('Stayed faithful with water only');
+  await fillJournalField(page, 'Verse of the Day', 'Morning prayer focus');
+  await fillJournalField(page, 'Victory today', 'Stayed faithful with water only');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await expect(page.getByText('Reflection saved.')).toBeVisible();
@@ -52,11 +72,69 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
   expect(stored.journalEntries[0].victory).toBe('Stayed faithful with water only');
 });
 
+test('focus lightbox navigates between daily reflection fields', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByLabel('Verse of the Day').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('dialog').getByLabel('Verse of the Day').fill('Focus verse entry');
+  await page.getByRole('dialog').getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('dialog').getByLabel('What I prayed about').fill('Focus prayed entry');
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+  await expect(page.getByText('Reflection saved.')).toBeVisible();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  const saved = stored.journalEntries.find(
+    (entry: { prayedAbout?: string }) => entry.prayedAbout === 'Focus prayed entry',
+  );
+  expect(saved?.prayerFocus).toBe('Focus verse entry');
+});
+
+test('dismisses focus lightbox when clicking the backdrop', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByLabel('Verse of the Day').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+
+  await page.getByRole('dialog').click({ position: { x: 8, y: 8 } });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('focus mode toggle off uses inline textareas', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByRole('switch', { name: 'Focus mode' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  await page.getByLabel('Victory today').fill('Inline victory note');
+  await page.getByRole('button', { name: 'Save Entry' }).click();
+
+  await expect(page.getByRole('listitem').filter({ hasText: 'Inline victory note' })).toBeVisible();
+
+  const stored = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  }, STORAGE_KEY);
+
+  expect(stored.settings.journalFocusMode).toBe(false);
+  expect(
+    stored.journalEntries.some(
+      (entry: { victory?: string }) => entry.victory === 'Inline victory note',
+    ),
+  ).toBe(true);
+});
+
 test('saves a simple prayer entry in one text box', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Prayer');
   await expect(page.getByLabel('Verse of the Day')).toHaveCount(0);
-  await page.getByLabel('Prayer').fill('Prayed for family healing');
+  await fillJournalField(page, 'Prayer', 'Prayed for family healing');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await expect(page.getByRole('listitem').filter({ hasText: 'Prayed for family healing' })).toBeVisible();
@@ -75,7 +153,7 @@ test('saved entry remains visible after clearing an active search filter', async
   await page.getByRole('searchbox', { name: 'Search journal entries' }).fill('nothing-matches');
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Revelations');
-  await page.getByLabel('What is God saying?').fill('Visible after save');
+  await fillJournalField(page, 'What is God saying?', 'Visible after save');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await expect(page.getByText('1 reflections')).toBeVisible();
@@ -90,7 +168,7 @@ test('date stays within plan bounds on save', async ({ page }) => {
   await expect(dateInput).toHaveAttribute('max', '2026-12-19');
 
   await selectType(page, 'Gratitude');
-  await page.getByLabel('Gratitude').fill('Plan date save');
+  await fillJournalField(page, 'Gratitude', 'Plan date save');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   const stored = await page.evaluate((key) => {
@@ -130,8 +208,6 @@ test('morning reflection tag links to filtered journal', async ({ page }) => {
 
 test('shows verse of the day chapter link in daily reflection form', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
-  await expect(page.getByText('Verse of the Day')).toBeVisible();
-
   const chapterLink = page.getByRole('link', { name: /read full chapter on Bible.com/i });
   await expect(chapterLink).toBeVisible();
   await expect(chapterLink).toHaveAttribute('href', /bible\.com\/bible\/116\/.+\.NLT$/);
@@ -140,9 +216,9 @@ test('shows verse of the day chapter link in daily reflection form', async ({ pa
 test('opens a read-only view of a saved entry', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Great' }).click();
-  await page.getByLabel('Verse of the Day').fill('Evening prayer focus');
-  await page.getByLabel('What I prayed about').fill('Family healing and peace');
-  await page.getByLabel('Victory today').fill('Completed the fast without complaint');
+  await fillJournalField(page, 'Verse of the Day', 'Evening prayer focus');
+  await fillJournalField(page, 'What I prayed about', 'Family healing and peace');
+  await fillJournalField(page, 'Victory today', 'Completed the fast without complaint');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.getByRole('button', { name: /View reflection from/i }).click();
@@ -168,12 +244,12 @@ test('opens a read-only view of a saved entry', async ({ page }) => {
 test('filter chips and listing hashtags show only entries with matching types', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Prayer');
-  await page.getByLabel('Prayer').fill('Prayer only entry');
+  await fillJournalField(page, 'Prayer', 'Prayer only entry');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Revelations');
-  await page.getByLabel('What is God saying?').fill('Victory only entry');
+  await fillJournalField(page, 'What is God saying?', 'Victory only entry');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.getByRole('button', { name: 'Prayer', exact: true }).click();
@@ -201,12 +277,12 @@ test('filter chips and listing hashtags show only entries with matching types', 
 test('viewer hashtag returns to filtered journal listing', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Revelations');
-  await page.getByLabel('What is God saying?').fill('Victory viewer hashtag entry');
+  await fillJournalField(page, 'What is God saying?', 'Victory viewer hashtag entry');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Prayer');
-  await page.getByLabel('Prayer').fill('Prayer viewer hashtag entry');
+  await fillJournalField(page, 'Prayer', 'Prayer viewer hashtag entry');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page
@@ -228,8 +304,8 @@ test('viewer hashtag returns to filtered journal listing', async ({ page }) => {
 test('saves a food entry with meal fields', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Food');
-  await page.getByLabel('What did you eat for breakfast?').fill('Oatmeal with berries');
-  await page.getByLabel('What did you eat for lunch?').fill('Grilled chicken salad');
+  await fillJournalField(page, 'What did you eat for breakfast?', 'Oatmeal with berries');
+  await fillJournalField(page, 'What did you eat for lunch?', 'Grilled chicken salad');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await expect(page.getByRole('listitem').filter({ hasText: 'Oatmeal with berries' })).toBeVisible();
@@ -248,8 +324,8 @@ test('saves a food entry with meal fields', async ({ page }) => {
 test('saves meal photos with a food entry', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Food');
-  await page.getByLabel('What did you eat for breakfast?').fill('Eggs and toast');
-  await page.getByLabel('What did you eat as a snack?').fill('Apple slices');
+  await fillJournalField(page, 'What did you eat for breakfast?', 'Eggs and toast');
+  await fillJournalField(page, 'What did you eat as a snack?', 'Apple slices');
 
   const fileInput = page.locator('input[type="file"]').first();
   await fileInput.setInputFiles('e2e/fixtures/meal-photo.png');
@@ -344,7 +420,7 @@ test('migrates legacy base64 meal images and saves without storage-full', async 
 
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Food');
-  await page.getByLabel('What did you eat for breakfast?').fill('Post-migration meal');
+  await fillJournalField(page, 'What did you eat for breakfast?', 'Post-migration meal');
 
   const fileInput = page.locator('input[type="file"]').first();
   await fileInput.setInputFiles('e2e/fixtures/meal-photo.png');
@@ -372,7 +448,7 @@ test('migrates legacy base64 meal images and saves without storage-full', async 
 test('saves up to four meal photos per section', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Food');
-  await page.getByLabel('What did you eat for breakfast?').fill('Photo breakfast log');
+  await fillJournalField(page, 'What did you eat for breakfast?', 'Photo breakfast log');
 
   const fileInput = page.locator('input[type="file"]').first();
   await fileInput.setInputFiles([
@@ -400,7 +476,7 @@ test('saves up to four meal photos per section', async ({ page }) => {
 test('warns when selecting more meal photos than the section allows', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Food');
-  await page.getByLabel('What did you eat for lunch?').fill('Lunch photo limit test');
+  await fillJournalField(page, 'What did you eat for lunch?', 'Lunch photo limit test');
 
   const fileInput = page.locator('input[type="file"]').nth(1);
   await fileInput.setInputFiles([
@@ -419,7 +495,7 @@ test('warns when selecting more meal photos than the section allows', async ({ p
 test('saves a fitness entry', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Fitness');
-  await page.getByLabel('How did you move your body today?').fill('30-minute walk after dinner');
+  await fillJournalField(page, 'How did you move your body today?', '30-minute walk after dinner');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await expect(
@@ -482,10 +558,10 @@ test('migrates legacy tagged entries on load', async ({ page }) => {
 test('preserves text when switching prayer -> daily reflection -> prayer', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Prayer');
-  await page.getByLabel('Prayer').fill('Prayer text preserved across switches');
+  await fillJournalField(page, 'Prayer', 'Prayer text preserved across switches');
   await selectType(page, 'Daily Reflection');
   await selectType(page, 'Prayer');
-  await expect(page.getByLabel('Prayer')).toHaveValue('Prayer text preserved across switches');
+  await expect(page.getByLabel('Prayer')).toContainText('Prayer text preserved across switches');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   const stored = await page.evaluate((key) => {
@@ -603,8 +679,8 @@ test.describe('journal PDF export', () => {
 test('opens print document when exporting journal as PDF', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Verse of the Day').fill('Export cover verse');
-  await page.getByLabel('Victory today').fill('Export victory note');
+  await fillJournalField(page, 'Verse of the Day', 'Export cover verse');
+  await fillJournalField(page, 'Victory today', 'Export victory note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   const [popup] = await Promise.all([
@@ -632,7 +708,7 @@ test('includes meal photos in journal PDF export', async ({ page, context }) => 
 
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Food');
-  await page.getByLabel('What did you eat for breakfast?').fill('PDF export breakfast photo');
+  await fillJournalField(page, 'What did you eat for breakfast?', 'PDF export breakfast photo');
 
   const fileInput = page.locator('input[type="file"]').first();
   await fileInput.setInputFiles('e2e/fixtures/meal-photo.png');
@@ -656,7 +732,7 @@ test('includes meal photos in journal PDF export', async ({ page, context }) => 
 test('print page back button closes browser PDF export popup', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Verse of the Day').fill('Popup back verse');
+  await fillJournalField(page, 'Verse of the Day', 'Popup back verse');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   const [popup] = await Promise.all([
@@ -676,7 +752,7 @@ test('print page back button closes browser PDF export popup', async ({ page }) 
 test('shows a blocked popup message when PDF export cannot open', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Verse of the Day').fill('Blocked popup verse');
+  await fillJournalField(page, 'Verse of the Day', 'Blocked popup verse');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.evaluate(() => {
@@ -691,7 +767,7 @@ test('shows a blocked popup message when PDF export cannot open', async ({ page 
 test('waits for print fonts before opening the print dialog', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Prayer');
-  await page.getByLabel('Prayer').fill('Fonts should load before printing');
+  await fillJournalField(page, 'Prayer', 'Fonts should load before printing');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.context().addInitScript(() => {
@@ -756,7 +832,7 @@ test('waits for print fonts before opening the print dialog', async ({ page }) =
 test('settings PDF export opens print document', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await selectType(page, 'Prayer');
-  await page.getByLabel('Prayer').fill('Settings export prayer');
+  await fillJournalField(page, 'Prayer', 'Settings export prayer');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.goto('/settings');
@@ -777,7 +853,7 @@ test('settings PDF export opens print document', async ({ page }) => {
 test('print page back button returns to journal in a same-tab browser view', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Verse of the Day').fill('Back link verse');
+  await fillJournalField(page, 'Verse of the Day', 'Back link verse');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.addInitScript(() => {
@@ -793,7 +869,7 @@ test('print page back button returns to journal in a same-tab browser view', asy
 test('PDF export auto-returns in-app when installed PWA afterprint fires synchronously', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Verse of the Day').fill('PWA export verse');
+  await fillJournalField(page, 'Verse of the Day', 'PWA export verse');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.evaluate(() => {
