@@ -15,7 +15,7 @@ export function VerseOfTheDay({ date }: Props) {
 
   return (
     <section
-      className="stitch-card border border-gold/30 bg-surface-container-low p-stack-lg"
+      className="stitch-card flex flex-col justify-center border-l-4 border-gold p-stack-lg"
       aria-labelledby="verse-of-the-day-heading"
     >
       <div className="mb-4 flex items-center gap-2">
@@ -35,7 +35,7 @@ export function VerseOfTheDay({ date }: Props) {
             rel="noopener noreferrer"
             onClick={() => trackEvent('scripture_link_clicked', { source: 'verse_of_the_day' })}
             className="label-caps text-on-surface-variant underline decoration-outline/40 underline-offset-2 transition hover:text-primary"
-            aria-label={`${verse.reference} (opens on Bible.com in a new tab)`}
+            aria-label={`${verse.reference} (opens on Bible Gateway in a new tab)`}
           >
             — {verse.reference}
           </a>
