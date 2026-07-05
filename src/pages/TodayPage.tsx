@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { trackEvent } from '../lib/analytics';
 import { CheckInModal } from '../components/CheckInModal';
 import { DailyCommitmentCard } from '../components/DailyCommitmentCard';
 import { EncouragementCard } from '../components/EncouragementCard';
@@ -129,6 +130,9 @@ export function TodayPage() {
             <Link
               key={type}
               to={`/journal?type=${type}`}
+              onClick={() =>
+                trackEvent('journal_type_opened', { entry_type: type, source: 'today_link' })
+              }
               className={journalTypePillClass(false)}
             >
               {JOURNAL_ENTRY_TYPE_LABELS[type]}

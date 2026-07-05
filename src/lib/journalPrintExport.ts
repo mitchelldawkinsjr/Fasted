@@ -1,4 +1,6 @@
 import type { NavigateFunction } from 'react-router-dom';
+import { trackEvent } from './analytics';
+import { getProgress } from './storage';
 import { isRunningAsInstalledPwa } from './pwaInstall';
 
 export type JournalPrintReturnTo = '/journal' | '/settings';
@@ -11,6 +13,10 @@ export function openJournalPrintView(
 
   if (isRunningAsInstalledPwa()) {
     navigate(printPath);
+    trackEvent('journal_pdf_export', {
+      source: returnTo === '/settings' ? 'settings' : 'journal',
+      entry_count: getProgress().journalEntries.length,
+    });
     return true;
   }
 
@@ -20,6 +26,10 @@ export function openJournalPrintView(
   }
 
   printWindow.opener = null;
+  trackEvent('journal_pdf_export', {
+    source: returnTo === '/settings' ? 'settings' : 'journal',
+    entry_count: getProgress().journalEntries.length,
+  });
   return true;
 }
 

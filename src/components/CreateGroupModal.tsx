@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { trackEvent } from '../lib/analytics';
 import type { CommitmentDefinition, GroupPrivacy, Journey } from '../types';
 import { createCommitmentPreset } from '../data/commitmentPresets';
 import { formatGroupError } from '../lib/authErrors';
@@ -31,6 +32,10 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
   const inputClass =
     'w-full rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
 
+  const notifyGroupCreated = (type: 'built-in' | 'custom') => {
+    trackEvent('group_created', { privacy, journey_type: type });
+  };
+
   const handleCreateBuiltIn = async () => {
     if (!name.trim()) return;
     setBusy(true);
@@ -43,6 +48,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
         displayName: displayName.trim() || undefined,
         commitments,
       });
+      notifyGroupCreated('built-in');
       onCreated(group.id);
       onClose();
       setName('');
@@ -71,6 +77,7 @@ export function CreateGroupModal({ open, onClose, onCreated }: Props) {
         displayName: displayName.trim() || undefined,
         commitments,
       });
+      notifyGroupCreated('custom');
       setBuilderOpen(false);
       onCreated(group.id);
       onClose();

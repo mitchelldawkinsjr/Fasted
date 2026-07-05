@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { trackEvent } from '../lib/analytics';
 import { getTemplateById } from '../data/phaseTemplates';
 import { generateScheduleSummary, withGeneratedScheduleSummary } from '../lib/customPhaseContent';
 import {
@@ -345,6 +346,10 @@ export function JourneyBuilder({
 
   useEffect(() => {
     if (!open) return;
+    trackEvent('custom_journey_builder_opened', {
+      is_edit: Boolean(initialJourney),
+      context: onComplete ? 'group' : 'settings',
+    });
     const initial = getInitialBuilderState(initialJourney);
     setJourneyId(initial.journeyId);
     setName(initial.name);
@@ -426,6 +431,11 @@ export function JourneyBuilder({
         setActiveJourney(journeyToSave.id);
         toast.success(initialJourney ? 'Journey updated from today forward.' : 'Custom journey saved.');
       }
+      trackEvent('custom_journey_saved', {
+        phase_count: journeyToSave.phases.length,
+        is_update: Boolean(initialJourney),
+        context: onComplete ? 'group' : 'settings',
+      });
       onClose();
       resetForm();
     } catch (err) {

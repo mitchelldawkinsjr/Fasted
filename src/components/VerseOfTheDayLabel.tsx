@@ -2,6 +2,7 @@ import {
   abbreviateScriptureReference,
   scriptureReferenceToChapterUrl,
 } from '../lib/bibleComUrl';
+import { trackEvent } from '../lib/analytics';
 import { getVerseOfTheDayReference } from '../lib/dailyPlan';
 import { VERSE_OF_THE_DAY_LABEL } from '../lib/journalTags';
 
@@ -30,6 +31,7 @@ export function VerseOfTheDayLabel({ date, as = 'label' }: Props) {
           href={chapterUrl}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackEvent('scripture_link_clicked', { source: 'journal_verse' })}
           className="text-secondary underline decoration-outline/40 underline-offset-2 transition hover:text-primary"
           aria-label={`${displayRef} — read full chapter on Bible.com (opens in a new tab)`}
         >

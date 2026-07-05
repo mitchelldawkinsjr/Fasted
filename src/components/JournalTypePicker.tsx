@@ -3,6 +3,7 @@ import {
   JOURNAL_ENTRY_TYPES,
   journalTypePillClass,
 } from '../lib/journalTags';
+import { trackEvent } from '../lib/analytics';
 import type { JournalEntryType } from '../types';
 
 type Props = {
@@ -30,7 +31,12 @@ export function JournalTypePicker({ value, onChange, prefilled = false, classNam
             <button
               key={type}
               type="button"
-              onClick={() => onChange(type)}
+              onClick={() => {
+                if (type !== value) {
+                  trackEvent('journal_type_changed', { entry_type: type, source: 'editor_picker' });
+                }
+                onChange(type);
+              }}
               aria-pressed={selected}
               className={journalTypePillClass(selected)}
             >
