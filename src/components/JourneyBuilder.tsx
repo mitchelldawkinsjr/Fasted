@@ -166,25 +166,25 @@ function PhaseDurationDaysField({
             if (error) setError(null);
           }}
           onBlur={() => commitDraft(draft)}
-          className="min-h-11 flex-1 border-0 bg-transparent px-4 py-3 text-body-md focus:outline-none"
+          className="min-h-11 min-w-0 flex-1 border-0 bg-transparent px-4 py-3 text-body-md focus:outline-none"
         />
-        <div className="flex flex-col border-l border-outline-variant">
+        <div className="flex shrink-0 flex-col border-l border-outline-variant">
           <button
             type="button"
             aria-label="Increase duration by 1 day"
             onClick={() => stepDuration(1)}
-            className="flex min-h-[22px] min-w-11 flex-1 items-center justify-center hover:bg-surface-container"
+            className="flex h-6 w-11 items-center justify-center text-on-surface hover:bg-surface-container"
           >
-            <Icon name="arrow_upward" size={18} />
+            <Icon name="keyboard_arrow_up" size={20} />
           </button>
           <button
             type="button"
             aria-label="Decrease duration by 1 day"
             onClick={() => stepDuration(-1)}
             disabled={currentValue <= 1}
-            className="flex min-h-[22px] min-w-11 flex-1 items-center justify-center border-t border-outline-variant hover:bg-surface-container disabled:opacity-40"
+            className="flex h-6 w-11 items-center justify-center border-t border-outline-variant text-on-surface hover:bg-surface-container disabled:opacity-40"
           >
-            <Icon name="arrow_downward" size={18} />
+            <Icon name="keyboard_arrow_down" size={20} />
           </button>
         </div>
       </div>
@@ -470,6 +470,19 @@ export function JourneyBuilder({
     setStep(0);
   }, [initialJourney, open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const main = document.querySelector('main');
+    main?.setAttribute('inert', '');
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      main?.removeAttribute('inert');
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
   const draftJourney = useMemo((): Journey | null => {
     if (!name.trim() || phases.length === 0) return null;
     if (
@@ -586,9 +599,9 @@ export function JourneyBuilder({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/40 p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-4">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
       <div
-        className="flex max-h-[min(90vh,calc(100dvh-6rem))] w-full max-w-lg flex-col rounded-2xl bg-surface-container-lowest shadow-grace-up sm:max-h-[90vh]"
+        className="mb-[calc(5.5rem+env(safe-area-inset-bottom))] flex max-h-[min(calc(100dvh-2rem-5.5rem-env(safe-area-inset-bottom)),90vh)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-surface-container-lowest shadow-grace-up sm:mb-0 sm:max-h-[min(90vh,calc(100dvh-2rem))]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="journey-builder-title"
@@ -713,7 +726,7 @@ export function JourneyBuilder({
                   </label>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="block">
+                    <div className="block min-w-0">
                       <span className="mb-1 block text-body-md text-on-surface">Duration (days)</span>
                       <PhaseDurationDaysField
                         phaseId={activePhase.id}
@@ -963,7 +976,7 @@ export function JourneyBuilder({
           )}
         </div>
 
-        <div className="shrink-0 border-t border-surface-variant p-gutter pb-[env(safe-area-inset-bottom)]">
+        <div className="shrink-0 border-t border-surface-variant bg-surface-container-lowest p-gutter pb-[max(1rem,env(safe-area-inset-bottom))]">
           {step === 0 && (
             <LoadingButton
               type="button"
