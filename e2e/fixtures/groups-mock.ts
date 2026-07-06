@@ -58,6 +58,7 @@ function json(route: Route, body: unknown, status = 200) {
 type GroupMockOptions = {
   myMemberships?: Array<{ group_id: string }>;
   missingGroupCommitments?: boolean;
+  onJourneyCreated?: (journey: unknown) => void;
 };
 
 export async function seedAuthSession(page: Page) {
@@ -104,6 +105,8 @@ export async function mockGroupsApi(page: Page, options: GroupMockOptions = {}) 
     }
 
     if (url.includes('/journeys') && method === 'POST') {
+      const body = request.postDataJSON();
+      options.onJourneyCreated?.(body);
       return json(route, GROUP.journey);
     }
 
@@ -137,7 +140,8 @@ export async function mockGroupsApi(page: Page, options: GroupMockOptions = {}) 
           404,
         );
       }
-      return json(route, { group_id: GROUP_ID, commitments: [] });
+      const body = request.postDataJSON() as { commitments?: unknown } | null;
+      return json(route, { group_id: GROUP_ID, commitments: body?.commitments ?? [] });
     }
 
     if (url.includes('/member_covenants') && method === 'POST') {

@@ -86,6 +86,117 @@ function arrayToLines(value: string[] | undefined): string {
   return (value ?? []).join('\n');
 }
 
+function parsePhaseDurationDays(raw: string): { value: number | null; error: string | null } {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return { value: null, error: 'Enter a positive number of days.' };
+  }
+  const value = Number(trimmed);
+  if (!Number.isInteger(value) || value < 1) {
+    return { value: null, error: 'Duration must be at least 1 day.' };
+  }
+  return { value, error: null };
+}
+
+type PhaseDurationDaysFieldProps = {
+  phaseId: string;
+  durationDays: number;
+  onChange: (durationDays: number) => void;
+  onInvalid: () => void;
+};
+
+function PhaseDurationDaysField({
+  phaseId,
+  durationDays,
+  onChange,
+  onInvalid,
+}: PhaseDurationDaysFieldProps) {
+  const [draft, setDraft] = useState(() => String(durationDays));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDraft(String(durationDays));
+    setError(null);
+  }, [phaseId]);
+
+  const getCurrentValue = () => parsePhaseDurationDays(draft).value ?? durationDays;
+
+  const applyValue = (value: number) => {
+    const next = Math.max(1, value);
+    setDraft(String(next));
+    setError(null);
+    onChange(next);
+  };
+
+  const commitDraft = (raw: string) => {
+    const parsed = parsePhaseDurationDays(raw);
+    if (parsed.error) {
+      setError(parsed.error);
+      onInvalid();
+      return;
+    }
+    setError(null);
+    setDraft(String(parsed.value));
+    onChange(parsed.value ?? 1);
+  };
+
+  const stepDuration = (delta: 1 | -1) => {
+    applyValue(getCurrentValue() + delta);
+  };
+
+  const currentValue = getCurrentValue();
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div
+        className={`flex overflow-hidden rounded-xl border bg-surface-container-low focus-within:border-secondary focus-within:ring-1 focus-within:ring-secondary ${
+          error ? 'border-error' : 'border-outline-variant'
+        }`}
+      >
+        <input
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          aria-label="Duration (days)"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${phaseId}-duration-error` : undefined}
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value.replace(/\D/g, ''));
+            if (error) setError(null);
+          }}
+          onBlur={() => commitDraft(draft)}
+          className="min-h-11 min-w-0 flex-1 border-0 bg-transparent px-4 py-3 text-body-md focus:outline-none"
+        />
+        <div className="flex shrink-0 flex-col border-l border-outline-variant">
+          <button
+            type="button"
+            aria-label="Increase duration by 1 day"
+            onClick={() => stepDuration(1)}
+            className="flex h-6 w-11 items-center justify-center text-on-surface hover:bg-surface-container"
+          >
+            <Icon name="keyboard_arrow_up" size={20} />
+          </button>
+          <button
+            type="button"
+            aria-label="Decrease duration by 1 day"
+            onClick={() => stepDuration(-1)}
+            disabled={currentValue <= 1}
+            className="flex h-6 w-11 items-center justify-center border-t border-outline-variant text-on-surface hover:bg-surface-container disabled:opacity-40"
+          >
+            <Icon name="keyboard_arrow_down" size={20} />
+          </button>
+        </div>
+      </div>
+      {error && (
+        <span id={`${phaseId}-duration-error`} className="text-label-caps text-error">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function defaultPhaseDraft(index = 0): PhaseDraft {
   return {
     id: createDraftId(),
@@ -359,9 +470,29 @@ export function JourneyBuilder({
     setStep(0);
   }, [initialJourney, open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const main = document.querySelector('main');
+    main?.setAttribute('inert', '');
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      main?.removeAttribute('inert');
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
   const draftJourney = useMemo((): Journey | null => {
     if (!name.trim() || phases.length === 0) return null;
-    if (phases.some((phase) => !phase.title.trim() || linesToArray(phase.prayerFocus).length === 0)) {
+    if (
+      phases.some(
+        (phase) =>
+          !phase.title.trim() ||
+          linesToArray(phase.prayerFocus).length === 0 ||
+          phase.durationDays < 1,
+      )
+    ) {
       return null;
     }
     return {
@@ -468,9 +599,9 @@ export function JourneyBuilder({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/40 p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-4">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
       <div
-        className="flex max-h-[min(90vh,calc(100dvh-6rem))] w-full max-w-lg flex-col rounded-2xl bg-surface-container-lowest shadow-grace-up sm:max-h-[90vh]"
+        className="mb-[calc(5.5rem+env(safe-area-inset-bottom))] flex max-h-[min(calc(100dvh-2rem-5.5rem-env(safe-area-inset-bottom)),90vh)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-surface-container-lowest shadow-grace-up sm:mb-0 sm:max-h-[min(90vh,calc(100dvh-2rem))]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="journey-builder-title"
@@ -595,20 +726,17 @@ export function JourneyBuilder({
                   </label>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <label className="block">
+                    <div className="block min-w-0">
                       <span className="mb-1 block text-body-md text-on-surface">Duration (days)</span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={activePhase.durationDays}
-                        onChange={(e) =>
-                          updatePhase(activePhaseIndex, {
-                            durationDays: Math.max(1, Number(e.target.value) || 1),
-                          })
+                      <PhaseDurationDaysField
+                        phaseId={activePhase.id}
+                        durationDays={activePhase.durationDays}
+                        onChange={(durationDays) =>
+                          updatePhase(activePhaseIndex, { durationDays })
                         }
-                        className={inputClass}
+                        onInvalid={() => updatePhase(activePhaseIndex, { durationDays: 0 })}
                       />
-                    </label>
+                    </div>
                     <label className="block">
                       <span className="mb-1 block text-body-md text-on-surface">Theme color</span>
                       <input
@@ -848,7 +976,7 @@ export function JourneyBuilder({
           )}
         </div>
 
-        <div className="shrink-0 border-t border-surface-variant p-gutter pb-[env(safe-area-inset-bottom)]">
+        <div className="shrink-0 border-t border-surface-variant bg-surface-container-lowest p-gutter pb-[max(1rem,env(safe-area-inset-bottom))]">
           {step === 0 && (
             <LoadingButton
               type="button"
