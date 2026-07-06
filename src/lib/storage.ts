@@ -28,7 +28,6 @@ import { deleteRemoteImages, resolveMealImageBlob } from './mealImageSync';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
 import { computeCheckInStreak } from './streaks';
-
 /** Legacy key — migrated to {@link GUEST_STORAGE_KEY} on first load. */
 export const LEGACY_STORAGE_KEY = 'fasted-calendar-progress';
 

@@ -33,7 +33,7 @@ export function VerseOfTheDayLabel({ date, as = 'label' }: Props) {
           rel="noopener noreferrer"
           onClick={() => trackEvent('scripture_link_clicked', { source: 'journal_verse' })}
           className="text-secondary underline decoration-outline/40 underline-offset-2 transition hover:text-primary"
-          aria-label={`${displayRef} — read full chapter on Bible.com (opens in a new tab)`}
+          aria-label={`${displayRef} — read on Bible Gateway (opens in a new tab)`}
         >
           {displayRef}
         </a>
