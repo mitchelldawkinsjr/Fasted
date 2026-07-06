@@ -293,7 +293,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   };
 
   const dailyStripLabels: Record<string, string> = {
-    prayerFocus: 'Verse',
+    prayerFocus: 'Meditation',
     prayedAbout: 'Prayed',
     godTeaching: 'Teaching',
     hungerNotes: 'Feeling',

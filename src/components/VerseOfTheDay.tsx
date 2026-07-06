@@ -16,12 +16,13 @@ export function VerseOfTheDay({ date }: Props) {
   return (
     <section
       className="stitch-card flex flex-col justify-center border-l-4 border-gold p-stack-lg"
-      aria-labelledby="verse-of-the-day-heading"
+      aria-labelledby="todays-meditation-heading"
+      data-tour="scripture-card"
     >
       <div className="mb-4 flex items-center gap-2">
         <Icon name="menu_book" className="text-gold" />
-        <h2 id="verse-of-the-day-heading" className="font-display text-headline-md text-primary">
-          Verse of the Day
+        <h2 id="todays-meditation-heading" className="font-display text-headline-md text-primary">
+          Today&apos;s Meditation
         </h2>
       </div>
       <blockquote className="mb-4 font-display text-body-lg italic leading-relaxed text-primary">

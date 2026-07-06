@@ -6,7 +6,7 @@ A spiritual fasting companion for **June 13 – December 19, 2026**. Open the ap
 
 ## Features
 
-- **Today** — Current phase, fast-day instructions, scripture, prayer points, daily encouragement, and a **Verse of the Day** that changes each calendar date
+- **Today** — Current phase, fast-day instructions, scripture, prayer points, daily encouragement, and **Today's Meditation** — a daily verse that changes each calendar date
 - **Calendar** — Color-coded plan from June 13 through December 19 with fast-day markers
 - **Journal** — Daily reflections, prayer/gratitude/victory entries, focused lightbox editor, search, and JSON/Markdown export
 - **Progress** — Streaks, phase completion, badges, mood visualizer, and stats

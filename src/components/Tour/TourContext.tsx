@@ -53,8 +53,8 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: 'scripture-card',
     target: '[data-tour="scripture-card"]',
-    title: "Today's Scripture",
-    body: 'Each day includes a verse and reference tied to your current phase — tap to read on Bible.com.',
+    title: "Today's Meditation",
+    body: 'Each day includes a verse and reference tied to your current phase — tap to read on Bible Gateway.',
     placement: 'top',
     scroll: 'center',
   },
