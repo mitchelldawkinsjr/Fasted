@@ -40,11 +40,12 @@ export function CalendarGrid() {
 
   return (
     <div className="space-y-stack-lg">
-      {months.map((month) => (
+      {months.map((month, monthIndex) => (
         <section
           key={month.label}
           className="stitch-card overflow-hidden border-l-4 p-6"
           style={accentColor ? { borderLeftColor: accentColor } : undefined}
+          {...(monthIndex === 0 ? { 'data-tour': 'calendar-grid' } : {})}
         >
           <div className="mb-6 flex items-center justify-between">
             <h3 className="font-display text-headline-md text-primary">{month.label}</h3>

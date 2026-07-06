@@ -7,7 +7,7 @@ type Props = {
 
 export function PrayerPointsCard({ points, encouragement }: Props) {
   return (
-    <section className="stitch-card flex flex-col p-stack-lg" aria-labelledby="prayer-heading">
+    <section className="stitch-card flex flex-col p-stack-lg" aria-labelledby="prayer-heading" data-tour="prayer-focus">
       <div className="mb-4 flex items-center gap-2">
         <Icon name="flare" className="text-secondary" />
         <h2 id="prayer-heading" className="font-display text-headline-md text-primary">

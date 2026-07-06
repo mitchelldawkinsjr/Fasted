@@ -18,7 +18,7 @@ function ScriptureReferenceLink({ reference }: { reference: string }) {
       rel="noopener noreferrer"
       onClick={() => trackEvent('scripture_link_clicked', { source: 'today_card' })}
       className="underline decoration-outline/40 underline-offset-2 transition hover:text-primary"
-      aria-label={`${reference} (opens on Bible.com in a new tab)`}
+      aria-label={`${reference} (opens on Bible Gateway in a new tab)`}
     >
       {reference}
     </a>
@@ -34,6 +34,7 @@ export function ScriptureCard({ phaseId, references }: Props) {
     <section
       className="stitch-card flex flex-col justify-center border-l-4 border-gold p-stack-lg"
       aria-labelledby="scripture-heading"
+      data-tour="scripture-card"
     >
       <div className="mb-4 flex items-center gap-2">
         <Icon name="auto_stories" className="text-secondary" />

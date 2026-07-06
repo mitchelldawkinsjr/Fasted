@@ -23,6 +23,7 @@ export function MoodVisualizerPreview() {
     <Link
       to="/progress/mood"
       className="stitch-card block border-l-4 border-secondary-container p-stack-md transition-transform active:scale-[0.98]"
+      data-tour="progress-mood"
     >
       <div className="mb-stack-md flex items-start justify-between gap-gutter">
         <div>

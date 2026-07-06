@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { FASTED_JOURNEY } from '../../src/data/phaseTemplates';
 import type { UserProgress } from '../../src/types';
-import { FIXED_DATE, INSTALL_TOAST_KEY, LONG_TEXT, STORAGE_KEY } from './constants';
+import { FIXED_DATE, INSTALL_TOAST_KEY, LONG_TEXT, STORAGE_KEY, TOUR_DISMISSED } from './constants';
 
 const DEFAULT_SETTINGS = {
   reminderTime: '07:00',
@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS = {
 
 function baseProgress(overrides: Partial<UserProgress> = {}): UserProgress {
   return {
+    ...TOUR_DISMISSED,
     checkIns: [],
     checkInStreak: 0,
     journalEntries: [],

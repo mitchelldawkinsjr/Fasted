@@ -7,7 +7,7 @@ import { EncouragementCard } from '../components/EncouragementCard';
 import { InfoBanner } from '../components/InfoBanner';
 import { PrayerPointsCard } from '../components/PrayerPointsCard';
 import { SafetyNote } from '../components/SafetyNote';
-import { ScriptureCard } from '../components/ScriptureCard';
+import { VerseOfTheDay } from '../components/VerseOfTheDay';
 import { TodayFastCard } from '../components/TodayFastCard';
 import { Icon } from '../components/Icon';
 import { useActiveJourney } from '../hooks/useActiveJourney';
@@ -61,6 +61,8 @@ export function TodayPage() {
           )}
         </section>
 
+        <VerseOfTheDay date={viewDate} />
+
         <img
           src="/assets/fasting-plan-all-phases.png"
           alt="Overview of all eight fasting phases"
@@ -109,7 +111,7 @@ export function TodayPage() {
       />
 
       <section className="grid grid-cols-1 gap-gutter md:grid-cols-2">
-        <ScriptureCard phaseId={plan.phaseId} references={plan.scriptureReferences} />
+        <VerseOfTheDay date={viewDate} />
         <PrayerPointsCard
           points={plan.prayerPoints}
           encouragement="You are setting this time apart for something greater. Breathe and reflect."
@@ -118,7 +120,7 @@ export function TodayPage() {
 
       <EncouragementCard message={plan.encouragement} />
 
-      <section>
+      <section data-tour="morning-reflection">
         <div className="mb-stack-md flex items-center justify-between">
           <h3 className="font-display text-headline-md text-primary">Morning Reflection</h3>
           <Link to="/journal" aria-label="Open journal">

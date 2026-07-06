@@ -3,6 +3,7 @@ import { AuthProvider } from './components/AuthProvider';
 import { Layout } from './components/Layout';
 import { ScrollToTop } from './components/ScrollToTop';
 import { ThemeProvider } from './components/ThemeProvider';
+import { TourProvider } from './components/Tour/TourContext';
 import { CalendarPage } from './pages/CalendarPage';
 import { GroupDetailPage } from './pages/GroupDetailPage';
 import { GroupsHubPage } from './pages/GroupsHubPage';
@@ -15,6 +16,8 @@ import { BadgeGalleryPage } from './pages/BadgeGalleryPage';
 import { MilestoneDetailPage } from './pages/MilestoneDetailPage';
 import { MoodVisualizerPage } from './pages/MoodVisualizerPage';
 import { ProgressPage } from './pages/ProgressPage';
+import { DataDeletionPage } from './pages/DataDeletionPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TodayPage } from './pages/TodayPage';
 
@@ -23,8 +26,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ThemeProvider>
-          <ScrollToTop />
-          <Routes>
+          <TourProvider>
+            <ScrollToTop />
+            <Routes>
           <Route path="journal/print" element={<JournalPrintPage />} />
           <Route element={<Layout />}>
             <Route index element={<TodayPage />} />
@@ -40,8 +44,11 @@ export default function App() {
             <Route path="groups/:id/dashboard" element={<LeaderDashboardPage />} />
             <Route path="join/:code" element={<JoinGroupPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="privacy" element={<PrivacyPolicyPage />} />
+            <Route path="data-deletion" element={<DataDeletionPage />} />
           </Route>
           </Routes>
+          </TourProvider>
         </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>

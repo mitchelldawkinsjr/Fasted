@@ -28,7 +28,6 @@ import { deleteRemoteImages, resolveMealImageBlob } from './mealImageSync';
 import { messages } from './messages';
 import { scheduleCloudSync } from './sync';
 import { computeCheckInStreak } from './streaks';
-
 /** Legacy key — migrated to {@link GUEST_STORAGE_KEY} on first load. */
 export const LEGACY_STORAGE_KEY = 'fasted-calendar-progress';
 
@@ -416,6 +415,30 @@ export function saveSettings(settings: Partial<AppSettings>): void {
   });
 }
 
+const LEGACY_TOUR_KEY = 'fasted-tour-v1';
+
+/** Migrate the pre-v1 localStorage tour flag into {@link UserProgress}. */
+export function migrateLegacyTourFlag(): void {
+  if (localStorage.getItem(LEGACY_TOUR_KEY) !== 'done') return;
+  localStorage.removeItem(LEGACY_TOUR_KEY);
+  markTourSeen();
+}
+
+export function markTourSeen(): void {
+  const progress = getProgress();
+  if (progress.hasSeenTour) return;
+  persist({ ...progress, hasSeenTour: true });
+}
+
+export function markPageTourSeen(pageId: 'settings' | 'calendar' | 'progress' | 'groups'): void {
+  const progress = getProgress();
+  if (progress.pageToursSeen?.[pageId]) return;
+  persist({
+    ...progress,
+    pageToursSeen: { ...progress.pageToursSeen, [pageId]: true },
+  });
+}
+
 export function saveJourney(journey: Journey): void {
   const progress = getProgress();
   const normalizedJourney = normalizeJourney(journey);
@@ -558,7 +581,7 @@ export function exportJournalMarkdown(): string {
 
 **Type:** Daily Reflection
 ${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
-**Verse of the Day:** ${e.prayerFocus}
+**Today's Meditation:** ${e.prayerFocus}
 
 **What I prayed about:** ${e.prayedAbout}
 

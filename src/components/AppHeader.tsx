@@ -41,6 +41,7 @@ export function AppHeader({ title = 'Fasted', showPhasesLink = true }: Props) {
         to="/settings"
         className="text-primary transition-all hover:opacity-80 active:scale-95"
         aria-label="Account and settings"
+        data-tour="account-settings"
       >
         <Icon name="account_circle" size={28} />
       </Link>

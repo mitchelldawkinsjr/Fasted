@@ -14,6 +14,16 @@ const OUT_DIR = __dirname;
 
 const STORAGE_KEY = "fasted-calendar-progress:guest";
 
+const TOUR_DISMISSED = {
+  hasSeenTour: true,
+  pageToursSeen: {
+    settings: true,
+    calendar: true,
+    progress: true,
+    groups: true,
+  },
+};
+
 const PAGES = [
   { name: "today", url: `${BASE}/`, path: "/" },
   { name: "calendar", url: `${BASE}/calendar`, path: "/calendar" },
@@ -48,11 +58,14 @@ function mapSeverity(impact) {
 async function seedPage(page, routePath) {
   await page.goto(`${BASE}${routePath}`, { waitUntil: "networkidle", timeout: 30000 });
   await page.evaluate(
-    (key) => {
-      localStorage.setItem(key, JSON.stringify({ version: 1, checkIns: [], journal: [] }));
+    ({ key, tourFlags }) => {
+      localStorage.setItem(
+        key,
+        JSON.stringify({ version: 1, checkIns: [], journal: [], ...tourFlags }),
+      );
       localStorage.setItem("fasted-calendar-install-toast-dismissed", "1");
     },
-    STORAGE_KEY
+    { key: STORAGE_KEY, tourFlags: TOUR_DISMISSED },
   );
   await page.reload({ waitUntil: "networkidle" });
 }
