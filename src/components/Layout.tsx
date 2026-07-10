@@ -5,6 +5,7 @@ import { Icon } from './Icon';
 import { ConfirmModal } from './ConfirmModal';
 import { InstallPromptToast } from './InstallPromptToast';
 import { PwaUpdatePrompt } from './PwaUpdatePrompt';
+import { ReminderPromptToast } from './ReminderPromptToast';
 import { SyncToastWatcher } from './SyncToastWatcher';
 import { ToastHost } from './ToastHost';
 import { TourOverlay } from './Tour/TourOverlay';
@@ -60,6 +61,7 @@ export function Layout() {
       <AuthReturnRedirect />
       <ConfirmModal />
       <InstallPromptToast />
+      <ReminderPromptToast />
       <PwaUpdatePrompt />
 
       <nav

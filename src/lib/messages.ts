@@ -19,6 +19,8 @@ export const messages = {
     notConfigured: 'Push reminders are not configured for this deployment.',
     insecure: 'Push reminders require HTTPS (or localhost).',
     saveFailed: 'Could not update reminder settings.',
+    discoverTitle: 'Daily reminders',
+    discoverBody: 'Get a morning nudge to check your fast — turn it on in Settings.',
   },
   export: {
     journalJson: 'Journal exported as JSON.',

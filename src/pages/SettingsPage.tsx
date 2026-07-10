@@ -76,6 +76,13 @@ export function SettingsPage() {
   }, [location.hash, location.key, location.state]);
 
   useEffect(() => {
+    if (location.hash !== '#daily-reminders') return;
+    requestAnimationFrame(() => {
+      document.getElementById('daily-reminders')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [location.hash, location.key]);
+
+  useEffect(() => {
     setTheme(progress.settings.theme);
     setReminderTime(progress.settings.reminderTime || '07:00');
     setPushEnabled(Boolean(progress.settings.pushEnabled));
@@ -246,7 +253,7 @@ export function SettingsPage() {
             </select>
           </label>
 
-          <div className="space-y-3 pt-1">
+          <div id="daily-reminders" className="space-y-3 scroll-mt-24 pt-1">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-body-md text-on-surface">Daily reminders</p>
