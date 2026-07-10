@@ -68,6 +68,9 @@ Manual one-off (same order as the script):
 | `20260628000001_fix_membership_rls.sql` | Membership RLS fixes |
 | `20260630000000_group_commitments.sql` | `group_commitments`, `member_covenants`, leader-safe progress |
 | `20260631000000_backfill_group_commitments.sql` | Default commitments for existing groups |
+| `20260704000000_meal_images_storage.sql` | Meal image storage bucket |
+| `20260704010000_drop_group_checkin_stats_view.sql` | Drop unused check-in stats view |
+| `20260710000000_push_subscriptions.sql` | Web Push subscriptions for daily reminders |
 
 Deploys to `main` also run `scripts/apply-supabase-migrations.sh` when `supabase-db` is running.
 
@@ -76,8 +79,31 @@ Copy `ANON_KEY` from `${SUPABASE_DIR}/.env` into the app `.env`:
 ```bash
 VITE_SUPABASE_URL=https://api.example.com
 VITE_SUPABASE_ANON_KEY=<anon-key-from-supabase-env>
+VITE_VAPID_PUBLIC_KEY=<vapid-public-key>
 APP_PUBLISH_PORT=8022
 ```
+
+### Web Push reminders
+
+Daily morning (user-editable, default 07:00) and evening (fixed 20:00) reminders use Web Push.
+
+1. Generate VAPID keys: `npx web-push generate-vapid-keys --json`
+2. Set `VITE_VAPID_PUBLIC_KEY` in the app `.env` and rebuild the PWA.
+3. Apply the `push_subscriptions` migration.
+4. On the VPS, schedule the sender every 15 minutes with the service role key and VAPID private key:
+
+```bash
+# /etc/cron.d/fasted-push (example)
+*/15 * * * * root cd /opt/apps/fasted-calendar && \
+  SUPABASE_URL=https://api.example.com \
+  SUPABASE_SERVICE_ROLE_KEY=... \
+  VAPID_PUBLIC_KEY=... \
+  VAPID_PRIVATE_KEY=... \
+  VAPID_SUBJECT=mailto:you@example.com \
+  /usr/bin/node scripts/send-push-reminders.mjs >> /var/log/fasted-push.log 2>&1
+```
+
+Skip rules: no morning/evening send after today’s check-in; evening also skips if a daily reflection already exists. iOS requires the PWA installed to the Home Screen.
 
 ### Deploy app
 

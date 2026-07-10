@@ -12,6 +12,7 @@ import {
   switchStorageScope,
 } from './storage';
 import { MEAL_IMAGES_BUCKET } from './mealImageSync';
+import { deleteAllPushSubscriptionsForCurrentUser } from './push';
 import {
   getSupabase,
   isSyncConfigured,
@@ -582,6 +583,12 @@ export async function deleteAccountData(): Promise<void> {
       .delete()
       .eq('user_id', userId);
     if (progressError) throw progressError;
+
+    try {
+      await deleteAllPushSubscriptionsForCurrentUser();
+    } catch (err) {
+      reportError(err, { source: 'deleteAccountData.pushSubscriptions' });
+    }
 
     try {
       const { data: files } = await client.storage.from(MEAL_IMAGES_BUCKET).list(userId);

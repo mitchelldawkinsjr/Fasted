@@ -1,4 +1,5 @@
 const DISMISS_KEY = 'fasted-calendar-install-toast-dismissed';
+const REMINDER_PROMPT_DISMISS_KEY = 'fasted-calendar-reminder-prompt-dismissed';
 
 export function isRunningAsInstalledPwa(): boolean {
   if (typeof window === 'undefined') return false;
@@ -29,6 +30,22 @@ export function wasInstallToastDismissed(): boolean {
 export function dismissInstallToast(): void {
   try {
     localStorage.setItem(DISMISS_KEY, '1');
+  } catch {
+    // ignore
+  }
+}
+
+export function wasReminderPromptDismissed(): boolean {
+  try {
+    return localStorage.getItem(REMINDER_PROMPT_DISMISS_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function dismissReminderPrompt(): void {
+  try {
+    localStorage.setItem(REMINDER_PROMPT_DISMISS_KEY, '1');
   } catch {
     // ignore
   }

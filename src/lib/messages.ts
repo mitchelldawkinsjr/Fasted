@@ -10,6 +10,18 @@ export const messages = {
     preferences: 'Preferences saved.',
     profile: 'Profile saved.',
   },
+  push: {
+    enabled: 'Morning and evening reminders are on.',
+    disabled: 'Reminders turned off.',
+    permissionDenied: 'Notification permission was denied. Enable it in browser settings to get reminders.',
+    signInRequired: 'Sign in to enable push reminders across devices.',
+    unsupported: 'Push notifications are not supported in this browser.',
+    notConfigured: 'Push reminders are not configured for this deployment.',
+    insecure: 'Push reminders require HTTPS (or localhost).',
+    saveFailed: 'Could not update reminder settings.',
+    discoverTitle: 'Daily reminders',
+    discoverBody: 'Get a morning nudge to check your fast — turn it on in Settings.',
+  },
   export: {
     journalJson: 'Journal exported as JSON.',
     journalMarkdown: 'Journal exported as Markdown.',

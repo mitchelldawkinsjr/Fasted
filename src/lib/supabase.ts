@@ -26,6 +26,7 @@ export type UserRecord = {
 };
 
 export const PROGRESS_TABLE = 'user_progress';
+export const PUSH_SUBSCRIPTIONS_TABLE = 'push_subscriptions';
 
 export const JOURNEYS_TABLE = 'journeys';
 export const GROUPS_TABLE = 'groups';

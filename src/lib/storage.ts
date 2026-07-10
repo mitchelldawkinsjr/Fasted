@@ -39,6 +39,7 @@ export function userStorageKey(userId: string): string {
 
 const DEFAULT_SETTINGS: AppSettings = {
   reminderTime: '07:00',
+  pushEnabled: false,
   theme: 'light',
   scriptureNote:
     'Scripture text uses NLT (New Living Translation) wording where available. Some phases use a brief summary when multiple readings are assigned.',

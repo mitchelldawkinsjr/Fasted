@@ -12,6 +12,7 @@ function baseProgress(overrides: Partial<UserProgress> = {}): UserProgress {
     badges: [],
     settings: {
       reminderTime: '07:00',
+      pushEnabled: false,
       theme: 'light',
       scriptureNote: '',
     },

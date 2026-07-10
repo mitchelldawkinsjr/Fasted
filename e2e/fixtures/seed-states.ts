@@ -5,6 +5,7 @@ import { FIXED_DATE, INSTALL_TOAST_KEY, LONG_TEXT, STORAGE_KEY, TOUR_DISMISSED }
 
 const DEFAULT_SETTINGS = {
   reminderTime: '07:00',
+  pushEnabled: false,
   theme: 'light' as const,
   scriptureNote:
     'Scripture text uses NLT (New Living Translation) wording where available. Some phases use a brief summary when multiple readings are assigned.',
