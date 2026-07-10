@@ -53,7 +53,7 @@ export function SettingsPage() {
   const [updatingPush, setUpdatingPush] = useState(false);
   const [previewKind, setPreviewKind] = useState<ReminderKind | null>(null);
   const pushSupport = getPushSupport();
-  const isDev = import.meta.env.DEV;
+  const isDev = import.meta.env.DEV && import.meta.env.VITE_E2E !== 'true';
 
   useEffect(() => {
     if (authPromptHandled.current) return;
