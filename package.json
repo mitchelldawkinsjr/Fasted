@@ -32,7 +32,8 @@
     "canvas-confetti": "^1.9.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0"
+    "react-router-dom": "^6.28.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@cursor/sdk": "^1.0.18",
@@ -40,6 +41,7 @@
     "@types/canvas-confetti": "^1.6.4",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/web-push": "^3.6.4",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^4.1.9",
     "autoprefixer": "^10.4.20",

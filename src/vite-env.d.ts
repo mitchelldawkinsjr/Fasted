@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_TELEMETRY_URL?: string;
   /** Google Analytics 4 measurement ID (e.g. G-XXXXXXXXXX). Omit in dev. */
   readonly VITE_GA_MEASUREMENT_ID?: string;
+  /** Web Push VAPID public key (pair with server VAPID_PRIVATE_KEY). */
+  readonly VITE_VAPID_PUBLIC_KEY?: string;
 }
 
 interface ImportMeta {

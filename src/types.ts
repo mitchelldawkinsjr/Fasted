@@ -186,7 +186,10 @@ export type SimpleJournalEntry =
 export type JournalEntry = DailyReflectionEntry | SimpleJournalEntry;
 
 export type AppSettings = {
+  /** Morning Web Push reminder time (HH:mm, local). Evening is fixed at 20:00. */
   reminderTime: string;
+  /** When true, device may receive Web Push reminders (requires permission + subscription). */
+  pushEnabled: boolean;
   theme: 'light' | 'dark' | 'system';
   scriptureNote: string;
 };
