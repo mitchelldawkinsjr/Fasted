@@ -34,6 +34,8 @@ export default defineConfig({
     env: {
       VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? 'https://auth.test.invalid',
       VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY ?? 'test-anon-key',
+      // Hide DEV-only Settings preview controls so e2e/visual stay stable.
+      VITE_E2E: 'true',
     },
   },
   projects: [

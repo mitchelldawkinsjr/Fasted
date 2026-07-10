@@ -72,7 +72,7 @@ test.describe('custom journey builder', () => {
       'Pray for three families by name.',
     );
 
-    await page.getByRole('button', { name: 'Review' }).click();
+    await page.getByRole('button', { name: 'Review', exact: true }).click();
     await expect(page.getByText('Neighborhood Intercession')).toBeVisible();
     await expect(page.getByText(/Monday, July 6, 2026.*Friday, July 10, 2026/)).toBeVisible();
     await page.getByRole('button', { name: 'Start Journey' }).click();
@@ -187,7 +187,7 @@ test.describe('custom journey builder', () => {
     await expect(page.getByLabel('Edit from date')).toBeDisabled();
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByLabel('Phase title').fill('Edited From Today');
-    await page.getByRole('button', { name: 'Review' }).click();
+    await page.getByRole('button', { name: 'Review', exact: true }).click();
     await page.getByRole('button', { name: 'Save Journey' }).click();
 
     const stored = await page.evaluate((key) => {

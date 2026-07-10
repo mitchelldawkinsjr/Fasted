@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_GA_MEASUREMENT_ID?: string;
   /** Web Push VAPID public key (pair with server VAPID_PRIVATE_KEY). */
   readonly VITE_VAPID_PUBLIC_KEY?: string;
+  /** Set by Playwright so DEV-only UI (e.g. reminder previews) stays out of e2e/visual. */
+  readonly VITE_E2E?: string;
 }
 
 interface ImportMeta {
