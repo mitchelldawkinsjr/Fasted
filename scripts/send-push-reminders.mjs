@@ -13,11 +13,12 @@
  *   DRY_RUN=1
  *
  * Schedule every 15 minutes, e.g.:
- *   */15 * * * * cd /opt/apps/fasted-calendar && node scripts/send-push-reminders.mjs >> /var/log/fasted-push.log 2>&1
+ *   every-15-min cron: cd /opt/apps/fasted-calendar && node scripts/send-push-reminders.mjs >> /var/log/fasted-push.log 2>&1
  */
 
 import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import { decideReminder } from '../src/lib/pushReminders.shared.js';
 
 const DEFAULT_REMINDER_TIME = '07:00';
@@ -47,6 +48,8 @@ webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
+  // Node < 22 has no global WebSocket; cron only uses PostgREST, but client still inits Realtime.
+  realtime: { transport: ws },
 });
 
 function isGone(err) {
