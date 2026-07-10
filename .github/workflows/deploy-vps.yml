@@ -100,7 +100,19 @@ jobs:
 
       - name: Add server to known hosts
         run: |
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          set -euo pipefail
+          HOST="${{ secrets.VPS_HOST }}"
+          for attempt in 1 2 3 4 5; do
+            if ssh-keyscan -T 20 -H "$HOST" >> ~/.ssh/known_hosts 2>/tmp/ssh-keyscan.err; then
+              echo "ssh-keyscan succeeded on attempt ${attempt}"
+              exit 0
+            fi
+            echo "ssh-keyscan attempt ${attempt} failed:"
+            cat /tmp/ssh-keyscan.err || true
+            sleep $((attempt * 3))
+          done
+          echo "::error::ssh-keyscan failed after retries for ${HOST}"
+          exit 1
 
       - name: Deploy to VPS
         env:

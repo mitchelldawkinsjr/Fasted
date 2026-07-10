@@ -1,0 +1,77 @@
+name: Update visual snapshots
+
+# Regenerates Playwright visual baselines on Linux (same OS as CI) and
+# commits them back to the calling branch. Use after intentional UI changes
+# when local macOS snapshots would fail Visual regression on ubuntu-latest.
+on:
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Playwright -g filter (empty = all visual)'
+        required: false
+        default: ''
+  # One-shot: first push of this workflow on the fix branch regenerates Linux baselines.
+  # paths filter avoids a loop when the bot commits PNG updates.
+  push:
+    branches: [fix/ci-visual-settings-baselines]
+    paths:
+      - '.github/workflows/update-visual-snapshots.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: update-and-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Update visual snapshots
+        env:
+          CI: true
+        run: |
+          FILTER=()
+          GREP="${{ inputs.grep }}"
+          # Default Settings-only on the one-shot branch push; empty on manual "all".
+          if [ -z "$GREP" ] && [ "${{ github.event_name }}" = "push" ]; then
+            GREP="Settings"
+          fi
+          if [ -n "$GREP" ]; then
+            FILTER=(-g "$GREP")
+          fi
+          npx playwright test e2e/visual \
+            --project=visual-mobile \
+            --project=visual-tablet \
+            --project=visual-desktop \
+            --update-snapshots \
+            "${FILTER[@]}"
+          npm run compress:artifacts
+
+      - name: Commit and push baselines
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add e2e/visual/**/*.png
+          if git diff --cached --quiet; then
+            echo "No snapshot changes"
+            exit 0
+          fi
+          git commit -m "test(visual): refresh baselines from Linux CI"
+          git push
