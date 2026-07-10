@@ -10,12 +10,6 @@ on:
         description: 'Playwright -g filter (empty = all visual)'
         required: false
         default: ''
-  # One-shot: first push of this workflow on the fix branch regenerates Linux baselines.
-  # paths filter avoids a loop when the bot commits PNG updates.
-  push:
-    branches: [fix/ci-visual-settings-baselines]
-    paths:
-      - '.github/workflows/update-visual-snapshots.yml'
 
 permissions:
   contents: write
@@ -48,13 +42,8 @@ jobs:
           CI: true
         run: |
           FILTER=()
-          GREP="${{ inputs.grep }}"
-          # Default Settings-only on the one-shot branch push; empty on manual "all".
-          if [ -z "$GREP" ] && [ "${{ github.event_name }}" = "push" ]; then
-            GREP="Settings"
-          fi
-          if [ -n "$GREP" ]; then
-            FILTER=(-g "$GREP")
+          if [ -n "${{ inputs.grep }}" ]; then
+            FILTER=(-g "${{ inputs.grep }}")
           fi
           npx playwright test e2e/visual \
             --project=visual-mobile \
