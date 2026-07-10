@@ -1,7 +1,5 @@
 import { getSupabase, isSyncConfigured, PUSH_SUBSCRIPTIONS_TABLE } from './supabase';
 
-export const EVENING_REMINDER_TIME = '20:00';
-
 export type PushSupport =
   | { ok: true }
   | { ok: false; reason: 'unsupported' | 'not-configured' | 'insecure-context' };
@@ -34,14 +32,10 @@ export function getPushSupport(): PushSupport {
   return { ok: true };
 }
 
-async function getReadyRegistration(): Promise<ServiceWorkerRegistration> {
-  return navigator.serviceWorker.ready;
-}
-
 export async function getExistingPushSubscription(): Promise<PushSubscription | null> {
   const support = getPushSupport();
   if (!support.ok) return null;
-  const registration = await getReadyRegistration();
+  const registration = await navigator.serviceWorker.ready;
   return registration.pushManager.getSubscription();
 }
 
@@ -62,7 +56,7 @@ export async function enablePushNotifications(): Promise<PushSubscription> {
     throw new Error('Notification permission was not granted.');
   }
 
-  const registration = await getReadyRegistration();
+  const registration = await navigator.serviceWorker.ready;
   const existing = await registration.pushManager.getSubscription();
   const subscription =
     existing ??
@@ -79,7 +73,7 @@ export async function disablePushNotifications(): Promise<void> {
   const support = getPushSupport();
   if (!support.ok) return;
 
-  const registration = await getReadyRegistration();
+  const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
   if (subscription) {
     await deletePushSubscription(subscription.endpoint);
@@ -123,7 +117,6 @@ async function upsertPushSubscription(subscription: PushSubscription): Promise<v
       p256dh,
       auth: authKey,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-      enabled: true,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'user_id,endpoint' },

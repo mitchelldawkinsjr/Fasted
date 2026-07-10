@@ -16,12 +16,12 @@ import { formatError, messages } from '../lib/messages';
 import {
   disablePushNotifications,
   enablePushNotifications,
-  EVENING_REMINDER_TIME,
   getPushSupport,
   isValidReminderTime,
   syncPushSubscriptionIfNeeded,
 } from '../lib/push';
 import type { ReminderKind } from '../lib/pushReminders';
+import { EVENING_REMINDER_TIME } from '../lib/pushReminders';
 import {
   exportJournal,
   exportJournalMarkdown,
@@ -163,10 +163,6 @@ export function SettingsPage() {
     }
   };
 
-  const showReminderPreview = (kind: ReminderKind) => {
-    setPreviewKind(kind);
-  };
-
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -302,14 +298,14 @@ export function SettingsPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => showReminderPreview('morning')}
+                    onClick={() => setPreviewKind('morning')}
                     className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-sm text-on-surface transition hover:bg-surface-container"
                   >
                     Preview morning
                   </button>
                   <button
                     type="button"
-                    onClick={() => showReminderPreview('evening')}
+                    onClick={() => setPreviewKind('evening')}
                     className="rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-sm text-on-surface transition hover:bg-surface-container"
                   >
                     Preview evening

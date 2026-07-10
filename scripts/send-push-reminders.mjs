@@ -18,8 +18,8 @@
 
 import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
+import { decideReminder } from '../src/lib/pushReminders.shared.js';
 
-const EVENING_REMINDER_TIME = '20:00';
 const DEFAULT_REMINDER_TIME = '07:00';
 
 const {
@@ -49,77 +49,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-function localDateInTimeZone(date, timeZone) {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
-
-function localTimeInTimeZone(date, timeZone) {
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date);
-}
-
-function hasCompletedCheckIn(progress, date) {
-  if (!progress?.checkIns?.length) return false;
-  return progress.checkIns.some((c) => c.date === date && Boolean(c.completedAt));
-}
-
-function hasDailyReflection(progress, date) {
-  if (!progress?.journalEntries?.length) return false;
-  return progress.journalEntries.some(
-    (entry) => entry.date === date && entry.type === 'daily-reflection',
-  );
-}
-
-function decideReminder({
-  now,
-  timeZone,
-  reminderTime,
-  lastMorningSentOn,
-  lastEveningSentOn,
-  progress,
-}) {
-  const localDate = localDateInTimeZone(now, timeZone);
-  const localTime = localTimeInTimeZone(now, timeZone);
-
-  if (hasCompletedCheckIn(progress, localDate)) return null;
-
-  if (localTime >= EVENING_REMINDER_TIME) {
-    if (lastEveningSentOn === localDate) return null;
-    if (hasDailyReflection(progress, localDate)) return null;
-    return {
-      kind: 'evening',
-      title: 'Fasted',
-      body: 'Still time to check in and reflect on today’s fast.',
-      url: '/',
-      tag: `fasted-evening-${localDate}`,
-      localDate,
-    };
-  }
-
-  if (localTime >= reminderTime) {
-    if (lastMorningSentOn === localDate) return null;
-    return {
-      kind: 'morning',
-      title: 'Fasted',
-      body: 'Good morning — don’t forget to check your fast for today.',
-      url: '/',
-      tag: `fasted-morning-${localDate}`,
-      localDate,
-    };
-  }
-
-  return null;
-}
-
 function isGone(err) {
   const status = err?.statusCode ?? err?.status;
   return status === 404 || status === 410;
@@ -131,12 +60,11 @@ async function main() {
     .from('push_subscriptions')
     .select(
       'id, user_id, endpoint, p256dh, auth, timezone, last_morning_sent_on, last_evening_sent_on',
-    )
-    .eq('enabled', true);
+    );
 
   if (error) throw error;
   if (!subs?.length) {
-    console.log(`[${now.toISOString()}] No enabled subscriptions.`);
+    console.log(`[${now.toISOString()}] No subscriptions.`);
     return;
   }
 
@@ -164,8 +92,7 @@ async function main() {
         ? progress.settings.reminderTime
         : DEFAULT_REMINDER_TIME;
 
-    const pushEnabled = progress?.settings?.pushEnabled !== false;
-    if (!pushEnabled) {
+    if (progress?.settings?.pushEnabled === false) {
       skipped += 1;
       continue;
     }

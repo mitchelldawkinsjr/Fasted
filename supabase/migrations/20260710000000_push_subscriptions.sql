@@ -7,7 +7,6 @@ create table if not exists public.push_subscriptions (
   p256dh text not null,
   auth text not null,
   timezone text not null default 'UTC',
-  enabled boolean not null default true,
   last_morning_sent_on date,
   last_evening_sent_on date,
   created_at timestamptz not null default now(),
@@ -15,9 +14,8 @@ create table if not exists public.push_subscriptions (
   unique (user_id, endpoint)
 );
 
-create index if not exists push_subscriptions_enabled_idx
-  on public.push_subscriptions (enabled)
-  where enabled = true;
+create index if not exists push_subscriptions_user_id_idx
+  on public.push_subscriptions (user_id);
 
 alter table public.push_subscriptions enable row level security;
 

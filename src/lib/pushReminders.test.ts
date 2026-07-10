@@ -89,7 +89,7 @@ describe('decideReminder', () => {
     expect(decision?.kind).toBe('morning');
   });
 
-  it('skips morning if already sent today', () => {
+  it('skips morning if already sent today (before evening window)', () => {
     const decision = decideReminder({
       now: new Date('2026-07-10T12:00:00.000Z'),
       timeZone: tz,
@@ -99,6 +99,19 @@ describe('decideReminder', () => {
       progress: progress(),
     });
     expect(decision).toBeNull();
+  });
+
+  it('prefers morning over evening when morning was never sent and time is past 20:00', () => {
+    // Bug fix: late morning times (or missed morning) should still get morning first.
+    const decision = decideReminder({
+      now: new Date('2026-07-11T00:30:00.000Z'),
+      timeZone: tz,
+      reminderTime: '07:00',
+      lastMorningSentOn: null,
+      lastEveningSentOn: null,
+      progress: progress(),
+    });
+    expect(decision?.kind).toBe('morning');
   });
 
   it('skips when check-in is completed', () => {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { dismissReminderPrompt, wasReminderPromptDismissed } from './reminderPrompt';
+import { dismissReminderPrompt, wasReminderPromptDismissed } from './pwaInstall';
 
 const KEY = 'fasted-calendar-reminder-prompt-dismissed';
 const store = new Map<string, string>();
@@ -21,7 +21,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('reminderPrompt', () => {
+describe('reminder prompt dismiss flag', () => {
   it('starts undismissed', () => {
     expect(wasReminderPromptDismissed()).toBe(false);
   });
