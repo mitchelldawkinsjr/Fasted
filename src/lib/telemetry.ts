@@ -1,44 +1,82 @@
-type TelemetryLevel = 'error' | 'warning' | 'info';
+import * as Sentry from '@sentry/react';
+import type { ErrorEvent, EventHint } from '@sentry/react';
+import { scrubJoinInviteInText } from './analytics';
 
-type TelemetryEvent = {
-  message: string;
-  level: TelemetryLevel;
-  context?: Record<string, unknown>;
-  at: string;
-};
+const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
+
+function isSentryEnabled(): boolean {
+  return Boolean(SENTRY_DSN) && !import.meta.env.DEV;
+}
+
+/** Scrub invite codes from URLs before events leave the browser. */
+export function scrubSentryEvent(event: ErrorEvent, _hint?: EventHint): ErrorEvent | null {
+  if (event.request?.url) {
+    event.request.url = scrubJoinInviteInText(event.request.url);
+  }
+  if (event.transaction) {
+    event.transaction = scrubJoinInviteInText(event.transaction);
+  }
+  if (event.breadcrumbs) {
+    for (const crumb of event.breadcrumbs) {
+      if (crumb.data && typeof crumb.data.url === 'string') {
+        crumb.data.url = scrubJoinInviteInText(crumb.data.url);
+      }
+      if (typeof crumb.message === 'string') {
+        crumb.message = scrubJoinInviteInText(crumb.message);
+      }
+    }
+  }
+  return event;
+}
 
 /**
- * Lightweight client telemetry. When `VITE_TELEMETRY_URL` is set, events are
- * POSTed as JSON. Otherwise errors only log in development.
+ * Init Sentry for production error monitoring. No-op when DSN is unset or in DEV.
+ */
+export function initSentry(): void {
+  if (!isSentryEnabled()) return;
+
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    sendDefaultPii: false,
+    tracesSampleRate: 0,
+    beforeSend: scrubSentryEvent,
+  });
+}
+
+/**
+ * Report a client error to Sentry (when enabled). Always logs in development.
  */
 export function reportError(error: unknown, context?: Record<string, unknown>): void {
-  const message = error instanceof Error ? error.message : String(error);
-  emit({ message, level: 'error', context, at: new Date().toISOString() });
+  if (import.meta.env.DEV) {
+    console.error('[telemetry]', error instanceof Error ? error.message : String(error), context ?? '');
+  }
+
+  if (!isSentryEnabled()) return;
+
+  Sentry.withScope((scope) => {
+    if (context) {
+      scope.setContext('details', context);
+    }
+    if (error instanceof Error) {
+      Sentry.captureException(error);
+    } else {
+      Sentry.captureMessage(String(error), 'error');
+    }
+  });
 }
 
 export function reportWarning(message: string, context?: Record<string, unknown>): void {
-  emit({ message, level: 'warning', context, at: new Date().toISOString() });
-}
-
-function emit(event: TelemetryEvent): void {
   if (import.meta.env.DEV) {
-    const log = event.level === 'error' ? console.error : console.warn;
-    log('[telemetry]', event.message, event.context ?? '');
+    console.warn('[telemetry]', message, context ?? '');
   }
 
-  const endpoint = import.meta.env.VITE_TELEMETRY_URL;
-  if (!endpoint || typeof fetch !== 'function') return;
+  if (!isSentryEnabled()) return;
 
-  try {
-    void fetch(endpoint, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(event),
-      keepalive: true,
-    }).catch(() => {
-      /* never block the app on telemetry */
-    });
-  } catch {
-    /* ignore */
-  }
+  Sentry.withScope((scope) => {
+    if (context) {
+      scope.setContext('details', context);
+    }
+    Sentry.captureMessage(message, 'warning');
+  });
 }

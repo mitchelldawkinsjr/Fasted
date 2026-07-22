@@ -11,10 +11,15 @@ function isEnabled(): boolean {
   return Boolean(GA_ID) && !import.meta.env.DEV;
 }
 
+/** Redact invite codes in paths or full URLs (GA, Sentry, etc.). */
+export function scrubJoinInviteInText(text: string): string {
+  return text.replace(/\/join\/[^/?#]+/g, '/join/:code');
+}
+
 /** Strip invite codes and other sensitive path segments before sending to GA. */
 export function sanitizeAnalyticsPath(path: string): string {
   const [pathname, search = ''] = path.split('?');
-  const sanitizedPath = pathname.replace(/^\/join\/[^/]+/, '/join/:code');
+  const sanitizedPath = scrubJoinInviteInText(pathname);
   return search ? `${sanitizedPath}?${search}` : sanitizedPath;
 }
 
