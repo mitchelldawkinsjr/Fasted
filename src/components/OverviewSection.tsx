@@ -41,7 +41,7 @@ export function OverviewSection({ phase, fastTypeLabel, isFastDay }: Props) {
         aria-expanded={expanded}
         aria-controls="phase-overview-panel"
         className="group relative block h-64 w-full cursor-pointer overflow-hidden rounded-xl grace-shadow text-left transition-transform hover:ring-2 hover:ring-secondary/60 active:scale-[0.99] md:h-72"
-        aria-label={`View ${phase.title} image`}
+        aria-label={`${expanded ? 'Hide' : 'Show'} ${phase.title} phase overview`}
         data-testid="phase-overview-toggle"
       >
         {phase.imagePath && (
@@ -76,25 +76,13 @@ export function OverviewSection({ phase, fastTypeLabel, isFastDay }: Props) {
         </div>
       </button>
 
-      {expanded && (
-        <div
-          id="phase-overview-panel"
-          className="stitch-card animate-fade-in-up space-y-stack-md p-stack-lg"
-          data-testid="phase-overview-panel"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="font-display text-headline-md text-primary">Phase Overview</h3>
-            <button
-              type="button"
-              onClick={() => setExpanded(false)}
-              className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-label-caps text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-primary"
-              aria-label="Close overview"
-              data-testid="phase-overview-close"
-            >
-              <Icon name="close" size={18} />
-              Close
-            </button>
-          </div>
+      <div
+        id="phase-overview-panel"
+        hidden={!expanded}
+        className={`stitch-card space-y-stack-md p-stack-lg${expanded ? ' animate-fade-in-up' : ''}`}
+        data-testid="phase-overview-panel"
+      >
+        <h3 className="font-display text-headline-md text-primary">Phase Overview</h3>
 
           <OverviewBlock icon="menu_book" title="Scripture">
             <p className="font-medium text-primary">{phase.scriptureReference}</p>
@@ -165,8 +153,7 @@ export function OverviewSection({ phase, fastTypeLabel, isFastDay }: Props) {
               <Icon name="zoom_in" size={20} />
             </button>
           </div>
-        </div>
-      )}
+      </div>
 
       {lightboxOpen && phase.imagePath && (
         <ImageLightbox
