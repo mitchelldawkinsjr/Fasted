@@ -16,7 +16,7 @@
     { "path": "/settings", "label": "Settings", "states": ["empty", "rich"] }
   ],
   "modals": [
-    { "name": "CheckInModal", "state": "streakReady", "trigger": "Check-in for Today button on /" },
+    { "name": "DailyReflection", "state": "streakReady", "trigger": "Inline form on Today page /" },
     { "name": "JournalEditor", "state": "worstCase", "trigger": "+ New on /journal" },
     { "name": "JournalViewer", "state": "worstCase", "trigger": "View reflection on /journal" }
   ],

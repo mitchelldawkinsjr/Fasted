@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { trackEvent } from '../lib/analytics';
-import { CheckInModal } from '../components/CheckInModal';
 import { DailyCommitmentCard } from '../components/DailyCommitmentCard';
+import { DailyReflection } from '../components/DailyReflection';
 import { EncouragementCard } from '../components/EncouragementCard';
 import { InfoBanner } from '../components/InfoBanner';
 import { PrayerPointsCard } from '../components/PrayerPointsCard';
@@ -19,10 +19,10 @@ import {
   JOURNAL_ENTRY_TYPES,
   journalTypePillClass,
 } from '../lib/journalTags';
-import { messages } from '../lib/messages';
 import { getCheckIn } from '../lib/storage';
-import { toast } from '../lib/toast';
 import type { Badge } from '../types';
+
+const OTHER_JOURNAL_TYPES = JOURNAL_ENTRY_TYPES.filter((type) => type !== 'daily-reflection');
 
 export function TodayPage() {
   const [searchParams] = useSearchParams();
@@ -34,7 +34,15 @@ export function TodayPage() {
   const plan = inPlan ? getDailyPlan(viewDate, journey) : null;
   const progress = useProgress();
   const existingCheckIn = getCheckIn(viewDate);
-  const [showCheckIn, setShowCheckIn] = useState(false);
+  const reflectionSectionRef = useRef<HTMLElement>(null);
+
+  const scrollToReflection = () => {
+    reflectionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleReflectionComplete = (_badges: Badge[]) => {
+    // DailyReflection handles celebration inline; card updates via useProgress subscription.
+  };
 
   if (!inPlan || !plan) {
     const beforePlan = viewDate < planStart;
@@ -82,14 +90,9 @@ export function TodayPage() {
     );
   }
 
-  const hasJournal = progress.journalEntries.some((e) => e.date === viewDate);
-
-  const handleCheckInComplete = (badges: Badge[]) => {
-    if (badges.length === 0) {
-      toast.success(messages.save.checkIn);
-    }
-    setShowCheckIn(false);
-  };
+  const hasDailyReflection = progress.journalEntries.some(
+    (entry) => entry.type === 'daily-reflection' && entry.date === viewDate,
+  );
 
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
@@ -107,7 +110,7 @@ export function TodayPage() {
       <DailyCommitmentCard
         date={viewDate}
         checkedIn={!!existingCheckIn}
-        onCheckIn={() => setShowCheckIn(true)}
+        onCheckIn={scrollToReflection}
       />
 
       <section className="grid grid-cols-1 gap-gutter md:grid-cols-2">
@@ -120,47 +123,46 @@ export function TodayPage() {
 
       <EncouragementCard message={plan.encouragement} />
 
-      <section data-tour="morning-reflection">
+      <section
+        ref={reflectionSectionRef}
+        id="daily-reflection"
+        data-tour="morning-reflection"
+      >
         <div className="mb-stack-md flex items-center justify-between">
           <h3 className="font-display text-headline-md text-primary">Morning Reflection</h3>
           <Link to="/journal" aria-label="Open journal">
             <Icon name="edit_note" className="text-outline" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          {JOURNAL_ENTRY_TYPES.map((type) => (
-            <Link
-              key={type}
-              to={`/journal?type=${type}`}
-              onClick={() =>
-                trackEvent('journal_type_opened', { entry_type: type, source: 'today_link' })
-              }
-              className={journalTypePillClass(false)}
-            >
-              {JOURNAL_ENTRY_TYPE_LABELS[type]}
-            </Link>
-          ))}
+
+        <DailyReflection key={viewDate} date={viewDate} onComplete={handleReflectionComplete} />
+
+        <div className="mt-stack-md">
+          <p className="mb-2 text-body-sm text-on-surface-variant">Other reflections</p>
+          <div className="grid grid-cols-2 gap-2">
+            {OTHER_JOURNAL_TYPES.map((type) => (
+              <Link
+                key={type}
+                to={`/journal?type=${type}`}
+                onClick={() =>
+                  trackEvent('journal_type_opened', { entry_type: type, source: 'today_link' })
+                }
+                className={journalTypePillClass(false)}
+              >
+                {JOURNAL_ENTRY_TYPE_LABELS[type]}
+              </Link>
+            ))}
+          </div>
         </div>
-        {!hasJournal && (
-          <Link
-            to="/journal"
-            className="btn-stitch-secondary mt-stack-md block text-center"
-          >
-            Write in your journal
-          </Link>
+
+        {!hasDailyReflection && (
+          <p className="mt-stack-md text-center text-body-sm text-on-surface-variant">
+            Complete your daily reflection and check-in above.
+          </p>
         )}
       </section>
 
       <SafetyNote compact={plan.fastType !== 'twenty-four-hour-water'} />
-
-      {showCheckIn && (
-        <CheckInModal
-          date={viewDate}
-          existing={existingCheckIn}
-          onClose={() => setShowCheckIn(false)}
-          onComplete={handleCheckInComplete}
-        />
-      )}
     </div>
   );
 }

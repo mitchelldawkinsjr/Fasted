@@ -93,7 +93,7 @@ test.describe('custom journey builder', () => {
 
     await page.goto('/?date=2026-07-08');
     const instructions = page.getByTestId('today-instructions-list');
-    await expect(page.getByText('Phase 1: Neighborhood Intercession')).toBeVisible();
+    await expect(page.locator('[data-tour="today-card"]').getByText('Phase 1: Neighborhood Intercession')).toBeVisible();
     await expect(instructions).toContainText('Sunrise-to-sunset fast today—water only.');
     await expect(instructions).toContainText('Beverages: water.');
     await expect(instructions).toContainText('Invite one neighbor into prayer.');
@@ -101,7 +101,7 @@ test.describe('custom journey builder', () => {
     await expect(page.getByText('Neighbors')).toBeVisible();
 
     await page.reload();
-    await expect(page.getByText('Phase 1: Neighborhood Intercession')).toBeVisible();
+    await expect(page.locator('[data-tour="today-card"]').getByText('Phase 1: Neighborhood Intercession')).toBeVisible();
     await expect(page.getByTestId('today-instructions-list')).toContainText(
       'Pray for three families by name.',
     );
@@ -286,11 +286,10 @@ test.describe('custom journey builder', () => {
     });
 
     await page.goto(`/?date=${today}`);
-    await expect(page.getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
+    await expect(page.locator('[data-tour="today-card"]').getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
 
     await page.getByRole('button', { name: 'Check-in for Today' }).click();
-    const modal = page.getByRole('dialog');
-    await expect(modal.getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
-    await expect(modal.getByText('Phase 2:')).not.toBeVisible();
+    await expect(page.getByLabel("Today's Check-In").getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
+    await expect(page.getByText('Phase 2:')).not.toBeVisible();
   });
 });

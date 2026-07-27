@@ -2,6 +2,7 @@ import type {
   AppSettings,
   Badge,
   CheckIn,
+  DailyReflectionEntry,
   FoodMealKey,
   GroupCheckIn,
   JournalEntry,
@@ -22,7 +23,14 @@ import {
   isDataUrl,
   putImage,
 } from './imageStore';
-import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
+import {
+  FOOD_JOURNAL_FIELDS,
+  FITNESS_JOURNAL_LABEL,
+  isDailyReflectionEntry,
+  journalEntryNeedsMigration,
+  normalizeJournalEntries,
+  normalizeJournalEntry,
+} from './journalTags';
 import { collectMealImageIds } from './mealImages';
 import { deleteRemoteImages, resolveMealImageBlob } from './mealImageSync';
 import { messages } from './messages';
@@ -299,6 +307,48 @@ export function saveCheckInWithGroupCheckIns(
 
 export function getCheckIn(date: string): CheckIn | undefined {
   return getProgress().checkIns.find((c) => c.date === date);
+}
+
+export function getDailyReflectionByDate(date: string): DailyReflectionEntry | undefined {
+  return getProgress().journalEntries.find(
+    (entry): entry is DailyReflectionEntry =>
+      isDailyReflectionEntry(entry) && entry.date === date,
+  );
+}
+
+export function saveDailyReflectionWithCheckIn(
+  entry: DailyReflectionEntry,
+  checkIn: CheckIn,
+  groupCheckIns: ReadonlyArray<{ groupId: string; checkIn: GroupCheckIn }> = [],
+): void {
+  const progress = getProgress();
+  const filteredJournal = progress.journalEntries.filter((e) => e.id !== entry.id);
+  const journalEntries = [...filteredJournal, normalizeJournalEntry(entry)].sort((a, b) =>
+    b.date.localeCompare(a.date),
+  );
+
+  const filteredCheckIns = progress.checkIns.filter((c) => c.date !== checkIn.date);
+  const checkIns = [...filteredCheckIns, checkIn].sort((a, b) => a.date.localeCompare(b.date));
+
+  let nextGroupCheckIns = progress.groupCheckIns ?? {};
+  for (const { groupId, checkIn: groupCheckIn } of groupCheckIns) {
+    const existing = nextGroupCheckIns[groupId] ?? [];
+    const filteredGroup = existing.filter((c) => c.date !== groupCheckIn.date);
+    nextGroupCheckIns = {
+      ...nextGroupCheckIns,
+      [groupId]: [...filteredGroup, groupCheckIn].sort((a, b) =>
+        a.date.localeCompare(b.date),
+      ),
+    };
+  }
+
+  persist({
+    ...progress,
+    journalEntries,
+    checkIns,
+    checkInStreak: computeCheckInStreak(checkIns, checkIn.date),
+    groupCheckIns: nextGroupCheckIns,
+  });
 }
 
 export function saveGroupCheckIn(groupId: string, checkIn: GroupCheckIn): void {
