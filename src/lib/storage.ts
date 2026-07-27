@@ -586,11 +586,11 @@ ${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
 
 **What I prayed about:** ${e.prayedAbout}
 
-**What God is teaching me:** ${e.godTeaching}
+**What do I get from today's meditation?:** ${e.godTeaching}
 
-**Hunger / discipline notes:** ${e.hungerNotes}
+**What do you feel contributed to your feeling today?:** ${e.hungerNotes}
 
-**Victory today:** ${e.victory}
+**What are you grateful for today?:** ${e.victory}
 
 **Tomorrow's intention:** ${e.tomorrowIntention}
 `;

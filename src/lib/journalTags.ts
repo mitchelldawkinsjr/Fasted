@@ -41,15 +41,21 @@ export const VERSE_OF_THE_DAY_LABEL = "Today's Meditation";
 
 export const DAILY_REFLECTION_FIELDS = [
   { key: 'prayerFocus', label: VERSE_OF_THE_DAY_LABEL },
+  { key: 'godTeaching', label: "What do I get from today's meditation?" },
   { key: 'prayedAbout', label: 'What I prayed about' },
-  { key: 'godTeaching', label: 'What God is teaching me' },
-  { key: 'hungerNotes', label: "What do you think contributed most to how you're feeling today?" },
-  { key: 'victory', label: 'Victory today' },
+  { key: 'hungerNotes', label: 'What do you feel contributed to your feeling today?' },
+  { key: 'victory', label: 'What are you grateful for today?' },
   { key: 'tomorrowIntention', label: "Tomorrow's intention" },
 ] as const satisfies ReadonlyArray<{
   key: keyof Omit<DailyReflectionEntry, 'id' | 'date' | 'updatedAt' | 'type'>;
   label: string;
 }>;
+
+/** Daily reflection text fields shown before the mood picker in the editor and viewer. */
+export const DAILY_REFLECTION_FIELDS_BEFORE_MOOD = DAILY_REFLECTION_FIELDS.slice(0, 3);
+
+/** Daily reflection text fields shown after the mood picker in the editor and viewer. */
+export const DAILY_REFLECTION_FIELDS_AFTER_MOOD = DAILY_REFLECTION_FIELDS.slice(3);
 
 export const FOOD_JOURNAL_FIELDS = [
   { key: 'breakfast', label: 'What did you eat for breakfast?', sectionName: 'Breakfast' },

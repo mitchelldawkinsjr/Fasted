@@ -17,7 +17,7 @@ async function fillJournalField(
   label: string,
   text: string,
 ) {
-  const field = page.getByLabel(label);
+  const field = page.getByLabel(label, { exact: true });
   if (await field.evaluate((element) => element.tagName === 'TEXTAREA')) {
     await field.fill(text);
     return;
@@ -28,7 +28,7 @@ async function fillJournalField(
     await page.getByRole('button', { name: 'Done' }).click();
   }
   await field.click();
-  await dialog.getByLabel(label).fill(text);
+  await dialog.getByLabel(label, { exact: true }).fill(text);
   await page.getByRole('button', { name: 'Done' }).click();
 }
 
@@ -41,6 +41,23 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
+test('daily reflection fields follow the updated layout order', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+
+  const fieldLabels = page.locator(
+    'form .overflow-y-auto > label:not(:has(input[type="date"])) span.text-on-surface, form .overflow-y-auto > label:not(:has(input[type="date"])) span.font-medium',
+  );
+  await expect(fieldLabels.nth(0)).toContainText("Today's Meditation");
+  await expect(fieldLabels.nth(1)).toHaveText("What do I get from today's meditation?");
+  await expect(fieldLabels.nth(2)).toHaveText('What I prayed about');
+  await expect(page.getByRole('radio', { name: 'Good' })).toBeVisible();
+  await expect(fieldLabels.nth(3)).toHaveText(
+    'What do you feel contributed to your feeling today?',
+  );
+  await expect(fieldLabels.nth(4)).toHaveText('What are you grateful for today?');
+  await expect(fieldLabels.nth(5)).toHaveText("Tomorrow's intention");
+});
+
 test('saves a daily reflection with multiple fields', async ({ page }) => {
   await expect(page.getByText('0 reflections')).toBeVisible();
 
@@ -51,7 +68,7 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
   );
   await page.getByRole('radio', { name: 'Good' }).click();
   await fillJournalField(page, 'Today\'s Meditation', 'Morning prayer focus');
-  await fillJournalField(page, 'Victory today', 'Stayed faithful with water only');
+  await fillJournalField(page, 'What are you grateful for today?', 'Stayed faithful with water only');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await expect(page.getByText('Reflection saved.')).toBeVisible();
@@ -75,11 +92,16 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
 test('focus lightbox navigates between daily reflection fields', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Today\'s Meditation').click();
+  await page.getByLabel('Today\'s Meditation', { exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('dialog').getByLabel('Today\'s Meditation').fill('Focus verse entry');
+  await page.getByRole('dialog').getByLabel('Today\'s Meditation', { exact: true }).fill('Focus verse entry');
   await page.getByRole('dialog').getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('dialog').getByLabel('What I prayed about').fill('Focus prayed entry');
+  await page
+    .getByRole('dialog')
+    .getByLabel("What do I get from today's meditation?", { exact: true })
+    .fill('Meditation insight entry');
+  await page.getByRole('dialog').getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('dialog').getByLabel('What I prayed about', { exact: true }).fill('Focus prayed entry');
   await page.getByRole('button', { name: 'Done' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('button', { name: 'Save Entry' }).click();
@@ -99,7 +121,7 @@ test('focus lightbox navigates between daily reflection fields', async ({ page }
 test('dismisses focus lightbox when clicking the backdrop', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Today\'s Meditation').click();
+  await page.getByLabel('Today\'s Meditation', { exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 
   await page.getByRole('dialog').click({ position: { x: 8, y: 8 } });
@@ -233,7 +255,7 @@ test('opens a read-only view of a saved entry', async ({ page }) => {
   await page.getByRole('radio', { name: 'Great' }).click();
   await fillJournalField(page, 'Today\'s Meditation', 'Evening prayer focus');
   await fillJournalField(page, 'What I prayed about', 'Family healing and peace');
-  await fillJournalField(page, 'Victory today', 'Completed the fast without complaint');
+  await fillJournalField(page, 'What are you grateful for today?', 'Completed the fast without complaint');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.getByRole('button', { name: /View reflection from/i }).click();
@@ -695,7 +717,7 @@ test('opens print document when exporting journal as PDF', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
   await fillJournalField(page, 'Today\'s Meditation', 'Export cover verse');
-  await fillJournalField(page, 'Victory today', 'Export victory note');
+  await fillJournalField(page, 'What are you grateful for today?', 'Export victory note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   const [popup] = await Promise.all([

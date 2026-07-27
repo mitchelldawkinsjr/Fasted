@@ -6,6 +6,8 @@ import { useMealImageSrc } from '../hooks/useMealImageSrc';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
   DAILY_REFLECTION_FIELDS,
+  DAILY_REFLECTION_FIELDS_AFTER_MOOD,
+  DAILY_REFLECTION_FIELDS_BEFORE_MOOD,
   FOOD_JOURNAL_FIELDS,
   getSimpleContentLabel,
   isDailyReflectionEntry,
@@ -132,20 +134,45 @@ export function JournalEntryBody({
   };
 
   if (isDailyReflectionEntry(entry)) {
+    const hasBeforeContent = DAILY_REFLECTION_FIELDS_BEFORE_MOOD.some(
+      (field) => entry[field.key].trim(),
+    );
+    const hasAfterContent = DAILY_REFLECTION_FIELDS_AFTER_MOOD.some(
+      (field) => entry[field.key].trim(),
+    );
+    const hasAnyContent = hasBeforeContent || hasAfterContent || entry.dayMood;
+
+    const renderDailyFieldHeading = (
+      field: FieldDef<(typeof DAILY_REFLECTION_FIELDS)[number]['key']>,
+    ) =>
+      field.key === 'prayerFocus' ? (
+        renderVerseHeading(entry)
+      ) : (
+        <h3 className={classes.label}>{field.label}</h3>
+      );
+
     return (
-      <FieldListBody
-        fields={DAILY_REFLECTION_FIELDS}
-        getValue={(key) => entry[key]}
-        classes={classes}
-        emptyMessage={emptyMessage}
-        renderHeading={(field) =>
-          field.key === 'prayerFocus' ? (
-            renderVerseHeading(entry)
-          ) : (
-            <h3 className={classes.label}>{field.label}</h3>
-          )
-        }
-      />
+      <>
+        <FieldListBody
+          fields={DAILY_REFLECTION_FIELDS_BEFORE_MOOD}
+          getValue={(key) => entry[key]}
+          classes={classes}
+          emptyMessage={null}
+          renderHeading={renderDailyFieldHeading}
+        />
+        {entry.dayMood ? (
+          <section className={classes.section}>
+            <MoodBadge mood={entry.dayMood} />
+          </section>
+        ) : null}
+        <FieldListBody
+          fields={DAILY_REFLECTION_FIELDS_AFTER_MOOD}
+          getValue={(key) => entry[key]}
+          classes={classes}
+          emptyMessage={hasAnyContent ? null : emptyMessage}
+          renderHeading={(field) => <h3 className={classes.label}>{field.label}</h3>}
+        />
+      </>
     );
   }
 
@@ -183,9 +210,6 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete, onTypeClick }: 
           <p className="label-caps text-on-surface-variant">{formatDisplayDate(entry.date)}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <JournalTypeBadge type={entry.type} onClick={onTypeClick} />
-            {isDailyReflectionEntry(entry) && entry.dayMood && (
-              <MoodBadge mood={entry.dayMood} />
-            )}
           </div>
         </div>
         <div className="flex shrink-0 gap-3">

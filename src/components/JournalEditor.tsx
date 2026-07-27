@@ -13,6 +13,8 @@ import { deleteImages, imageScopeKey, invalidateMealImageSrcs } from '../lib/ima
 import {
   DEFAULT_JOURNAL_ENTRY_TYPE,
   DAILY_REFLECTION_FIELDS,
+  DAILY_REFLECTION_FIELDS_AFTER_MOOD,
+  DAILY_REFLECTION_FIELDS_BEFORE_MOOD,
   FOOD_JOURNAL_FIELDS,
   getSimpleContentLabel,
   isDailyReflectionEntry,
@@ -294,20 +296,27 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
   const dailyStripLabels: Record<string, string> = {
     prayerFocus: 'Meditation',
+    godTeaching: 'Insight',
     prayedAbout: 'Prayed',
-    godTeaching: 'Teaching',
     hungerNotes: 'Feeling',
-    victory: 'Victory',
+    victory: 'Gratitude',
     tomorrowIntention: 'Tomorrow',
   };
 
-  const dailyFields = DAILY_REFLECTION_FIELDS.map(({ key, label }) => ({
-    key,
-    label,
-    stripLabel: dailyStripLabels[key] ?? label,
-    value: dailyFieldState[key][0],
-    set: dailyFieldState[key][1],
-  }));
+  const mapDailyFields = (
+    fields: ReadonlyArray<(typeof DAILY_REFLECTION_FIELDS)[number]>,
+  ) =>
+    fields.map(({ key, label }) => ({
+      key,
+      label,
+      stripLabel: dailyStripLabels[key] ?? label,
+      value: dailyFieldState[key][0],
+      set: dailyFieldState[key][1],
+    }));
+
+  const dailyFieldsBeforeMood = mapDailyFields(DAILY_REFLECTION_FIELDS_BEFORE_MOOD);
+  const dailyFieldsAfterMood = mapDailyFields(DAILY_REFLECTION_FIELDS_AFTER_MOOD);
+  const dailyFields = [...dailyFieldsBeforeMood, ...dailyFieldsAfterMood];
 
   const foodFieldState = {
     breakfast: [breakfast, setBreakfast] as const,
@@ -405,10 +414,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
       {entryType === 'daily-reflection' ? (
         <>
-          <section className="stitch-card min-w-0 overflow-hidden p-stack-md">
-            <MoodPicker value={dayMood} onChange={setDayMood} />
-          </section>
-          {dailyFields.map((field) => (
+          {dailyFieldsBeforeMood.map((field) => (
             <label key={field.key} className="block">
               {field.key === 'prayerFocus' ? (
                 <VerseOfTheDayLabel date={date} />
@@ -422,6 +428,24 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                 placeholder={
                   field.key === 'prayerFocus' ? 'Write your reflection…' : `${field.label}…`
                 }
+                ariaLabel={field.label}
+                inputClass={inputClass}
+                isActive={focusFieldKey === field.key}
+                onOpen={() => openFocusField(field.key)}
+              />
+            </label>
+          ))}
+          <section className="stitch-card min-w-0 overflow-hidden p-stack-md">
+            <MoodPicker value={dayMood} onChange={setDayMood} />
+          </section>
+          {dailyFieldsAfterMood.map((field) => (
+            <label key={field.key} className="block">
+              <span className="mb-1 block text-body-md font-medium text-on-surface">
+                {field.label}
+              </span>
+              <JournalTextField
+                value={field.value}
+                placeholder={`${field.label}…`}
                 ariaLabel={field.label}
                 inputClass={inputClass}
                 isActive={focusFieldKey === field.key}
