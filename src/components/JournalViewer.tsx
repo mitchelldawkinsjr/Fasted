@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { JournalTypeBadge } from './JournalTypePicker';
 import { MoodBadge } from './MoodPicker';
-import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
+import { MeditationVerseBox } from './MeditationVerseBox';
 import { useMealImageSrc } from '../hooks/useMealImageSrc';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
@@ -101,14 +101,12 @@ type JournalEntryBodyProps = {
   entry: JournalEntry;
   classes?: JournalEntryBodyClasses;
   emptyMessage?: ReactNode;
-  renderVerseHeading?: (entry: JournalEntry) => ReactNode;
 };
 
 export function JournalEntryBody({
   entry,
   classes = DEFAULT_ENTRY_BODY_CLASSES,
   emptyMessage = 'No reflection notes recorded.',
-  renderVerseHeading = (item) => <VerseOfTheDayLabel date={item.date} as="heading" />,
 }: JournalEntryBodyProps) {
   const simpleContentLabel = getSimpleContentLabel(entry.type);
   const mealImages = entry.type === 'food' ? getMealImages(entry.id) : {};
@@ -133,19 +131,15 @@ export function JournalEntryBody({
 
   if (isDailyReflectionEntry(entry)) {
     return (
-      <FieldListBody
-        fields={DAILY_REFLECTION_FIELDS}
-        getValue={(key) => entry[key]}
-        classes={classes}
-        emptyMessage={emptyMessage}
-        renderHeading={(field) =>
-          field.key === 'prayerFocus' ? (
-            renderVerseHeading(entry)
-          ) : (
-            <h3 className={classes.label}>{field.label}</h3>
-          )
-        }
-      />
+      <>
+        <MeditationVerseBox date={entry.date} variant="compact" />
+        <FieldListBody
+          fields={DAILY_REFLECTION_FIELDS}
+          getValue={(key) => entry[key]}
+          classes={classes}
+          emptyMessage={emptyMessage}
+        />
+      </>
     );
   }
 

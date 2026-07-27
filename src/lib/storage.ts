@@ -12,6 +12,7 @@ import type {
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import { normalizeJourney, normalizeJourneys } from './journey';
 import { getDayMoodLabel } from './dayMood';
+import { resolveVerseForDate } from './verseOfTheDay';
 import {
   blobToDataUrl,
   clearScope,
@@ -578,11 +579,12 @@ export function exportJournalMarkdown(): string {
   return journalEntries
     .map((e) => {
       if (e.type === 'daily-reflection') {
+        const verse = resolveVerseForDate(e.date);
         return `## ${e.date}
 
 **Type:** Daily Reflection
 ${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
-**Today's Meditation:** ${e.prayerFocus}
+**Today's Meditation:** ${verse.reference} — "${verse.text}"
 
 **What I prayed about:** ${e.prayedAbout}
 
