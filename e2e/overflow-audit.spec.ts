@@ -53,18 +53,18 @@ test.describe('Visual overflow audit', () => {
       }
     }
 
-    // Modal states on Today page (mobile viewports only)
+    // Inline DailyReflection form on Today page (mobile viewports only)
     for (const viewport of AUDIT_VIEWPORTS.slice(0, 4)) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto(`/?date=${FIXED_DATE}`);
       await page.waitForLoadState('networkidle');
 
-      const checkInBtn = page.getByRole('button', { name: /check.?in|complete check/i });
-      if (await checkInBtn.count()) {
-        await checkInBtn.first().click();
+      const reflectionHeading = page.getByRole('heading', { name: 'Morning Reflection' });
+      if (await reflectionHeading.count()) {
+        await reflectionHeading.scrollIntoViewIfNeeded();
         await page.waitForTimeout(400);
         const issues = await detectOverflow(page);
-        const shotName = `CheckInModal-${viewport.name}.jpg`;
+        const shotName = `DailyReflection-${viewport.name}.jpg`;
         await page.screenshot({
           path: path.join(screenshotDir, shotName),
           fullPage: true,
@@ -72,12 +72,11 @@ test.describe('Visual overflow audit', () => {
           quality: 72,
         });
         allIssues.push({
-          route: 'CheckInModal',
+          route: 'DailyReflection',
           viewport: viewport.name,
           issues,
           screenshot: shotName,
         });
-        await page.keyboard.press('Escape');
       }
     }
 

@@ -11,7 +11,6 @@ import { VerseOfTheDay } from '../components/VerseOfTheDay';
 import { TodayFastCard } from '../components/TodayFastCard';
 import { Icon } from '../components/Icon';
 import { useActiveJourney } from '../hooks/useActiveJourney';
-import { useProgress } from '../hooks/useProgress';
 import { getDailyPlan } from '../lib/dailyPlan';
 import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/dateUtils';
 import {
@@ -20,7 +19,6 @@ import {
   journalTypePillClass,
 } from '../lib/journalTags';
 import { getCheckIn } from '../lib/storage';
-import type { Badge } from '../types';
 
 const OTHER_JOURNAL_TYPES = JOURNAL_ENTRY_TYPES.filter((type) => type !== 'daily-reflection');
 
@@ -32,16 +30,11 @@ export function TodayPage() {
   const { planStart, planEnd, journey } = useActiveJourney();
   const inPlan = isWithinPlan(viewDate, journey);
   const plan = inPlan ? getDailyPlan(viewDate, journey) : null;
-  const progress = useProgress();
   const existingCheckIn = getCheckIn(viewDate);
   const reflectionSectionRef = useRef<HTMLElement>(null);
 
   const scrollToReflection = () => {
     reflectionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const handleReflectionComplete = (_badges: Badge[]) => {
-    // DailyReflection handles celebration inline; card updates via useProgress subscription.
   };
 
   if (!inPlan || !plan) {
@@ -90,10 +83,6 @@ export function TodayPage() {
     );
   }
 
-  const hasDailyReflection = progress.journalEntries.some(
-    (entry) => entry.type === 'daily-reflection' && entry.date === viewDate,
-  );
-
   return (
     <div className="space-y-stack-lg animate-fade-in-up">
       {previewDate && previewDate !== today && (
@@ -135,7 +124,7 @@ export function TodayPage() {
           </Link>
         </div>
 
-        <DailyReflection key={viewDate} date={viewDate} onComplete={handleReflectionComplete} />
+        <DailyReflection key={viewDate} date={viewDate} />
 
         <div className="mt-stack-md">
           <p className="mb-2 text-body-sm text-on-surface-variant">Other reflections</p>
@@ -154,12 +143,6 @@ export function TodayPage() {
             ))}
           </div>
         </div>
-
-        {!hasDailyReflection && (
-          <p className="mt-stack-md text-center text-body-sm text-on-surface-variant">
-            Complete your daily reflection and check-in above.
-          </p>
-        )}
       </section>
 
       <SafetyNote compact={plan.fastType !== 'twenty-four-hour-water'} />

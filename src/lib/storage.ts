@@ -277,15 +277,11 @@ export function saveCheckIn(checkIn: CheckIn): void {
   saveCheckInWithGroupCheckIns(checkIn, []);
 }
 
-export function saveCheckInWithGroupCheckIns(
-  checkIn: CheckIn,
+function mergeGroupCheckIns(
+  current: UserProgress['groupCheckIns'],
   groupCheckIns: ReadonlyArray<{ groupId: string; checkIn: GroupCheckIn }>,
-): void {
-  const progress = getProgress();
-  const filtered = progress.checkIns.filter((c) => c.date !== checkIn.date);
-  const checkIns = [...filtered, checkIn].sort((a, b) => a.date.localeCompare(b.date));
-
-  let nextGroupCheckIns = progress.groupCheckIns ?? {};
+): UserProgress['groupCheckIns'] {
+  let nextGroupCheckIns = current ?? {};
   for (const { groupId, checkIn: groupCheckIn } of groupCheckIns) {
     const existing = nextGroupCheckIns[groupId] ?? [];
     const filteredGroup = existing.filter((c) => c.date !== groupCheckIn.date);
@@ -296,12 +292,22 @@ export function saveCheckInWithGroupCheckIns(
       ),
     };
   }
+  return nextGroupCheckIns;
+}
+
+export function saveCheckInWithGroupCheckIns(
+  checkIn: CheckIn,
+  groupCheckIns: ReadonlyArray<{ groupId: string; checkIn: GroupCheckIn }>,
+): void {
+  const progress = getProgress();
+  const filtered = progress.checkIns.filter((c) => c.date !== checkIn.date);
+  const checkIns = [...filtered, checkIn].sort((a, b) => a.date.localeCompare(b.date));
 
   persist({
     ...progress,
     checkIns,
     checkInStreak: computeCheckInStreak(checkIns, checkIn.date),
-    groupCheckIns: nextGroupCheckIns,
+    groupCheckIns: mergeGroupCheckIns(progress.groupCheckIns, groupCheckIns),
   });
 }
 
@@ -330,24 +336,12 @@ export function saveDailyReflectionWithCheckIn(
   const filteredCheckIns = progress.checkIns.filter((c) => c.date !== checkIn.date);
   const checkIns = [...filteredCheckIns, checkIn].sort((a, b) => a.date.localeCompare(b.date));
 
-  let nextGroupCheckIns = progress.groupCheckIns ?? {};
-  for (const { groupId, checkIn: groupCheckIn } of groupCheckIns) {
-    const existing = nextGroupCheckIns[groupId] ?? [];
-    const filteredGroup = existing.filter((c) => c.date !== groupCheckIn.date);
-    nextGroupCheckIns = {
-      ...nextGroupCheckIns,
-      [groupId]: [...filteredGroup, groupCheckIn].sort((a, b) =>
-        a.date.localeCompare(b.date),
-      ),
-    };
-  }
-
   persist({
     ...progress,
     journalEntries,
     checkIns,
     checkInStreak: computeCheckInStreak(checkIns, checkIn.date),
-    groupCheckIns: nextGroupCheckIns,
+    groupCheckIns: mergeGroupCheckIns(progress.groupCheckIns, groupCheckIns),
   });
 }
 

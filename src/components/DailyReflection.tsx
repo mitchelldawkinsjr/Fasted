@@ -1,10 +1,10 @@
 import confetti from 'canvas-confetti';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { trackEvent } from '../lib/analytics';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
-import { getGroupCommitments, getMyCovenant, listMyGroups } from '../lib/groups';
 import { useActiveJourney } from '../hooks/useActiveJourney';
+import { useGroupCommitmentContexts } from '../hooks/useGroupCommitmentContexts';
 import {
   DAILY_REFLECTION_FIELDS,
   joinTrimmedValues,
@@ -14,7 +14,6 @@ import {
   createJournalEntryId,
   getCheckIn,
   getDailyReflectionByDate,
-  getGroupCheckIn,
   saveDailyReflectionWithCheckIn,
 } from '../lib/storage';
 import { getCurrentStreak } from '../lib/streaks';
@@ -22,11 +21,8 @@ import { toast } from '../lib/toast';
 import type {
   Badge,
   CheckIn,
-  CommitmentDefinition,
-  CommitmentResult,
   DailyReflectionEntry,
   DayMood,
-  GroupRecord,
 } from '../types';
 import { BadgeSprite } from './BadgeSprite';
 import { GroupCommitmentRows } from './GroupCommitmentRows';
@@ -38,17 +34,9 @@ import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 
 type Props = {
   date: string;
-  onComplete?: (badges: Badge[]) => void;
 };
 
-type GroupCommitmentContext = {
-  group: GroupRecord;
-  commitments: CommitmentDefinition[];
-  existingResults?: CommitmentResult[];
-  hasExistingCheckIn: boolean;
-};
-
-export function DailyReflection({ date, onComplete }: Props) {
+export function DailyReflection({ date }: Props) {
   const { getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
   const existingEntry = getDailyReflectionByDate(date);
@@ -62,62 +50,20 @@ export function DailyReflection({ date, onComplete }: Props) {
   const [prayedAbout, setPrayedAbout] = useState(existingEntry?.prayedAbout ?? '');
   const [godTeaching, setGodTeaching] = useState(existingEntry?.godTeaching ?? '');
   const [hungerNotes, setHungerNotes] = useState(existingEntry?.hungerNotes ?? '');
-  const [victory, setVictory] = useState(existingEntry?.victory ?? '');
+  const [victory, setVictory] = useState(
+    existingEntry?.victory ?? existingCheckIn?.win ?? '',
+  );
   const [tomorrowIntention, setTomorrowIntention] = useState(existingEntry?.tomorrowIntention ?? '');
   const [saving, setSaving] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
   const [message, setMessage] = useState('');
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
   const [savedStreak, setSavedStreak] = useState<number | null>(null);
-  const [groupContexts, setGroupContexts] = useState<GroupCommitmentContext[]>([]);
-  const [groupResults, setGroupResults] = useState<Record<string, CommitmentResult[]>>({});
+  const { groupContexts, groupResults, setGroupResults } = useGroupCommitmentContexts(date);
 
   const currentStreak = getCurrentStreak(date);
   const reflectionFields = [prayerFocus, prayedAbout, godTeaching, hungerNotes, victory, tomorrowIntention];
   const hasReflectionContent = joinTrimmedValues(reflectionFields).length > 0;
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const myGroups = await listMyGroups();
-        const contexts: GroupCommitmentContext[] = [];
-
-        for (const group of myGroups) {
-          const covenant = await getMyCovenant(group.id);
-          if (!covenant) continue;
-
-          const commitments = await getGroupCommitments(group.id);
-          if (commitments.length === 0) continue;
-
-          const existingGroupCheckIn = getGroupCheckIn(group.id, date);
-          contexts.push({
-            group,
-            commitments,
-            existingResults: existingGroupCheckIn?.results,
-            hasExistingCheckIn: !!existingGroupCheckIn,
-          });
-        }
-
-        if (!cancelled) setGroupContexts(contexts);
-      } catch {
-        if (!cancelled) setGroupContexts([]);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [date]);
-
-  useEffect(() => {
-    const initial: Record<string, CommitmentResult[]> = {};
-    for (const ctx of groupContexts) {
-      initial[ctx.group.id] = ctx.existingResults ?? [];
-    }
-    setGroupResults(initial);
-  }, [groupContexts]);
 
   const dailyFieldState = {
     prayerFocus: [prayerFocus, setPrayerFocus] as const,
@@ -166,7 +112,7 @@ export function DailyReflection({ date, onComplete }: Props) {
       prayedFocus,
       readScripture,
       journaled: true,
-      win: existingCheckIn?.win ?? victory.trim(),
+      win: victory.trim(),
       completedAt: new Date().toISOString(),
     };
 
@@ -225,8 +171,6 @@ export function DailyReflection({ date, onComplete }: Props) {
         });
       }, 400);
     }
-
-    onComplete?.(earned);
   };
 
   if (celebrating) {
