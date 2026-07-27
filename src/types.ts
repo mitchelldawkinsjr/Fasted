@@ -234,12 +234,9 @@ export type FoodProfile = {
   sex?: 'female' | 'male' | 'prefer-not-to-say';
   heightInches?: number;
   weightLbs?: number;
-  goalWeightLbs?: number;
   activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
-  strengthTrainingDays?: number;
   allergies?: string;
   foodsAvoid?: string;
-  medicalNotes?: string;
   preferredMeals?: number;
   updatedAt?: string;
 };
@@ -249,8 +246,7 @@ export type KitchenCategory =
   | 'vegetables'
   | 'fruit'
   | 'carbohydrates'
-  | 'healthyFats'
-  | 'drinks';
+  | 'healthyFats';
 
 export type KitchenItem = {
   id: string;
@@ -258,9 +254,7 @@ export type KitchenItem = {
   category: KitchenCategory;
   quantity?: string;
   servingCount?: number;
-  expirationDate?: string;
   useSoon?: boolean;
-  phaseAligned?: boolean;
   addedAt: string;
 };
 
@@ -281,7 +275,6 @@ export type FoodPlanCheckIn = {
   hunger: 'low' | 'manageable' | 'high' | null;
   energy: 'low' | 'steady' | 'high' | null;
   ateOutsidePlan: boolean | null;
-  wantsAdjustment: boolean | null;
   completedAt?: string;
 };
 

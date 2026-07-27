@@ -5,20 +5,14 @@ import { useProgress } from '../../hooks/useProgress';
 import { getDailyPlan } from '../../lib/dailyPlan';
 import { getLocalDateString } from '../../lib/dateUtils';
 import {
-  COMMON_KITCHEN_FOODS,
-  FOOD_GOAL_LABELS,
-  KITCHEN_CATEGORY_LABELS,
-  MEAL_PLAN_SCOPE_LABELS,
-} from '../../lib/foodCategories';
-import {
   calculateDailyTargets,
-  formatRange,
   generateMealPlan,
   getPhaseDietaryRules,
+  getPlanSectionHeading,
   getPlateSegments,
+  isFoodAvoided,
 } from '../../lib/foodPlan';
 import {
-  createKitchenItemId,
   getFoodPlanCheckIn,
   removeKitchenItem,
   saveFoodPlanCheckIn,
@@ -42,15 +36,48 @@ type Props = {
 const INPUT_CLASS =
   'w-full rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-body-md focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary';
 
-const FOOD_GOALS: FoodGoal[] = ['lose-body-fat', 'maintain', 'gain-muscle', 'wellness'];
-const MEAL_SCOPES: MealPlanScope[] = [
-  'next-meal',
-  'today',
-  'tomorrow',
-  'week',
-  'post-fast',
-  'grocery-list',
-];
+const FOOD_GOAL_LABELS: Record<FoodGoal, string> = {
+  'lose-body-fat': 'Lose body fat',
+  maintain: 'Maintain weight',
+  'gain-muscle': 'Gain weight or muscle',
+  wellness: 'Support general wellness',
+};
+
+const MEAL_PLAN_SCOPE_LABELS: Record<MealPlanScope, string> = {
+  'next-meal': 'My next meal',
+  today: "Today's meals",
+  tomorrow: "Tomorrow's meals",
+  week: 'My week',
+  'post-fast': 'My post-fast meal',
+  'grocery-list': 'A grocery list',
+};
+
+const KITCHEN_CATEGORY_LABELS: Record<KitchenCategory, string> = {
+  protein: 'Protein',
+  vegetables: 'Vegetables',
+  fruit: 'Fruit',
+  carbohydrates: 'Carbohydrates',
+  healthyFats: 'Healthy Fats',
+};
+
+const COMMON_KITCHEN_FOODS: Record<KitchenCategory, string[]> = {
+  protein: [
+    'Chicken breast',
+    'Ground turkey',
+    'Eggs',
+    'Greek yogurt',
+    'Tuna',
+    'Salmon',
+    'Black beans',
+  ],
+  vegetables: ['Broccoli', 'Spinach', 'Green beans', 'Mixed vegetables', 'Carrots', 'Bell peppers'],
+  fruit: ['Apples', 'Bananas', 'Strawberries', 'Blueberries', 'Oranges'],
+  carbohydrates: ['Brown rice', 'Potatoes', 'Oats', 'Whole-grain bread', 'Quinoa'],
+  healthyFats: ['Avocado', 'Olive oil', 'Nuts', 'Peanut butter', 'Almonds'],
+};
+
+const FOOD_GOALS = Object.keys(FOOD_GOAL_LABELS) as FoodGoal[];
+const MEAL_SCOPES = Object.keys(MEAL_PLAN_SCOPE_LABELS) as MealPlanScope[];
 const KITCHEN_CATEGORIES = Object.keys(KITCHEN_CATEGORY_LABELS) as KitchenCategory[];
 
 export function PlanMyFoodPanel({ onLogFood }: Props) {
@@ -74,12 +101,9 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
     sex: savedProfile?.sex,
     heightInches: savedProfile?.heightInches,
     weightLbs: savedProfile?.weightLbs,
-    goalWeightLbs: savedProfile?.goalWeightLbs,
     activityLevel: savedProfile?.activityLevel ?? 'moderate',
-    strengthTrainingDays: savedProfile?.strengthTrainingDays ?? 0,
     allergies: savedProfile?.allergies ?? '',
     foodsAvoid: savedProfile?.foodsAvoid ?? '',
-    medicalNotes: savedProfile?.medicalNotes ?? '',
     preferredMeals: savedProfile?.preferredMeals ?? 3,
   });
 
@@ -95,15 +119,12 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
 
   const targets = useMemo(() => calculateDailyTargets(profile), [profile]);
   const mealPlan = useMemo(
-    () =>
-      plan
-        ? generateMealPlan(planScope, inventory, plan, phase, profile)
-        : null,
-    [planScope, inventory, plan, phase, profile],
+    () => (plan ? generateMealPlan(planScope, inventory, journey, today, profile) : null),
+    [planScope, inventory, journey, today, profile, plan],
   );
   const plateSegments = useMemo(
-    () => (plan ? getPlateSegments(phase, plan, goal) : []),
-    [phase, plan, goal],
+    () => (plan ? getPlateSegments(phase, plan, goal, planScope) : []),
+    [phase, plan, goal, planScope],
   );
   const dietaryRules = useMemo(
     () => (plan ? getPhaseDietaryRules(phase, plan) : []),
@@ -121,8 +142,23 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
       hunger: null,
       energy: null,
       ateOutsidePlan: null,
-      wantsAdjustment: null,
     },
+  );
+
+  const avoidTerms = useMemo(
+    () =>
+      [
+        ...(profile.allergies?.split(/[,;]/) ?? []),
+        ...(profile.foodsAvoid?.split(/[,;]/) ?? []),
+      ]
+        .map((term) => term.trim().toLowerCase())
+        .filter(Boolean),
+    [profile.allergies, profile.foodsAvoid],
+  );
+
+  const quickAddFoods = useMemo(
+    () => COMMON_KITCHEN_FOODS.protein.filter((food) => !isFoodAvoided(food, avoidTerms)).slice(0, 4),
+    [avoidTerms],
   );
 
   const handleSaveGoal = (nextGoal: FoodGoal) => {
@@ -141,13 +177,12 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
     const itemName = (name ?? newItemName).trim();
     if (!itemName) return;
     const item: KitchenItem = {
-      id: createKitchenItemId(),
+      id: crypto.randomUUID(),
       name: itemName,
       category: category ?? newItemCategory,
       quantity: newItemQuantity || undefined,
       servingCount: 2,
       useSoon: newItemUseSoon,
-      phaseAligned: true,
       addedAt: new Date().toISOString(),
     };
     saveKitchenItem(item);
@@ -167,7 +202,6 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
       hunger: checkIn.hunger ?? null,
       energy: checkIn.energy ?? null,
       ateOutsidePlan: checkIn.ateOutsidePlan ?? null,
-      wantsAdjustment: checkIn.wantsAdjustment ?? null,
     });
     toast.info('Food check-in saved.');
   };
@@ -313,20 +347,6 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
                 />
               </label>
               <label className="space-y-1">
-                <span className="text-label-caps text-on-surface-variant">Goal weight (optional)</span>
-                <input
-                  type="number"
-                  value={profileForm.goalWeightLbs ?? ''}
-                  onChange={(e) =>
-                    setProfileForm({
-                      ...profileForm,
-                      goalWeightLbs: Number(e.target.value) || undefined,
-                    })
-                  }
-                  className={INPUT_CLASS}
-                />
-              </label>
-              <label className="space-y-1">
                 <span className="text-label-caps text-on-surface-variant">Activity level</span>
                 <select
                   value={profileForm.activityLevel ?? 'moderate'}
@@ -344,22 +364,6 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
                   <option value="active">Active</option>
                   <option value="very-active">Very active</option>
                 </select>
-              </label>
-              <label className="space-y-1">
-                <span className="text-label-caps text-on-surface-variant">Strength days/week</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={7}
-                  value={profileForm.strengthTrainingDays ?? 0}
-                  onChange={(e) =>
-                    setProfileForm({
-                      ...profileForm,
-                      strengthTrainingDays: Number(e.target.value) || 0,
-                    })
-                  }
-                  className={INPUT_CLASS}
-                />
               </label>
               <label className="space-y-1">
                 <span className="text-label-caps text-on-surface-variant">Meals per day</span>
@@ -433,7 +437,7 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
             <div className="space-y-2">
               <p className="text-label-caps text-on-surface-variant">Quick add common foods</p>
               <div className="flex flex-wrap gap-2">
-                {COMMON_KITCHEN_FOODS.protein.slice(0, 4).map((food) => (
+                {quickAddFoods.map((food) => (
                   <button
                     key={food}
                     type="button"
@@ -544,10 +548,10 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
       {/* Today's Plan */}
       <section className="stitch-card space-y-stack-md p-stack-md">
         <h3 className="font-display text-headline-md text-primary">
-          {plan.isFastDay && planScope !== 'post-fast' ? "Today's Fast" : "Today's Plan"}
+          {getPlanSectionHeading(planScope, plan.isFastDay)}
         </h3>
 
-        {mealPlan?.isFastDay && planScope !== 'post-fast' ? (
+        {mealPlan?.isFastDay ? (
           <div className="space-y-3">
             <p className="text-body-md text-on-surface-variant">
               Today is a fasting day. Focus on hydration, prayer, and your phase commitment.
@@ -571,25 +575,25 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
               <div>
                 <span className="label-caps text-on-surface-variant">Protein</span>
                 <p className="text-primary">
-                  {formatRange(targets.protein.min, targets.protein.max, 'g')}
+                  {targets.protein.min}–{targets.protein.max} g
                 </p>
               </div>
               <div>
                 <span className="label-caps text-on-surface-variant">Vegetables</span>
                 <p className="text-primary">
-                  {formatRange(targets.vegetableCups.min, targets.vegetableCups.max, 'cups')}
+                  {targets.vegetableCups.min}–{targets.vegetableCups.max} cups
                 </p>
               </div>
               <div>
                 <span className="label-caps text-on-surface-variant">Fruit</span>
                 <p className="text-primary">
-                  {formatRange(targets.fruitServings.min, targets.fruitServings.max, 'servings')}
+                  {targets.fruitServings.min}–{targets.fruitServings.max} servings
                 </p>
               </div>
               <div>
                 <span className="label-caps text-on-surface-variant">Water</span>
                 <p className="text-primary">
-                  {formatRange(targets.waterOz.min, targets.waterOz.max, 'oz')}
+                  {targets.waterOz.min}–{targets.waterOz.max} oz
                 </p>
               </div>
             </div>
@@ -604,11 +608,17 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
             {showNutritionDetails && (
               <div className="grid grid-cols-2 gap-3 text-body-md">
                 <div>
-                  Calories: {formatRange(targets.calories.min, targets.calories.max, 'kcal')}
+                  Calories: {targets.calories.min}–{targets.calories.max} kcal
                 </div>
-                <div>Carbs: {formatRange(targets.carbs.min, targets.carbs.max, 'g')}</div>
-                <div>Fat: {formatRange(targets.fat.min, targets.fat.max, 'g')}</div>
-                <div>Fiber: {formatRange(targets.fiber.min, targets.fiber.max, 'g')}</div>
+                <div>
+                  Carbs: {targets.carbs.min}–{targets.carbs.max} g
+                </div>
+                <div>
+                  Fat: {targets.fat.min}–{targets.fat.max} g
+                </div>
+                <div>
+                  Fiber: {targets.fiber.min}–{targets.fiber.max} g
+                </div>
               </div>
             )}
 
@@ -723,11 +733,6 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
           label="Did you eat outside your plan?"
           value={checkIn.ateOutsidePlan}
           onChange={(v) => setCheckIn({ ...checkIn, ateOutsidePlan: v })}
-        />
-        <CheckInToggle
-          label="Would you like help adjusting tomorrow?"
-          value={checkIn.wantsAdjustment}
-          onChange={(v) => setCheckIn({ ...checkIn, wantsAdjustment: v })}
         />
         <button type="button" onClick={handleSaveCheckIn} className="btn-stitch-primary">
           Save Check-in

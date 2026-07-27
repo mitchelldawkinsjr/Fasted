@@ -419,10 +419,6 @@ export function saveSettings(settings: Partial<AppSettings>): void {
   });
 }
 
-export function getFoodProfile(): FoodProfile | undefined {
-  return getProgress().foodProfile;
-}
-
 export function saveFoodProfile(profile: FoodProfile): void {
   const progress = getProgress();
   persist({
@@ -431,18 +427,9 @@ export function saveFoodProfile(profile: FoodProfile): void {
   });
 }
 
-export function getKitchenInventory(): KitchenItem[] {
-  return getProgress().kitchenInventory ?? [];
-}
-
 export function saveKitchenItem(item: KitchenItem): void {
   const progress = getProgress();
-  const existing = progress.kitchenInventory ?? [];
-  const index = existing.findIndex((i) => i.id === item.id);
-  const kitchenInventory =
-    index >= 0
-      ? existing.map((i, idx) => (idx === index ? item : i))
-      : [...existing, item];
+  const kitchenInventory = [...(progress.kitchenInventory ?? []), item];
   persist({ ...progress, kitchenInventory });
 }
 
@@ -465,10 +452,6 @@ export function saveFoodPlanCheckIn(checkIn: FoodPlanCheckIn): void {
     { ...checkIn, completedAt: new Date().toISOString() },
   ].sort((a, b) => a.date.localeCompare(b.date));
   persist({ ...progress, foodPlanCheckIns });
-}
-
-export function createKitchenItemId(): string {
-  return crypto.randomUUID();
 }
 
 const LEGACY_TOUR_KEY = 'fasted-tour-v1';
