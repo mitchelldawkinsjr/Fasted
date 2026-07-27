@@ -580,11 +580,14 @@ export function exportJournalMarkdown(): string {
     .map((e) => {
       if (e.type === 'daily-reflection') {
         const verse = resolveVerseForDate(e.date);
+        const meditation = e.prayerFocus.trim()
+          ? e.prayerFocus
+          : `${verse.reference} — "${verse.text}"`;
         return `## ${e.date}
 
 **Type:** Daily Reflection
 ${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
-**Today's Meditation:** ${verse.reference} — "${verse.text}"
+**Today's Meditation:** ${meditation}
 
 **What I prayed about:** ${e.prayedAbout}
 

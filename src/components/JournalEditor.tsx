@@ -6,7 +6,7 @@ import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
 import { MealImageUpload } from './MealImageUpload';
 import { MoodPicker } from './MoodPicker';
-import { MeditationVerseBox } from './MeditationVerseBox';
+import { DailyReflectionMeditation } from './VerseOfTheDay';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
 import { deleteImages, imageScopeKey, invalidateMealImageSrcs } from '../lib/imageStore';
@@ -230,7 +230,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         ...base,
         type: 'daily-reflection',
         dayMood,
-        prayerFocus: '',
+        prayerFocus: entry && isDailyReflectionEntry(entry) ? entry.prayerFocus : '',
         prayedAbout: prayedAbout.trim(),
         godTeaching: godTeaching.trim(),
         hungerNotes: hungerNotes.trim(),
@@ -401,7 +401,26 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           <section className="stitch-card min-w-0 overflow-hidden p-stack-md">
             <MoodPicker value={dayMood} onChange={setDayMood} />
           </section>
-          <MeditationVerseBox date={date} />
+          <DailyReflectionMeditation
+            entry={
+              entry && isDailyReflectionEntry(entry)
+                ? { ...entry, date }
+                : {
+                    id: '',
+                    date,
+                    type: 'daily-reflection',
+                    dayMood: null,
+                    prayerFocus: '',
+                    prayedAbout: '',
+                    godTeaching: '',
+                    hungerNotes: '',
+                    victory: '',
+                    tomorrowIntention: '',
+                    updatedAt: '',
+                  }
+            }
+            variant="journal"
+          />
           {dailyFields.map((field) => (
             <label key={field.key} className="block">
               <span className="mb-1 block text-body-md font-medium text-on-surface">

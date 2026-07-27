@@ -318,6 +318,7 @@ export function getJournalEntryPreview(entry: JournalEntry): string {
         entry.godTeaching ||
         entry.hungerNotes ||
         entry.tomorrowIntention ||
+        entry.prayerFocus ||
         'Reflection saved')
     );
   }
@@ -335,7 +336,7 @@ export function getJournalEntryPreview(entry: JournalEntry): string {
 
 export function getJournalEntryTitle(entry: JournalEntry): string {
   if (entry.type === 'daily-reflection') {
-    return entry.victory.trim() || JOURNAL_ENTRY_TYPE_LABELS['daily-reflection'];
+    return entry.victory.trim() || entry.prayerFocus.trim() || JOURNAL_ENTRY_TYPE_LABELS['daily-reflection'];
   }
 
   if (isContentSimpleJournalEntry(entry)) {

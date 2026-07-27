@@ -3,18 +3,11 @@ import { expectDateInputContained } from './fixtures/overflow';
 import { AUDIT_VIEWPORTS } from './fixtures/viewports';
 import { FIXED_DATE } from './fixtures/constants';
 import { messages } from '../src/lib/messages';
-import { VERSES } from '../src/data/verses';
+import { resolveVerseForDate } from '../src/lib/verseOfTheDay';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
 
-function resolveVerseForTestDate(dateStr: string) {
-  const date = new Date(`${dateStr}T12:00:00`);
-  const daysSinceEpoch = Math.floor(date.getTime() / 86_400_000);
-  const index = ((daysSinceEpoch % VERSES.length) + VERSES.length) % VERSES.length;
-  return VERSES[index];
-}
-
-const expectedVerse = resolveVerseForTestDate(FIXED_DATE);
+const expectedVerse = resolveVerseForDate(FIXED_DATE);
 
 async function selectType(page: import('@playwright/test').Page, label: string) {
   const group = page.getByRole('group', { name: 'Reflection type' });

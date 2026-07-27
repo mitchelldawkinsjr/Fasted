@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { JournalTypeBadge } from './JournalTypePicker';
 import { MoodBadge } from './MoodPicker';
-import { MeditationVerseBox } from './MeditationVerseBox';
+import { DailyReflectionMeditation } from './VerseOfTheDay';
 import { useMealImageSrc } from '../hooks/useMealImageSrc';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
@@ -132,7 +132,7 @@ export function JournalEntryBody({
   if (isDailyReflectionEntry(entry)) {
     return (
       <>
-        <MeditationVerseBox date={entry.date} variant="compact" />
+        <DailyReflectionMeditation entry={entry} variant="compact" />
         <FieldListBody
           fields={DAILY_REFLECTION_FIELDS}
           getValue={(key) => entry[key]}
