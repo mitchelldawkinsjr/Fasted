@@ -226,6 +226,65 @@ export type GroupCheckIn = {
   completedAt: string;
 };
 
+export type FoodGoal = 'lose-body-fat' | 'maintain' | 'gain-muscle' | 'wellness';
+
+export type FoodProfile = {
+  goal: FoodGoal;
+  age?: number;
+  sex?: 'female' | 'male' | 'prefer-not-to-say';
+  heightInches?: number;
+  weightLbs?: number;
+  goalWeightLbs?: number;
+  activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
+  strengthTrainingDays?: number;
+  allergies?: string;
+  foodsAvoid?: string;
+  medicalNotes?: string;
+  preferredMeals?: number;
+  updatedAt?: string;
+};
+
+export type KitchenCategory =
+  | 'protein'
+  | 'vegetables'
+  | 'fruit'
+  | 'carbohydrates'
+  | 'healthyFats'
+  | 'drinks';
+
+export type KitchenItem = {
+  id: string;
+  name: string;
+  category: KitchenCategory;
+  quantity?: string;
+  servingCount?: number;
+  expirationDate?: string;
+  useSoon?: boolean;
+  phaseAligned?: boolean;
+  addedAt: string;
+};
+
+export type MealPlanScope =
+  | 'next-meal'
+  | 'today'
+  | 'tomorrow'
+  | 'week'
+  | 'post-fast'
+  | 'grocery-list';
+
+export type FoodPlanCheckIn = {
+  date: string;
+  followedPlan: boolean | null;
+  enoughProtein: boolean | null;
+  ateVegetables: boolean | null;
+  drankWater: boolean | null;
+  hunger: 'low' | 'manageable' | 'high' | null;
+  energy: 'low' | 'steady' | 'high' | null;
+  ateOutsidePlan: boolean | null;
+  wantsAdjustment: boolean | null;
+  completedAt?: string;
+};
+
 export type UserProgress = {
   checkIns: CheckIn[];
   /** Consecutive check-in days after the most recent successful check-in. */
@@ -239,6 +298,12 @@ export type UserProgress = {
   journeys: Journey[];
   /** Daily group commitment honor results keyed by group id. */
   groupCheckIns?: Record<string, GroupCheckIn[]>;
+  /** Saved food planning profile (My Food Profile). */
+  foodProfile?: FoodProfile;
+  /** Home grocery inventory (My Kitchen). */
+  kitchenInventory?: KitchenItem[];
+  /** Daily food plan adherence check-ins. */
+  foodPlanCheckIns?: FoodPlanCheckIn[];
   /** Whether the first-run product tour has been completed or skipped. */
   hasSeenTour?: boolean;
   /** First-visit mini-tours completed or skipped per page. */

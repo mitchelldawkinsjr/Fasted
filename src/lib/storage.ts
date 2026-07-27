@@ -3,9 +3,12 @@ import type {
   Badge,
   CheckIn,
   FoodMealKey,
+  FoodPlanCheckIn,
+  FoodProfile,
   GroupCheckIn,
   JournalEntry,
   Journey,
+  KitchenItem,
   MealSectionImages,
   UserProgress,
 } from '../types';
@@ -414,6 +417,58 @@ export function saveSettings(settings: Partial<AppSettings>): void {
     ...progress,
     settings: { ...progress.settings, ...settings },
   });
+}
+
+export function getFoodProfile(): FoodProfile | undefined {
+  return getProgress().foodProfile;
+}
+
+export function saveFoodProfile(profile: FoodProfile): void {
+  const progress = getProgress();
+  persist({
+    ...progress,
+    foodProfile: { ...profile, updatedAt: new Date().toISOString() },
+  });
+}
+
+export function getKitchenInventory(): KitchenItem[] {
+  return getProgress().kitchenInventory ?? [];
+}
+
+export function saveKitchenItem(item: KitchenItem): void {
+  const progress = getProgress();
+  const existing = progress.kitchenInventory ?? [];
+  const index = existing.findIndex((i) => i.id === item.id);
+  const kitchenInventory =
+    index >= 0
+      ? existing.map((i, idx) => (idx === index ? item : i))
+      : [...existing, item];
+  persist({ ...progress, kitchenInventory });
+}
+
+export function removeKitchenItem(id: string): void {
+  const progress = getProgress();
+  const kitchenInventory = (progress.kitchenInventory ?? []).filter((i) => i.id !== id);
+  persist({ ...progress, kitchenInventory });
+}
+
+export function getFoodPlanCheckIn(date: string): FoodPlanCheckIn | undefined {
+  return getProgress().foodPlanCheckIns?.find((c) => c.date === date);
+}
+
+export function saveFoodPlanCheckIn(checkIn: FoodPlanCheckIn): void {
+  const progress = getProgress();
+  const existing = progress.foodPlanCheckIns ?? [];
+  const filtered = existing.filter((c) => c.date !== checkIn.date);
+  const foodPlanCheckIns = [
+    ...filtered,
+    { ...checkIn, completedAt: new Date().toISOString() },
+  ].sort((a, b) => a.date.localeCompare(b.date));
+  persist({ ...progress, foodPlanCheckIns });
+}
+
+export function createKitchenItemId(): string {
+  return crypto.randomUUID();
 }
 
 const LEGACY_TOUR_KEY = 'fasted-tour-v1';

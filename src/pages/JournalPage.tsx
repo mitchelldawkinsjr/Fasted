@@ -7,6 +7,7 @@ import { JournalViewer } from '../components/JournalViewer';
 import { JournalTypeBadge } from '../components/JournalTypePicker';
 import { MoodBadge } from '../components/MoodPicker';
 import { Icon } from '../components/Icon';
+import { PlanMyFoodPanel } from '../components/plan-my-food/PlanMyFoodPanel';
 import { useProgress } from '../hooks/useProgress';
 import { confirmAction } from '../lib/confirm';
 import { formatDisplayDate, getDefaultJournalDate, getLocalDateString } from '../lib/dateUtils';
@@ -28,6 +29,7 @@ import { toast } from '../lib/toast';
 import type { JournalEntry, JournalEntryType } from '../types';
 
 type JournalFilter = 'all' | JournalEntryType;
+type JournalSection = 'reflections' | 'food-plan';
 
 const BACK_NAV_CLASS =
   'inline-flex items-center gap-1 text-body-md font-medium text-primary transition-opacity hover:opacity-80';
@@ -58,6 +60,7 @@ function clearJournalSearchParams(searchParams: URLSearchParams): URLSearchParam
   next.delete('date');
   next.delete('from');
   next.delete('moodView');
+  next.delete('section');
   return next;
 }
 
@@ -72,6 +75,9 @@ export function JournalPage() {
   );
   const [viewing, setViewing] = useState<JournalEntry | null>(null);
   const [editing, setEditing] = useState<JournalEntry | 'new' | null>(null);
+  const [section, setSection] = useState<JournalSection>(() =>
+    searchParams.get('section') === 'food-plan' ? 'food-plan' : 'reflections',
+  );
   const today = getLocalDateString();
   const defaultDate = getDefaultJournalDate(today);
   const initialType = useMemo(() => getInitialTypeFromParams(searchParams), [searchParams]);
@@ -161,6 +167,21 @@ export function JournalPage() {
       next.set('type', nextFilter);
     }
     setSearchParams(next);
+  };
+
+  const applySection = (nextSection: JournalSection) => {
+    setSection(nextSection);
+    const next = clearJournalSearchParams(searchParams);
+    if (nextSection === 'food-plan') {
+      next.set('section', 'food-plan');
+    }
+    setSearchParams(next);
+  };
+
+  const openFoodJournal = () => {
+    applySection('reflections');
+    applyFilter('food');
+    setEditing('new');
   };
 
   const applyTypeFilter = (type: JournalEntryType) => {
@@ -256,6 +277,39 @@ export function JournalPage() {
         <Icon name="arrow_back" size={20} />
       </Link>
 
+      <div className="flex justify-center gap-2" role="tablist" aria-label="Journal sections">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={section === 'reflections'}
+          onClick={() => applySection('reflections')}
+          className={`rounded-full px-4 py-2 text-label-caps transition-all ${
+            section === 'reflections'
+              ? 'bg-secondary-container text-on-secondary-container'
+              : 'bg-surface-container text-on-surface-variant'
+          }`}
+        >
+          My Reflections
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={section === 'food-plan'}
+          onClick={() => applySection('food-plan')}
+          className={`rounded-full px-4 py-2 text-label-caps transition-all ${
+            section === 'food-plan'
+              ? 'bg-secondary-container text-on-secondary-container'
+              : 'bg-surface-container text-on-surface-variant'
+          }`}
+        >
+          Plan My Food
+        </button>
+      </div>
+
+      {section === 'food-plan' ? (
+        <PlanMyFoodPanel onLogFood={openFoodJournal} />
+      ) : (
+        <>
       <header className="flex items-center justify-between gap-3">
         <p className="text-body-md text-on-surface-variant">
           {progress.journalEntries.length} reflections
@@ -389,6 +443,8 @@ export function JournalPage() {
             </li>
           ))}
         </ul>
+      )}
+        </>
       )}
     </div>
   );
