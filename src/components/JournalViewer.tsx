@@ -134,13 +134,8 @@ export function JournalEntryBody({
   };
 
   if (isDailyReflectionEntry(entry)) {
-    const hasBeforeContent = DAILY_REFLECTION_FIELDS_BEFORE_MOOD.some(
-      (field) => entry[field.key].trim(),
-    );
-    const hasAfterContent = DAILY_REFLECTION_FIELDS_AFTER_MOOD.some(
-      (field) => entry[field.key].trim(),
-    );
-    const hasAnyContent = hasBeforeContent || hasAfterContent || entry.dayMood;
+    const hasAnyContent =
+      DAILY_REFLECTION_FIELDS.some((field) => entry[field.key].trim()) || entry.dayMood;
 
     const renderDailyFieldHeading = (
       field: FieldDef<(typeof DAILY_REFLECTION_FIELDS)[number]['key']>,
@@ -170,7 +165,7 @@ export function JournalEntryBody({
           getValue={(key) => entry[key]}
           classes={classes}
           emptyMessage={hasAnyContent ? null : emptyMessage}
-          renderHeading={(field) => <h3 className={classes.label}>{field.label}</h3>}
+          renderHeading={renderDailyFieldHeading}
         />
       </>
     );

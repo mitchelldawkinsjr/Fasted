@@ -44,18 +44,32 @@ test.beforeEach(async ({ page }) => {
 test('daily reflection fields follow the updated layout order', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
 
-  const fieldLabels = page.locator(
-    'form .overflow-y-auto > label:not(:has(input[type="date"])) span.text-on-surface, form .overflow-y-auto > label:not(:has(input[type="date"])) span.font-medium',
-  );
-  await expect(fieldLabels.nth(0)).toContainText("Today's Meditation");
-  await expect(fieldLabels.nth(1)).toHaveText("What do I get from today's meditation?");
-  await expect(fieldLabels.nth(2)).toHaveText('What I prayed about');
-  await expect(page.getByRole('radio', { name: 'Good' })).toBeVisible();
-  await expect(fieldLabels.nth(3)).toHaveText(
+  const labelOrder = [
+    "Today's Meditation",
+    "What do I get from today's meditation?",
+    'What I prayed about',
     'What do you feel contributed to your feeling today?',
+    'What are you grateful for today?',
+    "Tomorrow's intention",
+  ];
+
+  for (const label of labelOrder) {
+    await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+  }
+
+  const positions = await Promise.all(
+    labelOrder.map(async (label) => {
+      const box = await page.getByLabel(label, { exact: true }).boundingBox();
+      return box?.y ?? 0;
+    }),
   );
-  await expect(fieldLabels.nth(4)).toHaveText('What are you grateful for today?');
-  await expect(fieldLabels.nth(5)).toHaveText("Tomorrow's intention");
+  for (let i = 1; i < positions.length; i++) {
+    expect(positions[i]).toBeGreaterThan(positions[i - 1]);
+  }
+
+  const moodY = (await page.getByRole('radio', { name: 'Good' }).boundingBox())?.y ?? 0;
+  expect(moodY).toBeGreaterThan(positions[2]);
+  expect(moodY).toBeLessThan(positions[3]);
 });
 
 test('saves a daily reflection with multiple fields', async ({ page }) => {

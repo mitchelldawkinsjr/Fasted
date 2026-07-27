@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { trackEvent } from '../lib/analytics';
 import { JournalFocusLightbox } from './JournalFocusLightbox';
 import { JournalTextField } from './JournalTextField';
@@ -13,7 +13,6 @@ import { deleteImages, imageScopeKey, invalidateMealImageSrcs } from '../lib/ima
 import {
   DEFAULT_JOURNAL_ENTRY_TYPE,
   DAILY_REFLECTION_FIELDS,
-  DAILY_REFLECTION_FIELDS_AFTER_MOOD,
   DAILY_REFLECTION_FIELDS_BEFORE_MOOD,
   FOOD_JOURNAL_FIELDS,
   getSimpleContentLabel,
@@ -303,20 +302,13 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     tomorrowIntention: 'Tomorrow',
   };
 
-  const mapDailyFields = (
-    fields: ReadonlyArray<(typeof DAILY_REFLECTION_FIELDS)[number]>,
-  ) =>
-    fields.map(({ key, label }) => ({
-      key,
-      label,
-      stripLabel: dailyStripLabels[key] ?? label,
-      value: dailyFieldState[key][0],
-      set: dailyFieldState[key][1],
-    }));
-
-  const dailyFieldsBeforeMood = mapDailyFields(DAILY_REFLECTION_FIELDS_BEFORE_MOOD);
-  const dailyFieldsAfterMood = mapDailyFields(DAILY_REFLECTION_FIELDS_AFTER_MOOD);
-  const dailyFields = [...dailyFieldsBeforeMood, ...dailyFieldsAfterMood];
+  const dailyFields = DAILY_REFLECTION_FIELDS.map(({ key, label }) => ({
+    key,
+    label,
+    stripLabel: dailyStripLabels[key] ?? label,
+    value: dailyFieldState[key][0],
+    set: dailyFieldState[key][1],
+  }));
 
   const foodFieldState = {
     breakfast: [breakfast, setBreakfast] as const,
@@ -414,44 +406,33 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
       {entryType === 'daily-reflection' ? (
         <>
-          {dailyFieldsBeforeMood.map((field) => (
-            <label key={field.key} className="block">
-              {field.key === 'prayerFocus' ? (
-                <VerseOfTheDayLabel date={date} />
-              ) : (
-                <span className="mb-1 block text-body-md font-medium text-on-surface">
-                  {field.label}
-                </span>
+          {dailyFields.map((field, index) => (
+            <Fragment key={field.key}>
+              {index === DAILY_REFLECTION_FIELDS_BEFORE_MOOD.length && (
+                <section className="stitch-card min-w-0 overflow-hidden p-stack-md">
+                  <MoodPicker value={dayMood} onChange={setDayMood} />
+                </section>
               )}
-              <JournalTextField
-                value={field.value}
-                placeholder={
-                  field.key === 'prayerFocus' ? 'Write your reflection…' : `${field.label}…`
-                }
-                ariaLabel={field.label}
-                inputClass={inputClass}
-                isActive={focusFieldKey === field.key}
-                onOpen={() => openFocusField(field.key)}
-              />
-            </label>
-          ))}
-          <section className="stitch-card min-w-0 overflow-hidden p-stack-md">
-            <MoodPicker value={dayMood} onChange={setDayMood} />
-          </section>
-          {dailyFieldsAfterMood.map((field) => (
-            <label key={field.key} className="block">
-              <span className="mb-1 block text-body-md font-medium text-on-surface">
-                {field.label}
-              </span>
-              <JournalTextField
-                value={field.value}
-                placeholder={`${field.label}…`}
-                ariaLabel={field.label}
-                inputClass={inputClass}
-                isActive={focusFieldKey === field.key}
-                onOpen={() => openFocusField(field.key)}
-              />
-            </label>
+              <label className="block">
+                {field.key === 'prayerFocus' ? (
+                  <VerseOfTheDayLabel date={date} />
+                ) : (
+                  <span className="mb-1 block text-body-md font-medium text-on-surface">
+                    {field.label}
+                  </span>
+                )}
+                <JournalTextField
+                  value={field.value}
+                  placeholder={
+                    field.key === 'prayerFocus' ? 'Write your reflection…' : `${field.label}…`
+                  }
+                  ariaLabel={field.label}
+                  inputClass={inputClass}
+                  isActive={focusFieldKey === field.key}
+                  onOpen={() => openFocusField(field.key)}
+                />
+              </label>
+            </Fragment>
           ))}
         </>
       ) : entryType === 'food' ? (

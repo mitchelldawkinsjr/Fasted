@@ -22,7 +22,15 @@ import {
   isDataUrl,
   putImage,
 } from './imageStore';
-import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
+import {
+  DAILY_REFLECTION_FIELDS_AFTER_MOOD,
+  DAILY_REFLECTION_FIELDS_BEFORE_MOOD,
+  FOOD_JOURNAL_FIELDS,
+  FITNESS_JOURNAL_LABEL,
+  journalEntryNeedsMigration,
+  normalizeJournalEntries,
+  normalizeJournalEntry,
+} from './journalTags';
 import { collectMealImageIds } from './mealImages';
 import { deleteRemoteImages, resolveMealImageBlob } from './mealImageSync';
 import { messages } from './messages';
@@ -578,21 +586,21 @@ export function exportJournalMarkdown(): string {
   return journalEntries
     .map((e) => {
       if (e.type === 'daily-reflection') {
+        const beforeFields = DAILY_REFLECTION_FIELDS_BEFORE_MOOD.map(
+          ({ key, label }) => `**${label}:** ${e[key]}`,
+        ).join('\n\n');
+        const moodLine = e.dayMood ? `\n\n**Mood:** ${getDayMoodLabel(e.dayMood)}` : '';
+        const afterFields = DAILY_REFLECTION_FIELDS_AFTER_MOOD.map(
+          ({ key, label }) => `**${label}:** ${e[key]}`,
+        ).join('\n\n');
+
         return `## ${e.date}
 
 **Type:** Daily Reflection
-${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
-**Today's Meditation:** ${e.prayerFocus}
 
-**What I prayed about:** ${e.prayedAbout}
+${beforeFields}${moodLine}
 
-**What do I get from today's meditation?:** ${e.godTeaching}
-
-**What do you feel contributed to your feeling today?:** ${e.hungerNotes}
-
-**What are you grateful for today?:** ${e.victory}
-
-**Tomorrow's intention:** ${e.tomorrowIntention}
+${afterFields}
 `;
       }
 

@@ -1,9 +1,8 @@
 import { JournalEntryBody } from './JournalViewer';
 import { JournalTypeBadge } from './JournalTypePicker';
-import { MoodBadge } from './MoodPicker';
 import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 import { getActiveJourney } from '../lib/journey';
-import { VERSE_OF_THE_DAY_LABEL, isDailyReflectionEntry } from '../lib/journalTags';
+import { VERSE_OF_THE_DAY_LABEL } from '../lib/journalTags';
 import type { JournalEntry, UserProgress } from '../types';
 
 export type JournalExportModel = {
@@ -75,9 +74,6 @@ function PrintEntryPage({ entry }: { entry: JournalEntry }) {
         <p className="print-entry-date">{formatDisplayDate(entry.date)}</p>
         <div className="print-entry-meta">
           <JournalTypeBadge type={entry.type} className="print-meta-chip" />
-          {isDailyReflectionEntry(entry) && entry.dayMood && (
-            <MoodBadge mood={entry.dayMood} className="print-meta-chip" />
-          )}
         </div>
       </header>
       <JournalEntryBody
