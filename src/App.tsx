@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
+import { SentryErrorPreview } from './components/SentryErrorPreview';
 import { Layout } from './components/Layout';
 import { ScrollToTop } from './components/ScrollToTop';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -23,7 +24,9 @@ import { TodayPage } from './pages/TodayPage';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <>
+      <SentryErrorPreview />
+      <BrowserRouter>
       <AuthProvider>
         <ThemeProvider>
           <TourProvider>
@@ -52,5 +55,6 @@ export default function App() {
         </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
+    </>
   );
 }

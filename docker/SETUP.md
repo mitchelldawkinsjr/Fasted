@@ -30,6 +30,8 @@ CI deploy reads production paths from **repository variables** (Settings → Sec
 | Variable | `API_DOMAIN` | Supabase API hostname (NPM setup scripts) |
 | Variable | `SITE_URL` | Full PWA URL for OAuth redirects |
 | Variable | `API_URL` | Full Supabase API URL |
+| Variable | `VITE_GA_MEASUREMENT_ID` | Google Analytics 4 measurement ID (production PWA build) |
+| Variable | `VITE_SENTRY_DSN` | Sentry client DSN for production error monitoring |
 
 Only `DEPLOY_DIR`, `SUPABASE_DIR`, and `DOCKER_NETWORK` are used on every deploy. Domain/URL variables are for one-time VPS setup scripts run manually on the server.
 
@@ -80,8 +82,15 @@ Copy `ANON_KEY` from `${SUPABASE_DIR}/.env` into the app `.env`:
 VITE_SUPABASE_URL=https://api.example.com
 VITE_SUPABASE_ANON_KEY=<anon-key-from-supabase-env>
 VITE_VAPID_PUBLIC_KEY=<vapid-public-key>
+VITE_SENTRY_DSN=<sentry-client-dsn>
 APP_PUBLISH_PORT=8022
 ```
+
+### Error monitoring (Sentry)
+
+Production builds report unhandled React errors and explicit sync failures to Sentry when `VITE_SENTRY_DSN` is set. Sentry does not initialize in dev (`npm run dev`). Invite codes in `/join/<code>` URLs are scrubbed before events are sent.
+
+Set `VITE_SENTRY_DSN` in GitHub Actions variables (or the VPS `.env`) and rebuild the PWA. See `.env.example` for the variable name.
 
 ### Web Push reminders
 
