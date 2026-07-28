@@ -2,11 +2,15 @@ import type {
   AppSettings,
   Badge,
   CheckIn,
+  FavoriteMealIdea,
   DailyReflectionEntry,
   FoodMealKey,
+  FoodPlanCheckIn,
+  FoodProfile,
   GroupCheckIn,
   JournalEntry,
   Journey,
+  KitchenItem,
   MealSectionImages,
   UserProgress,
 } from '../types';
@@ -461,6 +465,71 @@ export function saveSettings(settings: Partial<AppSettings>): void {
   persist({
     ...progress,
     settings: { ...progress.settings, ...settings },
+  });
+}
+
+export function saveFoodProfile(profile: FoodProfile): void {
+  const progress = getProgress();
+  persist({
+    ...progress,
+    foodProfile: { ...profile, updatedAt: new Date().toISOString() },
+  });
+}
+
+export function saveKitchenItem(item: KitchenItem): void {
+  const progress = getProgress();
+  const kitchenInventory = [...(progress.kitchenInventory ?? []), item];
+  persist({ ...progress, kitchenInventory });
+}
+
+export function removeKitchenItem(id: string): void {
+  const progress = getProgress();
+  const kitchenInventory = (progress.kitchenInventory ?? []).filter((i) => i.id !== id);
+  persist({ ...progress, kitchenInventory });
+}
+
+export function getFoodPlanCheckIn(date: string): FoodPlanCheckIn | undefined {
+  return getProgress().foodPlanCheckIns?.find((c) => c.date === date);
+}
+
+export function saveFoodPlanCheckIn(checkIn: FoodPlanCheckIn): void {
+  const progress = getProgress();
+  const existing = progress.foodPlanCheckIns ?? [];
+  const filtered = existing.filter((c) => c.date !== checkIn.date);
+  const foodPlanCheckIns = [
+    ...filtered,
+    { ...checkIn, completedAt: new Date().toISOString() },
+  ].sort((a, b) => a.date.localeCompare(b.date));
+  persist({ ...progress, foodPlanCheckIns });
+}
+
+export function saveFavoriteMealIdea(
+  idea: Omit<FavoriteMealIdea, 'id' | 'savedAt'> & { id?: string },
+): void {
+  const progress = getProgress();
+  const favorite: FavoriteMealIdea = {
+    id: idea.id ?? crypto.randomUUID(),
+    name: idea.name,
+    label: idea.label,
+    ingredients: idea.ingredients,
+    portions: idea.portions,
+    prepSteps: idea.prepSteps,
+    prepMinutes: idea.prepMinutes,
+    phaseNotes: idea.phaseNotes,
+    savedAt: new Date().toISOString(),
+  };
+  const existing = progress.favoriteMealIdeas ?? [];
+  const withoutDup = existing.filter(
+    (item) => item.name.toLowerCase() !== favorite.name.toLowerCase(),
+  );
+  persist({ ...progress, favoriteMealIdeas: [favorite, ...withoutDup].slice(0, 24) });
+}
+
+export function removeFavoriteMealIdea(id: string): void {
+  const progress = getProgress();
+  persist({
+    ...progress,
+    favoriteMealIdeas: (progress.favoriteMealIdeas ?? []).filter((item) => item.id !== id),
   });
 }
 
