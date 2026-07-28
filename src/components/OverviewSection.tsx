@@ -138,21 +138,27 @@ export function OverviewSection({ phase, fastTypeLabel, isFastDay }: Props) {
             </OverviewBlock>
           )}
 
-          <div className="relative">
-            <img
-              src={phase.imagePath}
-              alt={`${phase.title} phase overview`}
-              className="w-full rounded-xl grace-shadow"
-            />
+          {phase.imagePath && (
             <button
               type="button"
               onClick={() => setLightboxOpen(true)}
-              className="absolute right-3 top-3 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
-              aria-label="Zoom phase overview image"
+              className="group/infographic relative block w-full cursor-zoom-in overflow-hidden rounded-xl grace-shadow text-left transition-opacity hover:opacity-95"
+              aria-label={`Open ${phase.title} phase overview image in lightbox`}
+              data-testid="phase-overview-image"
             >
-              <Icon name="zoom_in" size={20} />
+              <img
+                src={phase.imagePath}
+                alt={`${phase.title} phase overview`}
+                className="w-full"
+              />
+              <span
+                className="pointer-events-none absolute right-3 top-3 rounded-full bg-black/50 p-2 text-white transition-colors group-hover/infographic:bg-black/70"
+                aria-hidden
+              >
+                <Icon name="zoom_in" size={20} />
+              </span>
             </button>
-          </div>
+          )}
       </div>
 
       {lightboxOpen && phase.imagePath && (

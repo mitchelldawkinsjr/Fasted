@@ -43,6 +43,15 @@ test.describe('Today phase overview', () => {
 
     await toggle.click();
     await expect(panel).toBeVisible();
+
+    const overviewImage = page.getByTestId('phase-overview-image');
+    await expect(overviewImage).toBeVisible();
+    await overviewImage.click();
+    const lightbox = page.getByRole('dialog', { name: /phase illustration/i });
+    await expect(lightbox).toBeVisible();
+    await page.getByRole('button', { name: 'Close image' }).click();
+    await expect(lightbox).toBeHidden();
+
     await toggle.click();
     await expect(panel).toBeHidden();
   });
