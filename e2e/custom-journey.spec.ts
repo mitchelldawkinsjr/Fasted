@@ -98,7 +98,7 @@ test.describe('custom journey builder', () => {
     await expect(instructions).toContainText('Beverages: water.');
     await expect(instructions).toContainText('Invite one neighbor into prayer.');
     await expect(instructions).toContainText('Pray for three families by name.');
-    await expect(page.getByText('Neighbors')).toBeVisible();
+    await expect(page.getByText('Neighbors', { exact: true })).toBeVisible();
 
     await page.reload();
     await expect(page.locator('[data-tour="today-card"]').getByText('Phase 1: Neighborhood Intercession')).toBeVisible();
