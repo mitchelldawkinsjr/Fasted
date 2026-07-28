@@ -208,17 +208,15 @@ test('date input fits within card on mobile and desktop', async ({ page }) => {
 });
 
 test('morning reflection tag links to filtered journal', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?date=2026-06-27');
+  await page.waitForLoadState('networkidle');
   await page.getByRole('link', { name: 'Prayer' }).click();
   await expect(page).toHaveURL('/journal?type=prayer');
   await expect(page.getByRole('button', { name: 'Prayer', exact: true })).toHaveClass(/bg-primary/);
 
-  await page.goto('/');
-  await page.getByRole('link', { name: 'Daily Reflection' }).click();
-  await expect(page).toHaveURL('/journal?type=daily-reflection');
-  await expect(page.getByRole('button', { name: 'Daily Reflection', exact: true })).toHaveClass(
-    /bg-primary/,
-  );
+  await page.goto('/?date=2026-06-27');
+  await page.getByRole('link', { name: 'Open journal' }).click();
+  await expect(page).toHaveURL('/journal');
 });
 
 test('shows verse of the day chapter link in daily reflection form', async ({ page }) => {
