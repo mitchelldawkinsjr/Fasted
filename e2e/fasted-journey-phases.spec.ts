@@ -76,7 +76,7 @@ test.describe('Fasted journey phase images and instructions', () => {
       await page.goto(`/?date=${phaseCase.date}`);
       await page.waitForLoadState('networkidle');
 
-      const phaseImage = page.getByRole('button', { name: /View .* image/ }).locator('img');
+      const phaseImage = page.getByTestId('phase-overview-toggle').locator('img');
       await expect(phaseImage).toHaveAttribute('src', phaseCase.image);
 
       const instructionsList = page.getByTestId('today-instructions-list');
