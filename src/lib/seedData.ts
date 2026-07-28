@@ -67,6 +67,7 @@ function buildSeedProgress(endDate: string = getLocalDateString()): UserProgress
       theme: 'light',
       scriptureNote:
         'Scripture text uses NLT (New Living Translation) wording where available. Some phases use a brief summary when multiple readings are assigned.',
+      journalFocusMode: false,
     },
     activeJourneyId: FASTED_JOURNEY.id,
     journeys: [

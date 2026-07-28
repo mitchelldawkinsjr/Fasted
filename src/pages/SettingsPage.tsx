@@ -49,6 +49,9 @@ export function SettingsPage() {
   const [theme, setTheme] = useState(progress.settings.theme);
   const [reminderTime, setReminderTime] = useState(progress.settings.reminderTime || '07:00');
   const [pushEnabled, setPushEnabled] = useState(Boolean(progress.settings.pushEnabled));
+  const [journalFocusMode, setJournalFocusMode] = useState(
+    Boolean(progress.settings.journalFocusMode),
+  );
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [updatingPush, setUpdatingPush] = useState(false);
   const [previewKind, setPreviewKind] = useState<ReminderKind | null>(null);
@@ -86,7 +89,13 @@ export function SettingsPage() {
     setTheme(progress.settings.theme);
     setReminderTime(progress.settings.reminderTime || '07:00');
     setPushEnabled(Boolean(progress.settings.pushEnabled));
-  }, [progress.settings.theme, progress.settings.reminderTime, progress.settings.pushEnabled]);
+    setJournalFocusMode(Boolean(progress.settings.journalFocusMode));
+  }, [
+    progress.settings.theme,
+    progress.settings.reminderTime,
+    progress.settings.pushEnabled,
+    progress.settings.journalFocusMode,
+  ]);
 
   useEffect(() => {
     if (!signedIn || !pushEnabled) return;
@@ -102,7 +111,7 @@ export function SettingsPage() {
     }
     setSavingPrefs(true);
     try {
-      saveSettings({ theme, reminderTime, pushEnabled });
+      saveSettings({ theme, reminderTime, pushEnabled, journalFocusMode });
       if (pushEnabled && signedIn) {
         await syncPushSubscriptionIfNeeded(true);
       }
@@ -248,6 +257,25 @@ export function SettingsPage() {
               <option value="system">System</option>
             </select>
           </label>
+
+          <div className="flex items-start justify-between gap-4 pt-1">
+            <div className="min-w-0">
+              <p className="text-body-md text-on-surface">Journal focus mode</p>
+              <p className="mt-1 text-body-sm text-on-surface-variant">
+                When on, tapping a journal field opens a full-screen editor. When off, edit inline on
+                the form.
+              </p>
+            </div>
+            <label className="inline-flex shrink-0 items-center gap-2 pt-0.5">
+              <span className="sr-only">Enable journal focus mode</span>
+              <input
+                type="checkbox"
+                checked={journalFocusMode}
+                onChange={(e) => setJournalFocusMode(e.target.checked)}
+                className="h-5 w-5 rounded border-outline-variant text-secondary focus:ring-secondary"
+              />
+            </label>
+          </div>
 
           <div id="daily-reminders" className="space-y-3 scroll-mt-24 pt-1">
             <div className="flex items-start justify-between gap-4">

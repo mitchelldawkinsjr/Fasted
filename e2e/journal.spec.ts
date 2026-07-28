@@ -32,6 +32,23 @@ async function fillJournalField(
   await page.getByRole('button', { name: 'Done' }).click();
 }
 
+async function enableJournalFocusMode(page: import('@playwright/test').Page) {
+  await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    const data = raw ? JSON.parse(raw) : {};
+    data.settings = {
+      reminderTime: '07:00',
+      pushEnabled: false,
+      theme: 'light',
+      scriptureNote: '',
+      ...(data.settings ?? {}),
+      journalFocusMode: true,
+    };
+    localStorage.setItem(key, JSON.stringify(data));
+  }, STORAGE_KEY);
+  await page.reload();
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/journal');
   await page.evaluate((key) => {
@@ -104,6 +121,7 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
 });
 
 test('focus lightbox navigates between daily reflection fields', async ({ page }) => {
+  await enableJournalFocusMode(page);
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
   await page.getByLabel('Today\'s Meditation', { exact: true }).click();
@@ -133,6 +151,7 @@ test('focus lightbox navigates between daily reflection fields', async ({ page }
 });
 
 test('dismisses focus lightbox when clicking the backdrop', async ({ page }) => {
+  await enableJournalFocusMode(page);
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
   await page.getByLabel('Today\'s Meditation', { exact: true }).click();
@@ -143,6 +162,7 @@ test('dismisses focus lightbox when clicking the backdrop', async ({ page }) => 
 });
 
 test('preserves journal editor scroll position after closing focus lightbox', async ({ page }) => {
+  await enableJournalFocusMode(page);
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
 

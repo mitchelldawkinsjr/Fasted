@@ -8,6 +8,7 @@ import { MealImageUpload } from './MealImageUpload';
 import { MoodPicker } from './MoodPicker';
 import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 import { useActiveJourney } from '../hooks/useActiveJourney';
+import { useProgress } from '../hooks/useProgress';
 import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
 import { deleteImages, imageScopeKey, invalidateMealImageSrcs } from '../lib/imageStore';
 import {
@@ -54,6 +55,8 @@ type Props = {
 
 export function JournalEditor({ entry, defaultDate, initialType, onSave, onCancel }: Props) {
   const { planStart, planEnd } = useActiveJourney();
+  const progress = useProgress();
+  const journalFocusMode = Boolean(progress.settings.journalFocusMode);
   const initialDate = clampDateToPlan(entry?.date ?? defaultDate ?? getDefaultJournalDate());
   const [date, setDate] = useState(initialDate);
   const [entryType, setEntryType] = useState<JournalEntryType>(
@@ -125,6 +128,10 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
       discardUnsavedMealImages(collectMealImageIds(mealImagesRef.current));
     };
   }, []);
+
+  useEffect(() => {
+    if (!journalFocusMode) setFocusFieldKey(null);
+  }, [journalFocusMode]);
 
   useEffect(() => {
     setFocusFieldKey(null);
@@ -367,8 +374,41 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           ];
 
   const openFocusField = (key: string) => {
+    if (!journalFocusMode) return;
     savedScrollTopRef.current = scrollAreaRef.current?.scrollTop ?? 0;
     setFocusFieldKey(key);
+  };
+
+  const renderTextControl = (
+    key: string,
+    label: string,
+    value: string,
+    setValue: (next: string) => void,
+    placeholder: string,
+  ) => {
+    if (journalFocusMode) {
+      return (
+        <JournalTextField
+          value={value}
+          placeholder={placeholder}
+          ariaLabel={label}
+          inputClass={inputClass}
+          isActive={focusFieldKey === key}
+          onOpen={() => openFocusField(key)}
+        />
+      );
+    }
+
+    return (
+      <textarea
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+        aria-label={label}
+        rows={4}
+        className={`${inputClass} min-h-[6rem] resize-y`}
+      />
+    );
   };
 
   return (
@@ -421,16 +461,13 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                     {field.label}
                   </span>
                 )}
-                <JournalTextField
-                  value={field.value}
-                  placeholder={
-                    field.key === 'prayerFocus' ? 'Write your reflection…' : `${field.label}…`
-                  }
-                  ariaLabel={field.label}
-                  inputClass={inputClass}
-                  isActive={focusFieldKey === field.key}
-                  onOpen={() => openFocusField(field.key)}
-                />
+                {renderTextControl(
+                  field.key,
+                  field.label,
+                  field.value,
+                  field.set,
+                  field.key === 'prayerFocus' ? 'Write your reflection…' : `${field.label}…`,
+                )}
               </label>
             </Fragment>
           ))}
@@ -442,14 +479,13 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
               <span className="mb-1 block text-body-md font-medium text-on-surface">
                 {field.label}
               </span>
-              <JournalTextField
-                value={field.value}
-                placeholder={`${field.label}…`}
-                ariaLabel={field.label}
-                inputClass={inputClass}
-                isActive={focusFieldKey === field.key}
-                onOpen={() => openFocusField(field.key)}
-              />
+              {renderTextControl(
+                field.key,
+                field.label,
+                field.value,
+                field.set,
+                `${field.label}…`,
+              )}
             </label>
             <MealImageUpload
               images={mealImages[field.key]}
@@ -463,19 +499,18 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           <span className="mb-1 block text-body-md font-medium text-on-surface">
             {simpleContentLabel}
           </span>
-          <JournalTextField
-            value={content}
-            placeholder={`${simpleContentLabel}…`}
-            ariaLabel={simpleContentLabel}
-            inputClass={inputClass}
-            isActive={focusFieldKey === 'content'}
-            onOpen={() => openFocusField('content')}
-          />
+          {renderTextControl(
+            'content',
+            simpleContentLabel,
+            content,
+            setContent,
+            `${simpleContentLabel}…`,
+          )}
         </label>
       )}
       </div>
 
-      {focusFieldKey && (
+      {journalFocusMode && focusFieldKey && (
         <JournalFocusLightbox
           fields={focusFields}
           activeKey={focusFieldKey}
