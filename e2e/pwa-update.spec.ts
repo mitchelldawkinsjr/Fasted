@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
 const PREVIEW_URL = 'http://127.0.0.1:4174';
-const PROMPT_PATH = 'src/components/PwaUpdatePrompt.tsx';
+const RELEASE_NOTES_PATH = 'src/data/releaseNotes.json';
 
 let previewProcess: ChildProcess | null = null;
 
@@ -40,7 +40,7 @@ test.describe('PWA update prompt', () => {
   test.use({ baseURL: PREVIEW_URL });
 
   test('registers service worker and shows update prompt after redeploy', async ({ page }) => {
-    const originalPrompt = readFileSync(PROMPT_PATH, 'utf8');
+    const originalReleaseNotes = readFileSync(RELEASE_NOTES_PATH, 'utf8');
 
     try {
       await page.goto('/');
@@ -56,11 +56,15 @@ test.describe('PWA update prompt', () => {
       );
 
       writeFileSync(
-        PROMPT_PATH,
-        originalPrompt.replace(
-          'A new version of Fasted is ready.',
-          `A new version of Fasted is ready. (${Date.now()})`,
-        ),
+        RELEASE_NOTES_PATH,
+        JSON.stringify(
+          {
+            version: 'e2e-test',
+            blurb: `E2E update blurb (${Date.now()})`,
+          },
+          null,
+          2,
+        ) + '\n',
       );
       execSync('npm run build', { stdio: 'inherit' });
 
@@ -81,7 +85,7 @@ test.describe('PWA update prompt', () => {
       await expect(page.getByText('Update available')).toBeVisible({ timeout: 10_000 });
       await expect(page.getByRole('button', { name: 'Refresh' })).toBeVisible();
     } finally {
-      writeFileSync(PROMPT_PATH, originalPrompt);
+      writeFileSync(RELEASE_NOTES_PATH, originalReleaseNotes);
       execSync('npm run build', { stdio: 'inherit' });
     }
   });

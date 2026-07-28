@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { getLatestReleaseNotes } from '../lib/releaseNotes';
 import { dismissToast, getToasts, subscribeToasts, toast } from '../lib/toast';
 
 export function PwaUpdatePrompt() {
@@ -25,11 +26,14 @@ export function PwaUpdatePrompt() {
   useEffect(() => {
     if (!needRefresh || activeToastId) return;
 
+    const { blurb } = getLatestReleaseNotes();
+    const message = blurb.trim() || 'A new version of Fasted is ready.';
+
     const id = toast.persistent({
       title: 'Update available',
-      message: 'A new version of Fasted is ready.',
+      message,
       type: 'info',
-      position: 'top',
+      position: 'bottom',
       actions: [
         {
           label: 'Refresh',

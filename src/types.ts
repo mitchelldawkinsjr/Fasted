@@ -413,3 +413,9 @@ export type CreateGroupInput = {
   displayName?: string;
   commitments?: CommitmentDefinition[];
 };
+
+/** Short user-facing summary shown in the PWA update toast. */
+export type ReleaseNotes = {
+  version: string;
+  blurb: string;
+};
