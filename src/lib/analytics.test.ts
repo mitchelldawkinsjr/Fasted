@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeAnalyticsPath } from './analytics';
+import { sanitizeAnalyticsPath, scrubJoinInviteInText } from './analytics';
+import { scrubSentryEvent, scrubSentryLog, toLogAttributes } from './telemetry';
+import type { ErrorEvent, Log } from '@sentry/react';
 
 describe('sanitizeAnalyticsPath', () => {
   it('redacts join invite codes from the path', () => {
@@ -10,5 +12,70 @@ describe('sanitizeAnalyticsPath', () => {
   it('leaves other routes unchanged', () => {
     expect(sanitizeAnalyticsPath('/journal?type=food')).toBe('/journal?type=food');
     expect(sanitizeAnalyticsPath('/groups/uuid-here')).toBe('/groups/uuid-here');
+  });
+});
+
+describe('scrubJoinInviteInText', () => {
+  it('redacts invite codes in full URLs', () => {
+    expect(scrubJoinInviteInText('https://app.example.com/join/secret-code-123')).toBe(
+      'https://app.example.com/join/:code',
+    );
+    expect(scrubJoinInviteInText('https://app.example.com/join/abc?ref=1')).toBe(
+      'https://app.example.com/join/:code?ref=1',
+    );
+  });
+});
+
+describe('scrubSentryEvent', () => {
+  it('redacts join codes from request URL, transaction, and breadcrumbs', () => {
+    const event = {
+      request: { url: 'https://app.example.com/join/secret-xyz' },
+      transaction: '/join/secret-xyz',
+      breadcrumbs: [
+        { message: 'Navigated to /join/secret-xyz', data: { url: 'https://app.example.com/join/secret-xyz' } },
+      ],
+    } as unknown as ErrorEvent;
+
+    const scrubbed = scrubSentryEvent(event);
+    expect(scrubbed?.request?.url).toBe('https://app.example.com/join/:code');
+    expect(scrubbed?.transaction).toBe('/join/:code');
+    expect(scrubbed?.breadcrumbs?.[0]?.message).toBe('Navigated to /join/:code');
+    expect(scrubbed?.breadcrumbs?.[0]?.data?.url).toBe('https://app.example.com/join/:code');
+  });
+});
+
+describe('scrubSentryLog', () => {
+  it('redacts join codes from message and string attributes', () => {
+    const log = {
+      level: 'warn',
+      message: 'Failed join at /join/secret-xyz',
+      timestamp: Date.now(),
+      attributes: { path: '/join/secret-xyz', retries: 2 },
+    } as Log;
+
+    const scrubbed = scrubSentryLog(log);
+    expect(scrubbed?.message).toBe('Failed join at /join/:code');
+    expect(scrubbed?.attributes?.path).toBe('/join/:code');
+    expect(scrubbed?.attributes?.retries).toBe(2);
+  });
+
+  it('drops debug and trace logs', () => {
+    expect(scrubSentryLog({ level: 'debug', message: 'x', timestamp: 1, attributes: {} } as Log)).toBeNull();
+    expect(scrubSentryLog({ level: 'trace', message: 'x', timestamp: 1, attributes: {} } as Log)).toBeNull();
+  });
+});
+
+describe('toLogAttributes', () => {
+  it('keeps primitives and stringifies other values', () => {
+    expect(toLogAttributes({ source: 'sync', retries: 1, ok: true, nested: { a: 1 } })).toEqual({
+      source: 'sync',
+      retries: 1,
+      ok: true,
+      nested: '[object Object]',
+    });
+  });
+
+  it('scrubs invite codes in string attributes', () => {
+    expect(toLogAttributes({ path: '/join/secret-xyz' })).toEqual({ path: '/join/:code' });
   });
 });
