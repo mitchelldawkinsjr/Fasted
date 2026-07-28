@@ -2,7 +2,6 @@ import { JournalEntryBody } from './JournalViewer';
 import { JournalTypeBadge } from './JournalTypePicker';
 import { formatDisplayDate, getLocalDateString } from '../lib/dateUtils';
 import { getActiveJourney } from '../lib/journey';
-import { VERSE_OF_THE_DAY_LABEL } from '../lib/journalTags';
 import type { JournalEntry, UserProgress } from '../types';
 
 export type JournalExportModel = {

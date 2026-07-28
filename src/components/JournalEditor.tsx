@@ -295,7 +295,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   };
 
   const dailyStripLabels: Record<string, string> = {
-    prayerFocus: 'Meditation',
     godTeaching: 'Insight',
     prayedAbout: 'Prayed',
     hungerNotes: 'Feeling',
@@ -440,6 +439,26 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
       {entryType === 'daily-reflection' ? (
         <>
+          <DailyReflectionMeditation
+            entry={
+              entry && isDailyReflectionEntry(entry)
+                ? { ...entry, date }
+                : {
+                    id: '',
+                    date,
+                    type: 'daily-reflection',
+                    dayMood: null,
+                    prayerFocus: '',
+                    prayedAbout: '',
+                    godTeaching: '',
+                    hungerNotes: '',
+                    victory: '',
+                    tomorrowIntention: '',
+                    updatedAt: '',
+                  }
+            }
+            variant="journal"
+          />
           {dailyFields.map((field, index) => (
             <Fragment key={field.key}>
               {index === DAILY_REFLECTION_FIELDS_BEFORE_MOOD.length && (
@@ -448,19 +467,15 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
                 </section>
               )}
               <label className="block">
-                {field.key === 'prayerFocus' ? (
-                  <VerseOfTheDayLabel date={date} />
-                ) : (
-                  <span className="mb-1 block text-body-md font-medium text-on-surface">
-                    {field.label}
-                  </span>
-                )}
+                <span className="mb-1 block text-body-md font-medium text-on-surface">
+                  {field.label}
+                </span>
                 {renderTextControl(
                   field.key,
                   field.label,
                   field.value,
                   field.set,
-                  field.key === 'prayerFocus' ? 'Write your reflection…' : `${field.label}…`,
+                  `${field.label}…`,
                 )}
               </label>
             </Fragment>

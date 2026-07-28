@@ -135,23 +135,14 @@ export function JournalEntryBody({
     const hasAnyContent =
       DAILY_REFLECTION_FIELDS.some((field) => entry[field.key].trim()) || entry.dayMood;
 
-    const renderDailyFieldHeading = (
-      field: FieldDef<(typeof DAILY_REFLECTION_FIELDS)[number]['key']>,
-    ) =>
-      field.key === 'prayerFocus' ? (
-        renderVerseHeading(entry)
-      ) : (
-        <h3 className={classes.label}>{field.label}</h3>
-      );
-
     return (
       <>
+        <DailyReflectionMeditation entry={entry} variant="compact" />
         <FieldListBody
           fields={DAILY_REFLECTION_FIELDS_BEFORE_MOOD}
           getValue={(key) => entry[key]}
           classes={classes}
           emptyMessage={null}
-          renderHeading={renderDailyFieldHeading}
         />
         {entry.dayMood ? (
           <section className={classes.section}>
@@ -163,7 +154,6 @@ export function JournalEntryBody({
           getValue={(key) => entry[key]}
           classes={classes}
           emptyMessage={hasAnyContent ? null : emptyMessage}
-          renderHeading={renderDailyFieldHeading}
         />
       </>
     );

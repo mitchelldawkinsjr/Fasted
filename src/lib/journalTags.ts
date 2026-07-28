@@ -41,7 +41,6 @@ export const VERSE_OF_THE_DAY_LABEL = "Today's Meditation";
 
 /** User-editable daily reflection fields (meditation verse is shown separately). */
 export const DAILY_REFLECTION_FIELDS = [
-  { key: 'prayerFocus', label: VERSE_OF_THE_DAY_LABEL },
   { key: 'godTeaching', label: "What do I get from today's meditation?" },
   { key: 'prayedAbout', label: 'What I prayed about' },
   { key: 'hungerNotes', label: 'What do you feel contributed to your feeling today?' },
@@ -53,10 +52,10 @@ export const DAILY_REFLECTION_FIELDS = [
 }>;
 
 /** Daily reflection text fields shown before the mood picker in the editor and viewer. */
-export const DAILY_REFLECTION_FIELDS_BEFORE_MOOD = DAILY_REFLECTION_FIELDS.slice(0, 3);
+export const DAILY_REFLECTION_FIELDS_BEFORE_MOOD = DAILY_REFLECTION_FIELDS.slice(0, 2);
 
 /** Daily reflection text fields shown after the mood picker in the editor and viewer. */
-export const DAILY_REFLECTION_FIELDS_AFTER_MOOD = DAILY_REFLECTION_FIELDS.slice(3);
+export const DAILY_REFLECTION_FIELDS_AFTER_MOOD = DAILY_REFLECTION_FIELDS.slice(2);
 
 export const FOOD_JOURNAL_FIELDS = [
   { key: 'breakfast', label: 'What did you eat for breakfast?', sectionName: 'Breakfast' },

@@ -6,7 +6,8 @@ import { evaluateBadges } from '../lib/badges';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { useGroupCommitmentContexts } from '../hooks/useGroupCommitmentContexts';
 import {
-  DAILY_REFLECTION_FIELDS,
+  DAILY_REFLECTION_FIELDS_AFTER_MOOD,
+  DAILY_REFLECTION_FIELDS_BEFORE_MOOD,
   joinTrimmedValues,
 } from '../lib/journalTags';
 import { formatError, messages } from '../lib/messages';
@@ -30,6 +31,7 @@ import { Icon } from './Icon';
 import { InfoBanner } from './InfoBanner';
 import { LoadingButton } from './LoadingButton';
 import { MoodPicker } from './MoodPicker';
+import { DailyReflectionMeditation } from './VerseOfTheDay';
 
 type Props = {
   date: string;
@@ -45,7 +47,6 @@ export function DailyReflection({ date }: Props) {
   const [prayedFocus, setPrayedFocus] = useState(existingCheckIn?.prayedFocus ?? false);
   const [readScripture, setReadScripture] = useState(existingCheckIn?.readScripture ?? false);
   const [dayMood, setDayMood] = useState<DayMood | null>(existingEntry?.dayMood ?? null);
-  const [prayerFocus, setPrayerFocus] = useState(existingEntry?.prayerFocus ?? '');
   const [prayedAbout, setPrayedAbout] = useState(existingEntry?.prayedAbout ?? '');
   const [godTeaching, setGodTeaching] = useState(existingEntry?.godTeaching ?? '');
   const [hungerNotes, setHungerNotes] = useState(existingEntry?.hungerNotes ?? '');
@@ -61,11 +62,10 @@ export function DailyReflection({ date }: Props) {
   const { groupContexts, groupResults, setGroupResults } = useGroupCommitmentContexts(date);
 
   const currentStreak = getCurrentStreak(date);
-  const reflectionFields = [prayerFocus, prayedAbout, godTeaching, hungerNotes, victory, tomorrowIntention];
+  const reflectionFields = [prayedAbout, godTeaching, hungerNotes, victory, tomorrowIntention];
   const hasReflectionContent = joinTrimmedValues(reflectionFields).length > 0;
 
   const dailyFieldState = {
-    prayerFocus: [prayerFocus, setPrayerFocus] as const,
     prayedAbout: [prayedAbout, setPrayedAbout] as const,
     godTeaching: [godTeaching, setGodTeaching] as const,
     hungerNotes: [hungerNotes, setHungerNotes] as const,
@@ -97,7 +97,7 @@ export function DailyReflection({ date }: Props) {
       updatedAt: new Date().toISOString(),
       type: 'daily-reflection',
       dayMood,
-      prayerFocus: prayerFocus.trim(),
+      prayerFocus: existingEntry?.prayerFocus?.trim() ?? '',
       prayedAbout: prayedAbout.trim(),
       godTeaching: godTeaching.trim(),
       hungerNotes: hungerNotes.trim(),
@@ -302,9 +302,44 @@ export function DailyReflection({ date }: Props) {
           Reflection
         </h4>
 
+        <DailyReflectionMeditation
+          entry={
+            existingEntry ?? {
+              id: '',
+              date,
+              type: 'daily-reflection',
+              dayMood: null,
+              prayerFocus: '',
+              prayedAbout: '',
+              godTeaching: '',
+              hungerNotes: '',
+              victory: '',
+              tomorrowIntention: '',
+              updatedAt: '',
+            }
+          }
+          variant="journal"
+        />
+
+        {DAILY_REFLECTION_FIELDS_BEFORE_MOOD.map(({ key, label }) => (
+          <label key={key} className="block">
+            <span className="mb-1 block text-body-md font-medium text-on-surface">
+              {label}
+            </span>
+            <textarea
+              value={dailyFieldState[key][0]}
+              onChange={(e) => dailyFieldState[key][1](e.target.value)}
+              placeholder={`${label}…`}
+              aria-label={label}
+              rows={3}
+              className={inputClass}
+            />
+          </label>
+        ))}
+
         <MoodPicker value={dayMood} onChange={setDayMood} />
 
-        {DAILY_REFLECTION_FIELDS.map(({ key, label }) => (
+        {DAILY_REFLECTION_FIELDS_AFTER_MOOD.map(({ key, label }) => (
           <label key={key} className="block">
             <span className="mb-1 block text-body-md font-medium text-on-surface">
               {label}

@@ -29,6 +29,7 @@ import {
   DAILY_REFLECTION_FIELDS_BEFORE_MOOD,
   FOOD_JOURNAL_FIELDS,
   FITNESS_JOURNAL_LABEL,
+  isDailyReflectionEntry,
   journalEntryNeedsMigration,
   normalizeJournalEntries,
   normalizeJournalEntry,
@@ -625,6 +626,10 @@ export function exportJournalMarkdown(): string {
   return journalEntries
     .map((e) => {
       if (e.type === 'daily-reflection') {
+        const verse = resolveVerseForDate(e.date);
+        const meditation = e.prayerFocus.trim()
+          ? e.prayerFocus
+          : `${verse.reference} — "${verse.text}"`;
         const beforeFields = DAILY_REFLECTION_FIELDS_BEFORE_MOOD.map(
           ({ key, label }) => `**${label}:** ${e[key]}`,
         ).join('\n\n');
@@ -636,6 +641,8 @@ export function exportJournalMarkdown(): string {
         return `## ${e.date}
 
 **Type:** Daily Reflection
+
+**Today's Meditation:** ${meditation}
 
 ${beforeFields}${moodLine}
 
