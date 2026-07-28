@@ -774,7 +774,6 @@ test.describe('journal PDF export', () => {
 test('opens print document when exporting journal as PDF', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Today\'s Meditation', 'Export cover verse');
   await fillJournalField(page, 'What are you grateful for today?', 'Export victory note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
@@ -827,7 +826,7 @@ test('includes meal photos in journal PDF export', async ({ page, context }) => 
 test('print page back button closes browser PDF export popup', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Victory today', 'Popup back note');
+  await fillJournalField(page, 'What are you grateful for today?', 'Popup back note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   const [popup] = await Promise.all([
@@ -847,7 +846,7 @@ test('print page back button closes browser PDF export popup', async ({ page }) 
 test('shows a blocked popup message when PDF export cannot open', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Victory today', 'Blocked popup note');
+  await fillJournalField(page, 'What are you grateful for today?', 'Blocked popup note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.evaluate(() => {
@@ -948,7 +947,7 @@ test('settings PDF export opens print document', async ({ page }) => {
 test('print page back button returns to journal in a same-tab browser view', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Victory today', 'Back link note');
+  await fillJournalField(page, 'What are you grateful for today?', 'Back link note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.addInitScript(() => {
@@ -964,7 +963,7 @@ test('print page back button returns to journal in a same-tab browser view', asy
 test('PDF export auto-returns in-app when installed PWA afterprint fires synchronously', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Victory today', 'PWA export note');
+  await fillJournalField(page, 'What are you grateful for today?', 'PWA export note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.evaluate(() => {
