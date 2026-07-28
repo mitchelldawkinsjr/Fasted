@@ -32,7 +32,14 @@ describe('scrubSentryEvent', () => {
       request: { url: 'https://app.example.com/join/secret-xyz' },
       transaction: '/join/secret-xyz',
       breadcrumbs: [
-        { message: 'Navigated to /join/secret-xyz', data: { url: 'https://app.example.com/join/secret-xyz' } },
+        {
+          message: 'Navigated to /join/secret-xyz',
+          data: {
+            url: 'https://app.example.com/join/secret-xyz',
+            from: '/join/secret-xyz',
+            to: '/settings#account-sign-in',
+          },
+        },
       ],
     } as unknown as ErrorEvent;
 
@@ -41,6 +48,8 @@ describe('scrubSentryEvent', () => {
     expect(scrubbed?.transaction).toBe('/join/:code');
     expect(scrubbed?.breadcrumbs?.[0]?.message).toBe('Navigated to /join/:code');
     expect(scrubbed?.breadcrumbs?.[0]?.data?.url).toBe('https://app.example.com/join/:code');
+    expect(scrubbed?.breadcrumbs?.[0]?.data?.from).toBe('/join/:code');
+    expect(scrubbed?.breadcrumbs?.[0]?.data?.to).toBe('/settings#account-sign-in');
   });
 });
 
