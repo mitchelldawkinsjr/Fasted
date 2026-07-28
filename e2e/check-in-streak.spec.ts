@@ -63,7 +63,7 @@ test.describe('check-in streak', () => {
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-before-save.png'), fullPage: true });
 
     await page.getByRole('radio', { name: 'Good' }).click();
-    await page.getByRole('textbox', { name: "Today's Meditation" }).fill('Completed check-in with reflection');
+    await page.getByRole('textbox', { name: 'Victory today' }).fill('Completed check-in with reflection');
     await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('consecutive check-in days')).toBeVisible();
