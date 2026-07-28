@@ -61,8 +61,9 @@ export function VerseOfTheDay({ date, variant = 'today' }: Props) {
   const headingId = variant === 'today' ? 'todays-meditation-heading' : `meditation-verse-${viewDate}`;
 
   if (variant === 'compact') {
+    // Not a landmark: often nested beside the Today-page meditation region.
     return (
-      <section aria-labelledby={headingId}>
+      <div>
         <h3
           id={headingId}
           className="mb-1 text-body-md font-medium text-on-surface"
@@ -73,16 +74,14 @@ export function VerseOfTheDay({ date, variant = 'today' }: Props) {
           <VerseQuote text={verse.text} size="md" />
           <VerseCitation reference={verse.reference} url={url} source={analyticsSource} className="mt-2 block not-italic" />
         </div>
-      </section>
+      </div>
     );
   }
 
   if (variant === 'journal') {
+    // Not a landmark: embeds under Reflection / Journal editor regions.
     return (
-      <section
-        className="stitch-card border-l-4 border-gold p-stack-md"
-        aria-labelledby={headingId}
-      >
+      <div className="stitch-card border-l-4 border-gold p-stack-md">
         <div className="mb-3 flex items-center gap-2">
           <Icon name="menu_book" className="text-gold" />
           <h3
@@ -94,7 +93,7 @@ export function VerseOfTheDay({ date, variant = 'today' }: Props) {
         </div>
         <VerseQuote text={verse.text} size="md" />
         <VerseCitation reference={verse.reference} url={url} source={analyticsSource} />
-      </section>
+      </div>
     );
   }
 

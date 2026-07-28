@@ -26,10 +26,8 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
   const meditationHeadings = page.getByRole('heading', { name: "Today's Meditation" });
   await expect(meditationHeadings).toHaveCount(2);
 
-  const topVerse = page.getByRole('region', { name: "Today's Meditation" }).first();
-  const reflectionVerse = page
-    .getByRole('region', { name: 'Reflection' })
-    .getByRole('region', { name: "Today's Meditation" });
+  const topVerse = page.getByRole('region', { name: "Today's Meditation" });
+  const reflectionVerse = page.getByRole('region', { name: 'Reflection' });
   const topLink = topVerse.getByRole('link');
   const reflectionLink = reflectionVerse.getByRole('link');
   await expect(topLink).toBeVisible();
