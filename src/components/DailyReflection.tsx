@@ -303,21 +303,19 @@ export function DailyReflection({ date }: Props) {
         </h4>
 
         <DailyReflectionMeditation
-          entry={
-            existingEntry ?? {
-              id: '',
-              date,
-              type: 'daily-reflection',
-              dayMood: null,
-              prayerFocus: '',
-              prayedAbout: '',
-              godTeaching: '',
-              hungerNotes: '',
-              victory: '',
-              tomorrowIntention: '',
-              updatedAt: '',
-            }
-          }
+          entry={{
+            id: existingEntry?.id ?? '',
+            date,
+            type: 'daily-reflection',
+            dayMood: existingEntry?.dayMood ?? null,
+            prayerFocus: existingEntry?.prayerFocus ?? '',
+            prayedAbout: existingEntry?.prayedAbout ?? '',
+            godTeaching: existingEntry?.godTeaching ?? '',
+            hungerNotes: existingEntry?.hungerNotes ?? '',
+            victory: existingEntry?.victory ?? '',
+            tomorrowIntention: existingEntry?.tomorrowIntention ?? '',
+            updatedAt: existingEntry?.updatedAt ?? '',
+          }}
           variant="journal"
         />
 

@@ -627,9 +627,7 @@ export function exportJournalMarkdown(): string {
     .map((e) => {
       if (e.type === 'daily-reflection') {
         const verse = resolveVerseForDate(e.date);
-        const meditation = e.prayerFocus.trim()
-          ? e.prayerFocus
-          : `${verse.reference} — "${verse.text}"`;
+        const meditation = `${verse.reference} — "${verse.text}"`;
         const beforeFields = DAILY_REFLECTION_FIELDS_BEFORE_MOOD.map(
           ({ key, label }) => `**${label}:** ${e[key]}`,
         ).join('\n\n');
