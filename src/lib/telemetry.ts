@@ -1,11 +1,30 @@
 import * as Sentry from '@sentry/react';
-import type { ErrorEvent, EventHint } from '@sentry/react';
+import type { ErrorEvent, EventHint, Log } from '@sentry/react';
 import { scrubJoinInviteInText } from './analytics';
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 
+type LogAttributes = Record<string, string | number | boolean>;
+
 function isSentryEnabled(): boolean {
   return Boolean(SENTRY_DSN) && !import.meta.env.DEV;
+}
+
+/** Convert context into Sentry log attributes (string | number | boolean only). */
+export function toLogAttributes(context?: Record<string, unknown>): LogAttributes | undefined {
+  if (!context) return undefined;
+
+  const attrs: LogAttributes = {};
+  for (const [key, value] of Object.entries(context)) {
+    if (typeof value === 'string') {
+      attrs[key] = scrubJoinInviteInText(value);
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
+      attrs[key] = value;
+    } else if (value != null) {
+      attrs[key] = scrubJoinInviteInText(String(value));
+    }
+  }
+  return Object.keys(attrs).length ? attrs : undefined;
 }
 
 /** Scrub invite codes from URLs before events leave the browser. */
@@ -29,8 +48,30 @@ export function scrubSentryEvent(event: ErrorEvent, _hint?: EventHint): ErrorEve
   return event;
 }
 
+/** Scrub invite codes from structured logs before they leave the browser. */
+export function scrubSentryLog(log: Log): Log | null {
+  if (log.level === 'debug' || log.level === 'trace') {
+    return null;
+  }
+
+  if (typeof log.message === 'string') {
+    log.message = scrubJoinInviteInText(log.message);
+  }
+
+  if (log.attributes) {
+    for (const [key, value] of Object.entries(log.attributes)) {
+      if (typeof value === 'string') {
+        log.attributes[key] = scrubJoinInviteInText(value);
+      }
+    }
+  }
+
+  return log;
+}
+
 /**
- * Init Sentry for production error monitoring. No-op when DSN is unset or in DEV.
+ * Init Sentry for production error monitoring + structured logs.
+ * No-op when DSN is unset or in DEV.
  */
 export function initSentry(): void {
   if (!isSentryEnabled()) return;
@@ -40,19 +81,27 @@ export function initSentry(): void {
     environment: import.meta.env.MODE,
     sendDefaultPii: false,
     tracesSampleRate: 0,
+    enableLogs: true,
+    integrations: [Sentry.consoleLoggingIntegration({ levels: ['warn', 'error'] })],
     beforeSend: scrubSentryEvent,
+    beforeSendLog: scrubSentryLog,
   });
 }
 
 /**
- * Report a client error to Sentry (when enabled). Always logs in development.
+ * Report a client error to Sentry Issues + Logs (when enabled). Always logs in development.
  */
 export function reportError(error: unknown, context?: Record<string, unknown>): void {
+  const message = error instanceof Error ? error.message : String(error);
+
   if (import.meta.env.DEV) {
-    console.error('[telemetry]', error instanceof Error ? error.message : String(error), context ?? '');
+    console.error('[telemetry]', message, context ?? '');
   }
 
   if (!isSentryEnabled()) return;
+
+  const attrs = toLogAttributes(context);
+  Sentry.logger.error(message, attrs);
 
   Sentry.withScope((scope) => {
     if (context) {
@@ -66,6 +115,9 @@ export function reportError(error: unknown, context?: Record<string, unknown>): 
   });
 }
 
+/**
+ * Report a warning as a structured Sentry log (when enabled). Always logs in development.
+ */
 export function reportWarning(message: string, context?: Record<string, unknown>): void {
   if (import.meta.env.DEV) {
     console.warn('[telemetry]', message, context ?? '');
@@ -73,10 +125,5 @@ export function reportWarning(message: string, context?: Record<string, unknown>
 
   if (!isSentryEnabled()) return;
 
-  Sentry.withScope((scope) => {
-    if (context) {
-      scope.setContext('details', context);
-    }
-    Sentry.captureMessage(message, 'warning');
-  });
+  Sentry.logger.warn(message, toLogAttributes(context));
 }

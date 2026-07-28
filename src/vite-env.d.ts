@@ -4,7 +4,7 @@
 interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL?: string;
   readonly VITE_SUPABASE_ANON_KEY?: string;
-  /** Sentry DSN for client error monitoring. Omit in dev. */
+  /** Sentry DSN for client errors + structured logs. Omit in dev. */
   readonly VITE_SENTRY_DSN?: string;
   /** Google Analytics 4 measurement ID (e.g. G-XXXXXXXXXX). Omit in dev. */
   readonly VITE_GA_MEASUREMENT_ID?: string;

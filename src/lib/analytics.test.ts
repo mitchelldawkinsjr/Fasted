@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { sanitizeAnalyticsPath, scrubJoinInviteInText } from './analytics';
-import { scrubSentryEvent } from './telemetry';
-import type { ErrorEvent } from '@sentry/react';
+import { scrubSentryEvent, scrubSentryLog, toLogAttributes } from './telemetry';
+import type { ErrorEvent, Log } from '@sentry/react';
 
 describe('sanitizeAnalyticsPath', () => {
   it('redacts join invite codes from the path', () => {
@@ -41,5 +41,41 @@ describe('scrubSentryEvent', () => {
     expect(scrubbed?.transaction).toBe('/join/:code');
     expect(scrubbed?.breadcrumbs?.[0]?.message).toBe('Navigated to /join/:code');
     expect(scrubbed?.breadcrumbs?.[0]?.data?.url).toBe('https://app.example.com/join/:code');
+  });
+});
+
+describe('scrubSentryLog', () => {
+  it('redacts join codes from message and string attributes', () => {
+    const log = {
+      level: 'warn',
+      message: 'Failed join at /join/secret-xyz',
+      timestamp: Date.now(),
+      attributes: { path: '/join/secret-xyz', retries: 2 },
+    } as Log;
+
+    const scrubbed = scrubSentryLog(log);
+    expect(scrubbed?.message).toBe('Failed join at /join/:code');
+    expect(scrubbed?.attributes?.path).toBe('/join/:code');
+    expect(scrubbed?.attributes?.retries).toBe(2);
+  });
+
+  it('drops debug and trace logs', () => {
+    expect(scrubSentryLog({ level: 'debug', message: 'x', timestamp: 1, attributes: {} } as Log)).toBeNull();
+    expect(scrubSentryLog({ level: 'trace', message: 'x', timestamp: 1, attributes: {} } as Log)).toBeNull();
+  });
+});
+
+describe('toLogAttributes', () => {
+  it('keeps primitives and stringifies other values', () => {
+    expect(toLogAttributes({ source: 'sync', retries: 1, ok: true, nested: { a: 1 } })).toEqual({
+      source: 'sync',
+      retries: 1,
+      ok: true,
+      nested: '[object Object]',
+    });
+  });
+
+  it('scrubs invite codes in string attributes', () => {
+    expect(toLogAttributes({ path: '/join/secret-xyz' })).toEqual({ path: '/join/:code' });
   });
 });
