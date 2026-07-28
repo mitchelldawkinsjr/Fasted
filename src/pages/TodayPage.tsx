@@ -11,6 +11,7 @@ import { VerseOfTheDay } from '../components/VerseOfTheDay';
 import { TodayFastCard } from '../components/TodayFastCard';
 import { Icon } from '../components/Icon';
 import { useActiveJourney } from '../hooks/useActiveJourney';
+import { useProgress } from '../hooks/useProgress';
 import { getDailyPlan } from '../lib/dailyPlan';
 import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/dateUtils';
 import {
@@ -18,7 +19,6 @@ import {
   JOURNAL_ENTRY_TYPES,
   journalTypePillClass,
 } from '../lib/journalTags';
-import { getCheckIn } from '../lib/storage';
 
 const OTHER_JOURNAL_TYPES = JOURNAL_ENTRY_TYPES.filter((type) => type !== 'daily-reflection');
 
@@ -27,10 +27,11 @@ export function TodayPage() {
   const previewDate = searchParams.get('date');
   const today = getLocalDateString();
   const viewDate = previewDate ?? today;
+  const progress = useProgress();
   const { planStart, planEnd, journey } = useActiveJourney();
   const inPlan = isWithinPlan(viewDate, journey);
   const plan = inPlan ? getDailyPlan(viewDate, journey) : null;
-  const existingCheckIn = getCheckIn(viewDate);
+  const existingCheckIn = progress.checkIns.find((c) => c.date === viewDate);
   const reflectionSectionRef = useRef<HTMLElement>(null);
 
   const scrollToReflection = () => {

@@ -51,10 +51,9 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
 
   await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
 
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible({ timeout: 5000 });
-  await page.getByRole('button', { name: 'Continue' }).click();
-
-  await expect(page.getByText('Checked In')).toBeVisible();
+  await expect(page.getByTestId('morning-reflection-complete')).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText('Checked In', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save Reflection & Check-In' })).toHaveCount(0);
 
   const stored = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
@@ -71,6 +70,12 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
   expect(stored.checkIns[0].followedPlan).toBe(true);
   expect(stored.checkIns[0].prayedFocus).toBe(true);
   expect(stored.checkIns[0].journaled).toBe(true);
+
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByTestId('morning-reflection-complete')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save Reflection & Check-In' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'View in Journal' })).toBeVisible();
 });
 
 test('requires reflection content before saving check-in', async ({ page }) => {

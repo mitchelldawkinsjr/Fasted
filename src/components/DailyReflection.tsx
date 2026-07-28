@@ -1,5 +1,6 @@
 import confetti from 'canvas-confetti';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { trackEvent } from '../lib/analytics';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
@@ -15,6 +16,7 @@ import {
   createJournalEntryId,
   getCheckIn,
   getDailyReflectionByDate,
+  getProgress,
   saveDailyReflectionWithCheckIn,
 } from '../lib/storage';
 import { getCurrentStreak } from '../lib/streaks';
@@ -37,11 +39,80 @@ type Props = {
   date: string;
 };
 
+function badgesEarnedOnDate(date: string): Badge[] {
+  return getProgress().badges.filter(
+    (badge) => Boolean(badge.earnedAt) && badge.earnedAt!.startsWith(date),
+  );
+}
+
+function MorningReflectionComplete({
+  message,
+  streak,
+  badges,
+}: {
+  message: string;
+  streak: number;
+  badges: Badge[];
+}) {
+  return (
+    <div
+      className="stitch-card space-y-stack-md p-stack-md text-center"
+      data-testid="morning-reflection-complete"
+    >
+      <Icon name="celebration" className="mx-auto text-4xl text-secondary" />
+      <p className="font-display text-headline-md text-primary">{message}</p>
+      <p className="text-body-md text-on-surface-variant">
+        {streak === 1 ? (
+          <>Day 1 of your check-in streak.</>
+        ) : (
+          <>
+            <strong className="text-primary">{streak}</strong> consecutive check-in days.
+          </>
+        )}
+      </p>
+      {badges.length > 0 && (
+        <div className="space-y-stack-sm">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {badges.map((badge) => (
+              <BadgeSprite
+                key={badge.id}
+                id={badge.id}
+                earned
+                size={72}
+                title={badge.title}
+              />
+            ))}
+          </div>
+          <p className="text-body-md text-on-surface-variant">
+            {badges.length === 1 ? (
+              <>
+                You earned <strong className="text-primary">{badges[0].title}</strong>.
+              </>
+            ) : (
+              <>You earned {badges.length} sacred milestones today.</>
+            )}
+          </p>
+        </div>
+      )}
+      <p className="text-body-sm text-on-surface-variant">
+        You&apos;re checked in for today. Come back tomorrow for a new reflection.
+      </p>
+      <Link
+        to="/journal"
+        className="btn-stitch-secondary inline-flex w-full items-center justify-center"
+      >
+        View in Journal
+      </Link>
+    </div>
+  );
+}
+
 export function DailyReflection({ date }: Props) {
   const { getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
   const existingEntry = getDailyReflectionByDate(date);
   const existingCheckIn = getCheckIn(date);
+  const isCompleteForDay = Boolean(existingEntry && existingCheckIn);
 
   const [followedPlan, setFollowedPlan] = useState(existingCheckIn?.followedPlan ?? false);
   const [prayedFocus, setPrayedFocus] = useState(existingCheckIn?.prayedFocus ?? false);
@@ -55,10 +126,8 @@ export function DailyReflection({ date }: Props) {
   );
   const [tomorrowIntention, setTomorrowIntention] = useState(existingEntry?.tomorrowIntention ?? '');
   const [saving, setSaving] = useState(false);
-  const [celebrating, setCelebrating] = useState(false);
-  const [message, setMessage] = useState('');
-  const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
-  const [savedStreak, setSavedStreak] = useState<number | null>(null);
+  const [justCompleted, setJustCompleted] = useState(false);
+  const [freshBadges, setFreshBadges] = useState<Badge[]>([]);
   const { groupContexts, groupResults, setGroupResults } = useGroupCommitmentContexts(date);
 
   const currentStreak = getCurrentStreak(date);
@@ -147,10 +216,8 @@ export function DailyReflection({ date }: Props) {
     });
 
     const earned = evaluateBadges(date);
-    setSavedStreak(getCurrentStreak(date));
-    setEarnedBadges(earned);
-    setMessage(getCelebrationMessage(date));
-    setCelebrating(true);
+    setFreshBadges(earned);
+    setJustCompleted(true);
     setSaving(false);
 
     confetti({
@@ -172,54 +239,17 @@ export function DailyReflection({ date }: Props) {
     }
   };
 
-  if (celebrating) {
+  if (isCompleteForDay || justCompleted) {
+    const badges = justCompleted
+      ? (freshBadges.length > 0 ? freshBadges : badgesEarnedOnDate(date))
+      : badgesEarnedOnDate(date);
+
     return (
-      <div className="stitch-card space-y-stack-md p-stack-md text-center">
-        <Icon name="celebration" className="mx-auto text-4xl text-secondary" />
-        <p className="font-display text-headline-md text-primary">{message}</p>
-        {savedStreak !== null && (
-          <p className="text-body-md text-on-surface-variant">
-            {savedStreak === 1 ? (
-              <>Day 1 of your check-in streak.</>
-            ) : (
-              <>
-                <strong className="text-primary">{savedStreak}</strong> consecutive check-in days.
-              </>
-            )}
-          </p>
-        )}
-        {earnedBadges.length > 0 && (
-          <div className="space-y-stack-sm">
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {earnedBadges.map((badge) => (
-                <BadgeSprite
-                  key={badge.id}
-                  id={badge.id}
-                  earned
-                  size={72}
-                  title={badge.title}
-                />
-              ))}
-            </div>
-            <p className="text-body-md text-on-surface-variant">
-              {earnedBadges.length === 1 ? (
-                <>
-                  You earned <strong className="text-primary">{earnedBadges[0].title}</strong>.
-                </>
-              ) : (
-                <>You earned {earnedBadges.length} new sacred milestones.</>
-              )}
-            </p>
-          </div>
-        )}
-        <LoadingButton
-          type="button"
-          onClick={() => setCelebrating(false)}
-          className="w-full"
-        >
-          Continue
-        </LoadingButton>
-      </div>
+      <MorningReflectionComplete
+        message={getCelebrationMessage(date)}
+        streak={getCurrentStreak(date)}
+        badges={badges}
+      />
     );
   }
 
