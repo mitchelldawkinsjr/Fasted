@@ -42,7 +42,7 @@ npm run preview
 
 ### PWA updates and caching
 
-Production caching headers and the in-app update prompt are documented in [docker/SETUP.md](docker/SETUP.md#vps-production). When a new version is available, a bottom toast shows **Update available** with a short release-notes blurb from [`src/data/releaseNotes.json`](src/data/releaseNotes.json); tap **Refresh** to activate the waiting service worker and reload. Update `releaseNotes.json` before each production deploy so users see what changed.
+Production caching headers and the in-app update prompt are documented in [docker/SETUP.md](docker/SETUP.md#vps-production). When a new version is available, a bottom toast shows **Update available** with a short release-notes blurb fetched from [`public/releaseNotes.json`](public/releaseNotes.json); tap **Refresh** to activate the waiting service worker and reload. Update `releaseNotes.json` before each production deploy so users see what changed.
 
 ## Testing
 
