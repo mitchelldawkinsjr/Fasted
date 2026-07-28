@@ -37,8 +37,12 @@ export function scrubSentryEvent(event: ErrorEvent, _hint?: EventHint): ErrorEve
   }
   if (event.breadcrumbs) {
     for (const crumb of event.breadcrumbs) {
-      if (crumb.data && typeof crumb.data.url === 'string') {
-        crumb.data.url = scrubJoinInviteInText(crumb.data.url);
+      if (crumb.data) {
+        for (const [key, value] of Object.entries(crumb.data)) {
+          if (typeof value === 'string') {
+            crumb.data[key] = scrubJoinInviteInText(value);
+          }
+        }
       }
       if (typeof crumb.message === 'string') {
         crumb.message = scrubJoinInviteInText(crumb.message);
