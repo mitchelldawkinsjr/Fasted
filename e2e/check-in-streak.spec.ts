@@ -63,15 +63,17 @@ test.describe('check-in streak', () => {
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-before-save.png'), fullPage: true });
 
     await page.getByRole('radio', { name: 'Good' }).click();
-    await page.getByRole('textbox', { name: 'Victory today' }).fill('Completed check-in with reflection');
+    await page
+      .getByRole('textbox', { name: 'What are you grateful for today?' })
+      .fill('Completed check-in with reflection');
     await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
-    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('morning-reflection-complete')).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('consecutive check-in days')).toBeVisible();
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-celebration.png'), fullPage: true });
 
-    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(streakLabel).toContainText('3');
-    await expect(page.getByText('Checked In')).toBeVisible();
+    await expect(page.getByText('Checked In', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save Reflection & Check-In' })).toHaveCount(0);
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'today-after-checkin.png'), fullPage: true });
   });
 

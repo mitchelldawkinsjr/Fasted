@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
   theme: 'light' as const,
   scriptureNote:
     'Scripture text uses NLT (New Living Translation) wording where available. Some phases use a brief summary when multiple readings are assigned.',
+  journalFocusMode: false,
 };
 
 function baseProgress(overrides: Partial<UserProgress> = {}): UserProgress {

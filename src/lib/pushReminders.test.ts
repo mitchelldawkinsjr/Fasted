@@ -21,6 +21,7 @@ function progress(overrides: Partial<UserProgress> = {}): UserProgress {
       pushEnabled: false,
       theme: 'light',
       scriptureNote: '',
+      journalFocusMode: false,
     },
     activeJourneyId: FASTED_JOURNEY.id,
     journeys: [FASTED_JOURNEY],

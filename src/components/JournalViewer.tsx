@@ -6,6 +6,8 @@ import { useMealImageSrc } from '../hooks/useMealImageSrc';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
   DAILY_REFLECTION_FIELDS,
+  DAILY_REFLECTION_FIELDS_AFTER_MOOD,
+  DAILY_REFLECTION_FIELDS_BEFORE_MOOD,
   FOOD_JOURNAL_FIELDS,
   getSimpleContentLabel,
   isDailyReflectionEntry,
@@ -130,14 +132,28 @@ export function JournalEntryBody({
   };
 
   if (isDailyReflectionEntry(entry)) {
+    const hasAnyContent =
+      DAILY_REFLECTION_FIELDS.some((field) => entry[field.key].trim()) || entry.dayMood;
+
     return (
       <>
         <DailyReflectionMeditation entry={entry} variant="compact" />
         <FieldListBody
-          fields={DAILY_REFLECTION_FIELDS}
+          fields={DAILY_REFLECTION_FIELDS_BEFORE_MOOD}
           getValue={(key) => entry[key]}
           classes={classes}
-          emptyMessage={emptyMessage}
+          emptyMessage={null}
+        />
+        {entry.dayMood ? (
+          <section className={classes.section}>
+            <MoodBadge mood={entry.dayMood} />
+          </section>
+        ) : null}
+        <FieldListBody
+          fields={DAILY_REFLECTION_FIELDS_AFTER_MOOD}
+          getValue={(key) => entry[key]}
+          classes={classes}
+          emptyMessage={hasAnyContent ? null : emptyMessage}
         />
       </>
     );
@@ -177,9 +193,6 @@ export function JournalViewer({ entry, onBack, onEdit, onDelete, onTypeClick }: 
           <p className="label-caps text-on-surface-variant">{formatDisplayDate(entry.date)}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <JournalTypeBadge type={entry.type} onClick={onTypeClick} />
-            {isDailyReflectionEntry(entry) && entry.dayMood && (
-              <MoodBadge mood={entry.dayMood} />
-            )}
           </div>
         </div>
         <div className="flex shrink-0 gap-3">

@@ -121,50 +121,7 @@ type DailyReflectionMeditationProps = {
   variant: 'journal' | 'compact';
 };
 
-/** Shows the date-bound verse, or legacy custom meditation text when preserved on the entry. */
+/** Same date-bound verse as the Today page meditation card (and Journal). */
 export function DailyReflectionMeditation({ entry, variant }: DailyReflectionMeditationProps) {
-  const legacyFocus = entry.prayerFocus.trim();
-  if (legacyFocus) {
-    const headingId = `meditation-verse-${entry.date}`;
-
-    if (variant === 'compact') {
-      return (
-        <section aria-labelledby={headingId}>
-          <h3
-            id={headingId}
-            className="mb-1 text-body-md font-medium text-on-surface"
-          >
-            {VERSE_OF_THE_DAY_LABEL}
-          </h3>
-          <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 grace-shadow">
-            <p className="font-display text-body-md leading-relaxed text-primary whitespace-pre-wrap">
-              {legacyFocus}
-            </p>
-          </div>
-        </section>
-      );
-    }
-
-    return (
-      <section
-        className="stitch-card border-l-4 border-gold p-stack-md"
-        aria-labelledby={headingId}
-      >
-        <div className="mb-3 flex items-center gap-2">
-          <Icon name="menu_book" className="text-gold" />
-          <h3
-            id={headingId}
-            className="font-display text-headline-md text-primary"
-          >
-            {VERSE_OF_THE_DAY_LABEL}
-          </h3>
-        </div>
-        <p className="font-display text-body-md leading-relaxed text-primary whitespace-pre-wrap">
-          {legacyFocus}
-        </p>
-      </section>
-    );
-  }
-
   return <VerseOfTheDay date={entry.date} variant={variant === 'compact' ? 'compact' : 'journal'} />;
 }

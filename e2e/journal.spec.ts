@@ -21,7 +21,7 @@ async function fillJournalField(
   label: string,
   text: string,
 ) {
-  const field = page.getByLabel(label);
+  const field = page.getByLabel(label, { exact: true });
   if (await field.evaluate((element) => element.tagName === 'TEXTAREA')) {
     await field.fill(text);
     return;
@@ -32,8 +32,25 @@ async function fillJournalField(
     await page.getByRole('button', { name: 'Done' }).click();
   }
   await field.click();
-  await dialog.getByLabel(label).fill(text);
+  await dialog.getByLabel(label, { exact: true }).fill(text);
   await page.getByRole('button', { name: 'Done' }).click();
+}
+
+async function enableJournalFocusMode(page: import('@playwright/test').Page) {
+  await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    const data = raw ? JSON.parse(raw) : {};
+    data.settings = {
+      reminderTime: '07:00',
+      pushEnabled: false,
+      theme: 'light',
+      scriptureNote: '',
+      ...(data.settings ?? {}),
+      journalFocusMode: true,
+    };
+    localStorage.setItem(key, JSON.stringify(data));
+  }, STORAGE_KEY);
+  await page.reload();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -46,6 +63,45 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
+test('daily reflection fields follow the updated layout order', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+
+  await expect(page.getByRole('heading', { name: "Today's Meditation" })).toBeVisible();
+  // Meditation is read-only (region/heading), not an editable textbox named exactly that.
+  await expect(
+    page.getByRole('textbox', { name: "Today's Meditation", exact: true }),
+  ).toHaveCount(0);
+
+  const labelOrder = [
+    "What do I get from today's meditation?",
+    'What I prayed about',
+    'What do you feel contributed to your feeling today?',
+    'What are you grateful for today?',
+    "Tomorrow's intention",
+  ];
+
+  for (const label of labelOrder) {
+    await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+  }
+
+  const meditationY =
+    (await page.getByRole('heading', { name: "Today's Meditation" }).boundingBox())?.y ?? 0;
+  const positions = await Promise.all(
+    labelOrder.map(async (label) => {
+      const box = await page.getByLabel(label, { exact: true }).boundingBox();
+      return box?.y ?? 0;
+    }),
+  );
+  expect(positions[0]).toBeGreaterThan(meditationY);
+  for (let i = 1; i < positions.length; i++) {
+    expect(positions[i]).toBeGreaterThan(positions[i - 1]);
+  }
+
+  const moodY = (await page.getByRole('radio', { name: 'Good' }).boundingBox())?.y ?? 0;
+  expect(moodY).toBeGreaterThan(positions[1]);
+  expect(moodY).toBeLessThan(positions[2]);
+});
+
 test('saves a daily reflection with multiple fields', async ({ page }) => {
   await expect(page.getByText('0 reflections')).toBeVisible();
 
@@ -55,8 +111,8 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
     'true',
   );
   await page.getByRole('radio', { name: 'Good' }).click();
-  await expect(page.getByText(expectedVerse.text.slice(0, 40))).toBeVisible();
-  await fillJournalField(page, 'Victory today', 'Stayed faithful with water only');
+  await fillJournalField(page, "What do I get from today's meditation?", 'Morning insight');
+  await fillJournalField(page, 'What are you grateful for today?', 'Stayed faithful with water only');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await expect(page.getByText('Reflection saved.')).toBeVisible();
@@ -73,17 +129,22 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
   expect(stored.journalEntries[0].type).toBe('daily-reflection');
   expect(stored.journalEntries[0].dayMood).toBe('good');
   expect(stored.journalEntries[0].prayerFocus).toBe('');
+  expect(stored.journalEntries[0].godTeaching).toBe('Morning insight');
   expect(stored.journalEntries[0].victory).toBe('Stayed faithful with water only');
 });
 
 test('focus lightbox navigates between daily reflection fields', async ({ page }) => {
+  await enableJournalFocusMode(page);
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('What I prayed about').click();
+  await page.getByLabel("What do I get from today's meditation?", { exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('dialog').getByLabel('What I prayed about').fill('Focus prayed entry');
+  await page
+    .getByRole('dialog')
+    .getByLabel("What do I get from today's meditation?", { exact: true })
+    .fill('Focus teaching entry');
   await page.getByRole('dialog').getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('dialog').getByLabel('What God is teaching me').fill('Focus teaching entry');
+  await page.getByRole('dialog').getByLabel('What I prayed about', { exact: true }).fill('Focus prayed entry');
   await page.getByRole('button', { name: 'Done' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('button', { name: 'Save Entry' }).click();
@@ -101,9 +162,10 @@ test('focus lightbox navigates between daily reflection fields', async ({ page }
 });
 
 test('dismisses focus lightbox when clicking the backdrop', async ({ page }) => {
+  await enableJournalFocusMode(page);
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Victory today').click();
+  await page.getByLabel("What do I get from today's meditation?", { exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 
   await page.getByRole('dialog').click({ position: { x: 8, y: 8 } });
@@ -111,6 +173,7 @@ test('dismisses focus lightbox when clicking the backdrop', async ({ page }) => 
 });
 
 test('preserves journal editor scroll position after closing focus lightbox', async ({ page }) => {
+  await enableJournalFocusMode(page);
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
 
@@ -124,7 +187,9 @@ test('preserves journal editor scroll position after closing focus lightbox', as
   );
 
   await page.evaluate(() => {
-    const button = document.querySelector('[aria-label="Victory today"]');
+    const button = document.querySelector(
+      '[aria-label="What are you grateful for today?"]',
+    );
     button?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     button?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
     button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -247,7 +312,7 @@ test('opens a read-only view of a saved entry', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Great' }).click();
   await fillJournalField(page, 'What I prayed about', 'Family healing and peace');
-  await fillJournalField(page, 'Victory today', 'Completed the fast without complaint');
+  await fillJournalField(page, 'What are you grateful for today?', 'Completed the fast without complaint');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.getByRole('button', { name: /View reflection from/i }).click();
@@ -709,7 +774,8 @@ test.describe('journal PDF export', () => {
 test('opens print document when exporting journal as PDF', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Victory today', 'Export victory note');
+  await fillJournalField(page, 'Today\'s Meditation', 'Export cover verse');
+  await fillJournalField(page, 'What are you grateful for today?', 'Export victory note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   const [popup] = await Promise.all([

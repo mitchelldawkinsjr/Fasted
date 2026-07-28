@@ -192,6 +192,8 @@ export type AppSettings = {
   pushEnabled: boolean;
   theme: 'light' | 'dark' | 'system';
   scriptureNote: string;
+  /** When true, tapping a journal field opens full-screen focus mode. Off by default. */
+  journalFocusMode: boolean;
 };
 
 export type BadgeId = string;

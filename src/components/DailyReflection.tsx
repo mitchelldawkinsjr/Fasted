@@ -1,12 +1,14 @@
 import confetti from 'canvas-confetti';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { trackEvent } from '../lib/analytics';
 import { getCelebrationMessage } from '../data/encouragements';
 import { evaluateBadges } from '../lib/badges';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { useGroupCommitmentContexts } from '../hooks/useGroupCommitmentContexts';
 import {
-  DAILY_REFLECTION_FIELDS,
+  DAILY_REFLECTION_FIELDS_AFTER_MOOD,
+  DAILY_REFLECTION_FIELDS_BEFORE_MOOD,
   joinTrimmedValues,
 } from '../lib/journalTags';
 import { formatError, messages } from '../lib/messages';
@@ -14,6 +16,7 @@ import {
   createJournalEntryId,
   getCheckIn,
   getDailyReflectionByDate,
+  getProgress,
   saveDailyReflectionWithCheckIn,
 } from '../lib/storage';
 import { getCurrentStreak } from '../lib/streaks';
@@ -30,22 +33,91 @@ import { Icon } from './Icon';
 import { InfoBanner } from './InfoBanner';
 import { LoadingButton } from './LoadingButton';
 import { MoodPicker } from './MoodPicker';
+import { DailyReflectionMeditation } from './VerseOfTheDay';
 
 type Props = {
   date: string;
 };
+
+function badgesEarnedOnDate(date: string): Badge[] {
+  return getProgress().badges.filter(
+    (badge) => Boolean(badge.earnedAt) && badge.earnedAt!.startsWith(date),
+  );
+}
+
+function MorningReflectionComplete({
+  message,
+  streak,
+  badges,
+}: {
+  message: string;
+  streak: number;
+  badges: Badge[];
+}) {
+  return (
+    <div
+      className="stitch-card space-y-stack-md p-stack-md text-center"
+      data-testid="morning-reflection-complete"
+    >
+      <Icon name="celebration" className="mx-auto text-4xl text-secondary" />
+      <p className="font-display text-headline-md text-primary">{message}</p>
+      <p className="text-body-md text-on-surface-variant">
+        {streak === 1 ? (
+          <>Day 1 of your check-in streak.</>
+        ) : (
+          <>
+            <strong className="text-primary">{streak}</strong> consecutive check-in days.
+          </>
+        )}
+      </p>
+      {badges.length > 0 && (
+        <div className="space-y-stack-sm">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {badges.map((badge) => (
+              <BadgeSprite
+                key={badge.id}
+                id={badge.id}
+                earned
+                size={72}
+                title={badge.title}
+              />
+            ))}
+          </div>
+          <p className="text-body-md text-on-surface-variant">
+            {badges.length === 1 ? (
+              <>
+                You earned <strong className="text-primary">{badges[0].title}</strong>.
+              </>
+            ) : (
+              <>You earned {badges.length} sacred milestones today.</>
+            )}
+          </p>
+        </div>
+      )}
+      <p className="text-body-sm text-on-surface-variant">
+        You&apos;re checked in for today. Come back tomorrow for a new reflection.
+      </p>
+      <Link
+        to="/journal"
+        className="btn-stitch-secondary inline-flex w-full items-center justify-center"
+      >
+        View in Journal
+      </Link>
+    </div>
+  );
+}
 
 export function DailyReflection({ date }: Props) {
   const { getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
   const existingEntry = getDailyReflectionByDate(date);
   const existingCheckIn = getCheckIn(date);
+  const isCompleteForDay = Boolean(existingEntry && existingCheckIn);
 
   const [followedPlan, setFollowedPlan] = useState(existingCheckIn?.followedPlan ?? false);
   const [prayedFocus, setPrayedFocus] = useState(existingCheckIn?.prayedFocus ?? false);
   const [readScripture, setReadScripture] = useState(existingCheckIn?.readScripture ?? false);
   const [dayMood, setDayMood] = useState<DayMood | null>(existingEntry?.dayMood ?? null);
-  const [prayerFocus, setPrayerFocus] = useState(existingEntry?.prayerFocus ?? '');
   const [prayedAbout, setPrayedAbout] = useState(existingEntry?.prayedAbout ?? '');
   const [godTeaching, setGodTeaching] = useState(existingEntry?.godTeaching ?? '');
   const [hungerNotes, setHungerNotes] = useState(existingEntry?.hungerNotes ?? '');
@@ -54,18 +126,15 @@ export function DailyReflection({ date }: Props) {
   );
   const [tomorrowIntention, setTomorrowIntention] = useState(existingEntry?.tomorrowIntention ?? '');
   const [saving, setSaving] = useState(false);
-  const [celebrating, setCelebrating] = useState(false);
-  const [message, setMessage] = useState('');
-  const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
-  const [savedStreak, setSavedStreak] = useState<number | null>(null);
+  const [justCompleted, setJustCompleted] = useState(false);
+  const [freshBadges, setFreshBadges] = useState<Badge[]>([]);
   const { groupContexts, groupResults, setGroupResults } = useGroupCommitmentContexts(date);
 
   const currentStreak = getCurrentStreak(date);
-  const reflectionFields = [prayerFocus, prayedAbout, godTeaching, hungerNotes, victory, tomorrowIntention];
+  const reflectionFields = [prayedAbout, godTeaching, hungerNotes, victory, tomorrowIntention];
   const hasReflectionContent = joinTrimmedValues(reflectionFields).length > 0;
 
   const dailyFieldState = {
-    prayerFocus: [prayerFocus, setPrayerFocus] as const,
     prayedAbout: [prayedAbout, setPrayedAbout] as const,
     godTeaching: [godTeaching, setGodTeaching] as const,
     hungerNotes: [hungerNotes, setHungerNotes] as const,
@@ -97,7 +166,7 @@ export function DailyReflection({ date }: Props) {
       updatedAt: new Date().toISOString(),
       type: 'daily-reflection',
       dayMood,
-      prayerFocus: prayerFocus.trim(),
+      prayerFocus: existingEntry?.prayerFocus?.trim() ?? '',
       prayedAbout: prayedAbout.trim(),
       godTeaching: godTeaching.trim(),
       hungerNotes: hungerNotes.trim(),
@@ -147,10 +216,8 @@ export function DailyReflection({ date }: Props) {
     });
 
     const earned = evaluateBadges(date);
-    setSavedStreak(getCurrentStreak(date));
-    setEarnedBadges(earned);
-    setMessage(getCelebrationMessage(date));
-    setCelebrating(true);
+    setFreshBadges(earned);
+    setJustCompleted(true);
     setSaving(false);
 
     confetti({
@@ -172,54 +239,17 @@ export function DailyReflection({ date }: Props) {
     }
   };
 
-  if (celebrating) {
+  if (isCompleteForDay || justCompleted) {
+    const badges = justCompleted
+      ? (freshBadges.length > 0 ? freshBadges : badgesEarnedOnDate(date))
+      : badgesEarnedOnDate(date);
+
     return (
-      <div className="stitch-card space-y-stack-md p-stack-md text-center">
-        <Icon name="celebration" className="mx-auto text-4xl text-secondary" />
-        <p className="font-display text-headline-md text-primary">{message}</p>
-        {savedStreak !== null && (
-          <p className="text-body-md text-on-surface-variant">
-            {savedStreak === 1 ? (
-              <>Day 1 of your check-in streak.</>
-            ) : (
-              <>
-                <strong className="text-primary">{savedStreak}</strong> consecutive check-in days.
-              </>
-            )}
-          </p>
-        )}
-        {earnedBadges.length > 0 && (
-          <div className="space-y-stack-sm">
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {earnedBadges.map((badge) => (
-                <BadgeSprite
-                  key={badge.id}
-                  id={badge.id}
-                  earned
-                  size={72}
-                  title={badge.title}
-                />
-              ))}
-            </div>
-            <p className="text-body-md text-on-surface-variant">
-              {earnedBadges.length === 1 ? (
-                <>
-                  You earned <strong className="text-primary">{earnedBadges[0].title}</strong>.
-                </>
-              ) : (
-                <>You earned {earnedBadges.length} new sacred milestones.</>
-              )}
-            </p>
-          </div>
-        )}
-        <LoadingButton
-          type="button"
-          onClick={() => setCelebrating(false)}
-          className="w-full"
-        >
-          Continue
-        </LoadingButton>
-      </div>
+      <MorningReflectionComplete
+        message={getCelebrationMessage(date)}
+        streak={getCurrentStreak(date)}
+        badges={badges}
+      />
     );
   }
 
@@ -302,9 +332,42 @@ export function DailyReflection({ date }: Props) {
           Reflection
         </h4>
 
+        <DailyReflectionMeditation
+          entry={{
+            id: existingEntry?.id ?? '',
+            date,
+            type: 'daily-reflection',
+            dayMood: existingEntry?.dayMood ?? null,
+            prayerFocus: existingEntry?.prayerFocus ?? '',
+            prayedAbout: existingEntry?.prayedAbout ?? '',
+            godTeaching: existingEntry?.godTeaching ?? '',
+            hungerNotes: existingEntry?.hungerNotes ?? '',
+            victory: existingEntry?.victory ?? '',
+            tomorrowIntention: existingEntry?.tomorrowIntention ?? '',
+            updatedAt: existingEntry?.updatedAt ?? '',
+          }}
+          variant="journal"
+        />
+
+        {DAILY_REFLECTION_FIELDS_BEFORE_MOOD.map(({ key, label }) => (
+          <label key={key} className="block">
+            <span className="mb-1 block text-body-md font-medium text-on-surface">
+              {label}
+            </span>
+            <textarea
+              value={dailyFieldState[key][0]}
+              onChange={(e) => dailyFieldState[key][1](e.target.value)}
+              placeholder={`${label}…`}
+              aria-label={label}
+              rows={3}
+              className={inputClass}
+            />
+          </label>
+        ))}
+
         <MoodPicker value={dayMood} onChange={setDayMood} />
 
-        {DAILY_REFLECTION_FIELDS.map(({ key, label }) => (
+        {DAILY_REFLECTION_FIELDS_AFTER_MOOD.map(({ key, label }) => (
           <label key={key} className="block">
             <span className="mb-1 block text-body-md font-medium text-on-surface">
               {label}

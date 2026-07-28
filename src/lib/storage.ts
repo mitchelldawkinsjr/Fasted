@@ -25,6 +25,8 @@ import {
   putImage,
 } from './imageStore';
 import {
+  DAILY_REFLECTION_FIELDS_AFTER_MOOD,
+  DAILY_REFLECTION_FIELDS_BEFORE_MOOD,
   FOOD_JOURNAL_FIELDS,
   FITNESS_JOURNAL_LABEL,
   isDailyReflectionEntry,
@@ -52,6 +54,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
   scriptureNote:
     'Scripture text uses NLT (New Living Translation) wording where available. Some phases use a brief summary when multiple readings are assigned.',
+  journalFocusMode: false,
 };
 
 const DEFAULT_PROGRESS: UserProgress = {
@@ -624,24 +627,24 @@ export function exportJournalMarkdown(): string {
     .map((e) => {
       if (e.type === 'daily-reflection') {
         const verse = resolveVerseForDate(e.date);
-        const meditation = e.prayerFocus.trim()
-          ? e.prayerFocus
-          : `${verse.reference} — "${verse.text}"`;
+        const meditation = `${verse.reference} — "${verse.text}"`;
+        const beforeFields = DAILY_REFLECTION_FIELDS_BEFORE_MOOD.map(
+          ({ key, label }) => `**${label}:** ${e[key]}`,
+        ).join('\n\n');
+        const moodLine = e.dayMood ? `\n\n**Mood:** ${getDayMoodLabel(e.dayMood)}` : '';
+        const afterFields = DAILY_REFLECTION_FIELDS_AFTER_MOOD.map(
+          ({ key, label }) => `**${label}:** ${e[key]}`,
+        ).join('\n\n');
+
         return `## ${e.date}
 
 **Type:** Daily Reflection
-${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
+
 **Today's Meditation:** ${meditation}
 
-**What I prayed about:** ${e.prayedAbout}
+${beforeFields}${moodLine}
 
-**What God is teaching me:** ${e.godTeaching}
-
-**Hunger / discipline notes:** ${e.hungerNotes}
-
-**Victory today:** ${e.victory}
-
-**Tomorrow's intention:** ${e.tomorrowIntention}
+${afterFields}
 `;
       }
 
