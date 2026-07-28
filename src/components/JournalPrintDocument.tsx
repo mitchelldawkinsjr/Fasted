@@ -80,9 +80,6 @@ function PrintEntryPage({ entry }: { entry: JournalEntry }) {
         entry={entry}
         classes={PRINT_ENTRY_BODY_CLASSES}
         emptyMessage={null}
-        renderVerseHeading={() => (
-          <h3 className="print-field-label">{VERSE_OF_THE_DAY_LABEL}</h3>
-        )}
       />
     </article>
   );

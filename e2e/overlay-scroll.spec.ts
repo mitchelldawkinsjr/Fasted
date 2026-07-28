@@ -36,33 +36,31 @@ test.describe('Mobile overlay and scroll smoke', () => {
     });
   }
 
-  test('hides bottom nav while check-in modal is open (iphone-se)', async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 568 });
-    await preparePage(page, { state: 'streakReady', date: FIXED_DATE });
-
-    const nav = page.locator(MAIN_NAV);
-    await expect(nav).toBeVisible();
-
-    await page.getByRole('button', { name: /check.?in for today/i }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(nav).toBeHidden();
-  });
-
-  test('check-in modal actions are visible without overlapping nav (iphone-se)', async ({ page }) => {
+  test('daily reflection save button is visible without overlapping nav (iphone-se)', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 });
     await preparePage(page, { state: 'streakReady', date: FIXED_DATE });
 
     await page.getByRole('button', { name: /check.?in for today/i }).click();
-    const modal = page.getByRole('dialog');
-    await expect(modal).toBeVisible();
+    await expect(page.locator('#daily-reflection')).toBeInViewport();
 
-    const saveBtn = modal.getByRole('button', { name: /save check-in/i });
+    const saveBtn = page.getByRole('button', { name: 'Save Reflection & Check-In' });
     await expect(saveBtn).toBeVisible();
     await expect(saveBtn).toBeInViewport();
     await saveBtn.click({ trial: true });
+    await expectAboveMainNav(page, saveBtn, 'Daily reflection save');
+    await expectNotCoveredByNav(page, saveBtn, 'Daily reflection save');
+  });
 
-    const cancelBtn = modal.getByRole('button', { name: /^cancel$/i });
-    await expect(cancelBtn).toBeInViewport();
+  test('daily reflection mood picker is not covered by nav after scrolling into view (iphone-se)', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await preparePage(page, { state: 'streakReady', date: FIXED_DATE });
+
+    await page.getByRole('button', { name: /check.?in for today/i }).click();
+    await expect(page.locator('#daily-reflection')).toBeInViewport();
+
+    const moodGroup = page.getByRole('radiogroup', { name: 'How did today feel?' });
+    await expect(moodGroup).toBeVisible();
+    await expectNotCoveredByNav(page, moodGroup, 'Daily reflection mood picker');
   });
 
   test('journal save bar is visible without scrolling on small phone', async ({ page }) => {

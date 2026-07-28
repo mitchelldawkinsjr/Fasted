@@ -2,6 +2,7 @@ import type {
   AppSettings,
   Badge,
   CheckIn,
+  DailyReflectionEntry,
   FoodMealKey,
   GroupCheckIn,
   JournalEntry,
@@ -12,6 +13,7 @@ import type {
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import { normalizeJourney, normalizeJourneys } from './journey';
 import { getDayMoodLabel } from './dayMood';
+import { resolveVerseForDate } from './verseOfTheDay';
 import {
   blobToDataUrl,
   clearScope,
@@ -278,15 +280,11 @@ export function saveCheckIn(checkIn: CheckIn): void {
   saveCheckInWithGroupCheckIns(checkIn, []);
 }
 
-export function saveCheckInWithGroupCheckIns(
-  checkIn: CheckIn,
+function mergeGroupCheckIns(
+  current: UserProgress['groupCheckIns'],
   groupCheckIns: ReadonlyArray<{ groupId: string; checkIn: GroupCheckIn }>,
-): void {
-  const progress = getProgress();
-  const filtered = progress.checkIns.filter((c) => c.date !== checkIn.date);
-  const checkIns = [...filtered, checkIn].sort((a, b) => a.date.localeCompare(b.date));
-
-  let nextGroupCheckIns = progress.groupCheckIns ?? {};
+): UserProgress['groupCheckIns'] {
+  let nextGroupCheckIns = current ?? {};
   for (const { groupId, checkIn: groupCheckIn } of groupCheckIns) {
     const existing = nextGroupCheckIns[groupId] ?? [];
     const filteredGroup = existing.filter((c) => c.date !== groupCheckIn.date);
@@ -297,17 +295,57 @@ export function saveCheckInWithGroupCheckIns(
       ),
     };
   }
+  return nextGroupCheckIns;
+}
+
+export function saveCheckInWithGroupCheckIns(
+  checkIn: CheckIn,
+  groupCheckIns: ReadonlyArray<{ groupId: string; checkIn: GroupCheckIn }>,
+): void {
+  const progress = getProgress();
+  const filtered = progress.checkIns.filter((c) => c.date !== checkIn.date);
+  const checkIns = [...filtered, checkIn].sort((a, b) => a.date.localeCompare(b.date));
 
   persist({
     ...progress,
     checkIns,
     checkInStreak: computeCheckInStreak(checkIns, checkIn.date),
-    groupCheckIns: nextGroupCheckIns,
+    groupCheckIns: mergeGroupCheckIns(progress.groupCheckIns, groupCheckIns),
   });
 }
 
 export function getCheckIn(date: string): CheckIn | undefined {
   return getProgress().checkIns.find((c) => c.date === date);
+}
+
+export function getDailyReflectionByDate(date: string): DailyReflectionEntry | undefined {
+  return getProgress().journalEntries.find(
+    (entry): entry is DailyReflectionEntry =>
+      isDailyReflectionEntry(entry) && entry.date === date,
+  );
+}
+
+export function saveDailyReflectionWithCheckIn(
+  entry: DailyReflectionEntry,
+  checkIn: CheckIn,
+  groupCheckIns: ReadonlyArray<{ groupId: string; checkIn: GroupCheckIn }> = [],
+): void {
+  const progress = getProgress();
+  const filteredJournal = progress.journalEntries.filter((e) => e.id !== entry.id);
+  const journalEntries = [...filteredJournal, normalizeJournalEntry(entry)].sort((a, b) =>
+    b.date.localeCompare(a.date),
+  );
+
+  const filteredCheckIns = progress.checkIns.filter((c) => c.date !== checkIn.date);
+  const checkIns = [...filteredCheckIns, checkIn].sort((a, b) => a.date.localeCompare(b.date));
+
+  persist({
+    ...progress,
+    journalEntries,
+    checkIns,
+    checkInStreak: computeCheckInStreak(checkIns, checkIn.date),
+    groupCheckIns: mergeGroupCheckIns(progress.groupCheckIns, groupCheckIns),
+  });
 }
 
 export function saveGroupCheckIn(groupId: string, checkIn: GroupCheckIn): void {

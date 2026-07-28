@@ -6,7 +6,7 @@ import { JournalTypePicker } from './JournalTypePicker';
 import { LoadingButton } from './LoadingButton';
 import { MealImageUpload } from './MealImageUpload';
 import { MoodPicker } from './MoodPicker';
-import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
+import { DailyReflectionMeditation } from './VerseOfTheDay';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { useProgress } from '../hooks/useProgress';
 import { clampDateToPlan, getDefaultJournalDate } from '../lib/dateUtils';
@@ -99,9 +99,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
     void deleteImages(scope, orphans);
   };
 
-  const [prayerFocus, setPrayerFocus] = useState(
-    entry && isDailyReflectionEntry(entry) ? entry.prayerFocus : '',
-  );
   const [prayedAbout, setPrayedAbout] = useState(
     entry && isDailyReflectionEntry(entry) ? entry.prayedAbout : '',
   );
@@ -166,7 +163,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   const getPreservedText = (): string => {
     if (entryType === 'daily-reflection') {
       return joinTrimmedValues([
-        prayerFocus,
         prayedAbout,
         godTeaching,
         hungerNotes,
@@ -190,7 +186,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
 
     if (nextType === 'daily-reflection') {
       setDayMood(null);
-      setPrayerFocus('');
       setPrayedAbout('');
       setGodTeaching('');
       setHungerNotes('');
@@ -243,7 +238,7 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
         ...base,
         type: 'daily-reflection',
         dayMood,
-        prayerFocus: prayerFocus.trim(),
+        prayerFocus: entry && isDailyReflectionEntry(entry) ? entry.prayerFocus : '',
         prayedAbout: prayedAbout.trim(),
         godTeaching: godTeaching.trim(),
         hungerNotes: hungerNotes.trim(),
@@ -292,7 +287,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
   };
 
   const dailyFieldState = {
-    prayerFocus: [prayerFocus, setPrayerFocus] as const,
     prayedAbout: [prayedAbout, setPrayedAbout] as const,
     godTeaching: [godTeaching, setGodTeaching] as const,
     hungerNotes: [hungerNotes, setHungerNotes] as const,
@@ -516,7 +510,6 @@ export function JournalEditor({ entry, defaultDate, initialType, onSave, onCance
           activeKey={focusFieldKey}
           onNavigate={setFocusFieldKey}
           onClose={() => setFocusFieldKey(null)}
-          date={date}
           entryType={entryType}
         />
       )}

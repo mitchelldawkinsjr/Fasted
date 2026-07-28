@@ -5,9 +5,11 @@ import { initAnalytics } from './lib/analytics';
 import { applyDevSeedIfRequested } from './lib/seedData';
 import { initAuthSync } from './lib/sync';
 import { getProgress } from './lib/storage';
+import { initSentry } from './lib/telemetry';
 import { applyTheme } from './lib/theme';
 import './styles/globals.css';
 
+initSentry();
 initAnalytics();
 applyDevSeedIfRequested();
 initAuthSync();

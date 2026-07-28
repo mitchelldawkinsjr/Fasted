@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { JournalTypeBadge } from './JournalTypePicker';
 import { MoodBadge } from './MoodPicker';
-import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
+import { DailyReflectionMeditation } from './VerseOfTheDay';
 import { useMealImageSrc } from '../hooks/useMealImageSrc';
 import { formatDisplayDate } from '../lib/dateUtils';
 import {
@@ -103,14 +103,12 @@ type JournalEntryBodyProps = {
   entry: JournalEntry;
   classes?: JournalEntryBodyClasses;
   emptyMessage?: ReactNode;
-  renderVerseHeading?: (entry: JournalEntry) => ReactNode;
 };
 
 export function JournalEntryBody({
   entry,
   classes = DEFAULT_ENTRY_BODY_CLASSES,
   emptyMessage = 'No reflection notes recorded.',
-  renderVerseHeading = (item) => <VerseOfTheDayLabel date={item.date} as="heading" />,
 }: JournalEntryBodyProps) {
   const simpleContentLabel = getSimpleContentLabel(entry.type);
   const mealImages = entry.type === 'food' ? getMealImages(entry.id) : {};

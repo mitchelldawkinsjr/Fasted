@@ -80,6 +80,7 @@ Copy `ANON_KEY` from `${SUPABASE_DIR}/.env` into the app `.env`:
 VITE_SUPABASE_URL=https://api.example.com
 VITE_SUPABASE_ANON_KEY=<anon-key-from-supabase-env>
 VITE_VAPID_PUBLIC_KEY=<vapid-public-key>
+VITE_SENTRY_DSN=<sentry-dsn>
 APP_PUBLISH_PORT=8022
 ```
 

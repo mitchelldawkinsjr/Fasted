@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { trackEvent } from '../lib/analytics';
-import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 
 export type FocusField = {
   key: string;
@@ -16,7 +15,6 @@ type Props = {
   activeKey: string;
   onNavigate: (key: string) => void;
   onClose: () => void;
-  date: string;
   entryType: string;
 };
 
@@ -25,7 +23,6 @@ export function JournalFocusLightbox({
   activeKey,
   onNavigate,
   onClose,
-  date,
   entryType,
 }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -112,13 +109,9 @@ export function JournalFocusLightbox({
 
         <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
           <div id={labelId} className="mb-4 shrink-0">
-            {activeField.key === 'prayerFocus' ? (
-              <VerseOfTheDayLabel date={date} />
-            ) : (
-              <h2 className="journal-focus-sans text-[14px] font-medium tracking-wide text-on-surface">
-                {activeField.label}
-              </h2>
-            )}
+            <h2 className="journal-focus-sans text-[14px] font-medium tracking-wide text-on-surface">
+              {activeField.label}
+            </h2>
           </div>
 
           {showFieldNav && (
