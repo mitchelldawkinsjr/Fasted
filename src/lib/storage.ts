@@ -3,6 +3,7 @@ import type {
   Badge,
   CheckIn,
   FavoriteMealIdea,
+  DailyReflectionEntry,
   FoodMealKey,
   FoodPlanCheckIn,
   FoodProfile,
@@ -16,6 +17,7 @@ import type {
 import { FASTED_JOURNEY } from '../data/phaseTemplates';
 import { normalizeJourney, normalizeJourneys } from './journey';
 import { getDayMoodLabel } from './dayMood';
+import { resolveVerseForDate } from './verseOfTheDay';
 import {
   blobToDataUrl,
   clearScope,
@@ -26,7 +28,16 @@ import {
   isDataUrl,
   putImage,
 } from './imageStore';
-import { FOOD_JOURNAL_FIELDS, FITNESS_JOURNAL_LABEL, journalEntryNeedsMigration, normalizeJournalEntries, normalizeJournalEntry } from './journalTags';
+import {
+  DAILY_REFLECTION_FIELDS_AFTER_MOOD,
+  DAILY_REFLECTION_FIELDS_BEFORE_MOOD,
+  FOOD_JOURNAL_FIELDS,
+  FITNESS_JOURNAL_LABEL,
+  isDailyReflectionEntry,
+  journalEntryNeedsMigration,
+  normalizeJournalEntries,
+  normalizeJournalEntry,
+} from './journalTags';
 import { collectMealImageIds } from './mealImages';
 import { deleteRemoteImages, resolveMealImageBlob } from './mealImageSync';
 import { messages } from './messages';
@@ -47,6 +58,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
   scriptureNote:
     'Scripture text uses NLT (New Living Translation) wording where available. Some phases use a brief summary when multiple readings are assigned.',
+  journalFocusMode: false,
 };
 
 const DEFAULT_PROGRESS: UserProgress = {
@@ -273,15 +285,11 @@ export function saveCheckIn(checkIn: CheckIn): void {
   saveCheckInWithGroupCheckIns(checkIn, []);
 }
 
-export function saveCheckInWithGroupCheckIns(
-  checkIn: CheckIn,
+function mergeGroupCheckIns(
+  current: UserProgress['groupCheckIns'],
   groupCheckIns: ReadonlyArray<{ groupId: string; checkIn: GroupCheckIn }>,
-): void {
-  const progress = getProgress();
-  const filtered = progress.checkIns.filter((c) => c.date !== checkIn.date);
-  const checkIns = [...filtered, checkIn].sort((a, b) => a.date.localeCompare(b.date));
-
-  let nextGroupCheckIns = progress.groupCheckIns ?? {};
+): UserProgress['groupCheckIns'] {
+  let nextGroupCheckIns = current ?? {};
   for (const { groupId, checkIn: groupCheckIn } of groupCheckIns) {
     const existing = nextGroupCheckIns[groupId] ?? [];
     const filteredGroup = existing.filter((c) => c.date !== groupCheckIn.date);
@@ -292,17 +300,57 @@ export function saveCheckInWithGroupCheckIns(
       ),
     };
   }
+  return nextGroupCheckIns;
+}
+
+export function saveCheckInWithGroupCheckIns(
+  checkIn: CheckIn,
+  groupCheckIns: ReadonlyArray<{ groupId: string; checkIn: GroupCheckIn }>,
+): void {
+  const progress = getProgress();
+  const filtered = progress.checkIns.filter((c) => c.date !== checkIn.date);
+  const checkIns = [...filtered, checkIn].sort((a, b) => a.date.localeCompare(b.date));
 
   persist({
     ...progress,
     checkIns,
     checkInStreak: computeCheckInStreak(checkIns, checkIn.date),
-    groupCheckIns: nextGroupCheckIns,
+    groupCheckIns: mergeGroupCheckIns(progress.groupCheckIns, groupCheckIns),
   });
 }
 
 export function getCheckIn(date: string): CheckIn | undefined {
   return getProgress().checkIns.find((c) => c.date === date);
+}
+
+export function getDailyReflectionByDate(date: string): DailyReflectionEntry | undefined {
+  return getProgress().journalEntries.find(
+    (entry): entry is DailyReflectionEntry =>
+      isDailyReflectionEntry(entry) && entry.date === date,
+  );
+}
+
+export function saveDailyReflectionWithCheckIn(
+  entry: DailyReflectionEntry,
+  checkIn: CheckIn,
+  groupCheckIns: ReadonlyArray<{ groupId: string; checkIn: GroupCheckIn }> = [],
+): void {
+  const progress = getProgress();
+  const filteredJournal = progress.journalEntries.filter((e) => e.id !== entry.id);
+  const journalEntries = [...filteredJournal, normalizeJournalEntry(entry)].sort((a, b) =>
+    b.date.localeCompare(a.date),
+  );
+
+  const filteredCheckIns = progress.checkIns.filter((c) => c.date !== checkIn.date);
+  const checkIns = [...filteredCheckIns, checkIn].sort((a, b) => a.date.localeCompare(b.date));
+
+  persist({
+    ...progress,
+    journalEntries,
+    checkIns,
+    checkInStreak: computeCheckInStreak(checkIns, checkIn.date),
+    groupCheckIns: mergeGroupCheckIns(progress.groupCheckIns, groupCheckIns),
+  });
 }
 
 export function saveGroupCheckIn(groupId: string, checkIn: GroupCheckIn): void {
@@ -647,21 +695,25 @@ export function exportJournalMarkdown(): string {
   return journalEntries
     .map((e) => {
       if (e.type === 'daily-reflection') {
+        const verse = resolveVerseForDate(e.date);
+        const meditation = `${verse.reference} — "${verse.text}"`;
+        const beforeFields = DAILY_REFLECTION_FIELDS_BEFORE_MOOD.map(
+          ({ key, label }) => `**${label}:** ${e[key]}`,
+        ).join('\n\n');
+        const moodLine = e.dayMood ? `\n\n**Mood:** ${getDayMoodLabel(e.dayMood)}` : '';
+        const afterFields = DAILY_REFLECTION_FIELDS_AFTER_MOOD.map(
+          ({ key, label }) => `**${label}:** ${e[key]}`,
+        ).join('\n\n');
+
         return `## ${e.date}
 
 **Type:** Daily Reflection
-${e.dayMood ? `\n**Mood:** ${getDayMoodLabel(e.dayMood)}\n` : ''}
-**Today's Meditation:** ${e.prayerFocus}
 
-**What I prayed about:** ${e.prayedAbout}
+**Today's Meditation:** ${meditation}
 
-**What God is teaching me:** ${e.godTeaching}
+${beforeFields}${moodLine}
 
-**Hunger / discipline notes:** ${e.hungerNotes}
-
-**Victory today:** ${e.victory}
-
-**Tomorrow's intention:** ${e.tomorrowIntention}
+${afterFields}
 `;
       }
 

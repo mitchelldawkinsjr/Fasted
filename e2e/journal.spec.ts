@@ -1,9 +1,13 @@
 import { expect, test } from '@playwright/test';
 import { expectDateInputContained } from './fixtures/overflow';
 import { AUDIT_VIEWPORTS } from './fixtures/viewports';
+import { FIXED_DATE } from './fixtures/constants';
 import { messages } from '../src/lib/messages';
+import { resolveVerseForDate } from '../src/lib/verseOfTheDay';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
+
+const expectedVerse = resolveVerseForDate(FIXED_DATE);
 
 async function selectType(page: import('@playwright/test').Page, label: string) {
   const group = page.getByRole('group', { name: 'Reflection type' });
@@ -17,7 +21,7 @@ async function fillJournalField(
   label: string,
   text: string,
 ) {
-  const field = page.getByLabel(label);
+  const field = page.getByLabel(label, { exact: true });
   if (await field.evaluate((element) => element.tagName === 'TEXTAREA')) {
     await field.fill(text);
     return;
@@ -28,17 +32,74 @@ async function fillJournalField(
     await page.getByRole('button', { name: 'Done' }).click();
   }
   await field.click();
-  await dialog.getByLabel(label).fill(text);
+  await dialog.getByLabel(label, { exact: true }).fill(text);
   await page.getByRole('button', { name: 'Done' }).click();
 }
 
+async function enableJournalFocusMode(page: import('@playwright/test').Page) {
+  await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    const data = raw ? JSON.parse(raw) : {};
+    data.settings = {
+      reminderTime: '07:00',
+      pushEnabled: false,
+      theme: 'light',
+      scriptureNote: '',
+      ...(data.settings ?? {}),
+      journalFocusMode: true,
+    };
+    localStorage.setItem(key, JSON.stringify(data));
+  }, STORAGE_KEY);
+  await page.reload();
+}
+
 test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date(`${FIXED_DATE}T12:00:00.000Z`) });
   await page.goto('/journal');
   await page.evaluate((key) => {
     localStorage.removeItem(key);
     localStorage.setItem('fasted-calendar-install-toast-dismissed', '1');
   }, STORAGE_KEY);
   await page.reload();
+});
+
+test('daily reflection fields follow the updated layout order', async ({ page }) => {
+  await page.getByRole('button', { name: '+ New' }).click();
+
+  await expect(page.getByRole('heading', { name: "Today's Meditation" })).toBeVisible();
+  // Meditation is read-only (region/heading), not an editable textbox named exactly that.
+  await expect(
+    page.getByRole('textbox', { name: "Today's Meditation", exact: true }),
+  ).toHaveCount(0);
+
+  const labelOrder = [
+    "What do I get from today's meditation?",
+    'What I prayed about',
+    'What do you feel contributed to your feeling today?',
+    'What are you grateful for today?',
+    "Tomorrow's intention",
+  ];
+
+  for (const label of labelOrder) {
+    await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+  }
+
+  const meditationY =
+    (await page.getByRole('heading', { name: "Today's Meditation" }).boundingBox())?.y ?? 0;
+  const positions = await Promise.all(
+    labelOrder.map(async (label) => {
+      const box = await page.getByLabel(label, { exact: true }).boundingBox();
+      return box?.y ?? 0;
+    }),
+  );
+  expect(positions[0]).toBeGreaterThan(meditationY);
+  for (let i = 1; i < positions.length; i++) {
+    expect(positions[i]).toBeGreaterThan(positions[i - 1]);
+  }
+
+  const moodY = (await page.getByRole('radio', { name: 'Good' }).boundingBox())?.y ?? 0;
+  expect(moodY).toBeGreaterThan(positions[1]);
+  expect(moodY).toBeLessThan(positions[2]);
 });
 
 test('saves a daily reflection with multiple fields', async ({ page }) => {
@@ -50,14 +111,13 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
     'true',
   );
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Today\'s Meditation', 'Morning prayer focus');
-  await fillJournalField(page, 'Victory today', 'Stayed faithful with water only');
+  await fillJournalField(page, "What do I get from today's meditation?", 'Morning insight');
+  await fillJournalField(page, 'What are you grateful for today?', 'Stayed faithful with water only');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await expect(page.getByText('Reflection saved.')).toBeVisible();
   await expect(page.getByText('1 reflections')).toBeVisible();
-  await expect(page.getByText('Morning prayer focus')).toBeVisible();
-  await expect(page.getByText('Stayed faithful with water only')).toBeVisible();
+  await expect(page.getByRole('listitem').filter({ hasText: 'Stayed faithful with water only' })).toBeVisible();
   await expect(page.getByText('#DAILY REFLECTION')).toBeVisible();
 
   const stored = await page.evaluate((key) => {
@@ -68,18 +128,23 @@ test('saves a daily reflection with multiple fields', async ({ page }) => {
   expect(stored?.journalEntries).toHaveLength(1);
   expect(stored.journalEntries[0].type).toBe('daily-reflection');
   expect(stored.journalEntries[0].dayMood).toBe('good');
-  expect(stored.journalEntries[0].prayerFocus).toBe('Morning prayer focus');
+  expect(stored.journalEntries[0].prayerFocus).toBe('');
+  expect(stored.journalEntries[0].godTeaching).toBe('Morning insight');
   expect(stored.journalEntries[0].victory).toBe('Stayed faithful with water only');
 });
 
 test('focus lightbox navigates between daily reflection fields', async ({ page }) => {
+  await enableJournalFocusMode(page);
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Today\'s Meditation').click();
+  await page.getByLabel("What do I get from today's meditation?", { exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('dialog').getByLabel('Today\'s Meditation').fill('Focus verse entry');
+  await page
+    .getByRole('dialog')
+    .getByLabel("What do I get from today's meditation?", { exact: true })
+    .fill('Focus teaching entry');
   await page.getByRole('dialog').getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('dialog').getByLabel('What I prayed about').fill('Focus prayed entry');
+  await page.getByRole('dialog').getByLabel('What I prayed about', { exact: true }).fill('Focus prayed entry');
   await page.getByRole('button', { name: 'Done' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('button', { name: 'Save Entry' }).click();
@@ -93,13 +158,14 @@ test('focus lightbox navigates between daily reflection fields', async ({ page }
   const saved = stored.journalEntries.find(
     (entry: { prayedAbout?: string }) => entry.prayedAbout === 'Focus prayed entry',
   );
-  expect(saved?.prayerFocus).toBe('Focus verse entry');
+  expect(saved?.godTeaching).toBe('Focus teaching entry');
 });
 
 test('dismisses focus lightbox when clicking the backdrop', async ({ page }) => {
+  await enableJournalFocusMode(page);
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await page.getByLabel('Today\'s Meditation').click();
+  await page.getByLabel("What do I get from today's meditation?", { exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 
   await page.getByRole('dialog').click({ position: { x: 8, y: 8 } });
@@ -107,6 +173,7 @@ test('dismisses focus lightbox when clicking the backdrop', async ({ page }) => 
 });
 
 test('preserves journal editor scroll position after closing focus lightbox', async ({ page }) => {
+  await enableJournalFocusMode(page);
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
 
@@ -120,7 +187,9 @@ test('preserves journal editor scroll position after closing focus lightbox', as
   );
 
   await page.evaluate(() => {
-    const button = document.querySelector('[aria-label="Today\'s Meditation"]');
+    const button = document.querySelector(
+      '[aria-label="What are you grateful for today?"]',
+    );
     button?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
     button?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
     button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -208,42 +277,53 @@ test('date input fits within card on mobile and desktop', async ({ page }) => {
 });
 
 test('morning reflection tag links to filtered journal', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/?date=2026-06-27');
+  await page.waitForLoadState('networkidle');
   await page.getByRole('link', { name: 'Prayer' }).click();
   await expect(page).toHaveURL('/journal?type=prayer');
   await expect(page.getByRole('button', { name: 'Prayer', exact: true })).toHaveClass(/bg-primary/);
 
-  await page.goto('/');
-  await page.getByRole('link', { name: 'Daily Reflection' }).click();
-  await expect(page).toHaveURL('/journal?type=daily-reflection');
-  await expect(page.getByRole('button', { name: 'Daily Reflection', exact: true })).toHaveClass(
-    /bg-primary/,
-  );
+  await page.goto('/?date=2026-06-27');
+  await page.getByRole('link', { name: 'Open journal' }).click();
+  await expect(page).toHaveURL('/journal');
 });
 
-test('shows verse of the day chapter link in daily reflection form', async ({ page }) => {
+test('shows verse of the day in daily reflection form', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
-  const chapterLink = page.getByRole('link', { name: /read on Bible Gateway/i });
+  await expect(page.getByRole('heading', { name: "Today's Meditation" })).toBeVisible();
+  await expect(page.getByText(expectedVerse.text.slice(0, 40))).toBeVisible();
+  const chapterLink = page.getByRole('link', { name: new RegExp(expectedVerse.reference, 'i') });
   await expect(chapterLink).toBeVisible();
   await expect(chapterLink).toHaveAttribute('href', /biblegateway\.com\/passage\/\?search=.+&version=NLT$/);
+});
+
+test('journal meditation verse matches today page', async ({ page }) => {
+  await page.goto(`/?date=${FIXED_DATE}`);
+  const todayVerse = await page.locator('blockquote').first().innerText();
+
+  await page.goto('/journal');
+  await page.getByRole('button', { name: '+ New' }).click();
+  const journalVerse = await page.locator('blockquote').first().innerText();
+
+  expect(journalVerse).toBe(todayVerse);
 });
 
 test('opens a read-only view of a saved entry', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Great' }).click();
-  await fillJournalField(page, 'Today\'s Meditation', 'Evening prayer focus');
   await fillJournalField(page, 'What I prayed about', 'Family healing and peace');
-  await fillJournalField(page, 'Victory today', 'Completed the fast without complaint');
+  await fillJournalField(page, 'What are you grateful for today?', 'Completed the fast without complaint');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.getByRole('button', { name: /View reflection from/i }).click();
 
   await expect(page.getByRole('heading', { name: 'Reflection' })).toBeVisible();
-  await expect(page.getByText('Evening prayer focus')).toBeVisible();
+  await expect(page.getByText(expectedVerse.text.slice(0, 40))).toBeVisible();
   await expect(page.getByText('Great')).toBeVisible();
   await expect(page.getByText('Family healing and peace')).toBeVisible();
   await expect(page.getByText('Completed the fast without complaint')).toBeVisible();
-  await expect(page.getByLabel('Today\'s Meditation')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: "Today's Meditation" })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: "Today's Meditation" })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Go back' }).click();
   await expect(page.getByText('1 reflections')).toBeVisible();
@@ -695,7 +775,7 @@ test('opens print document when exporting journal as PDF', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
   await fillJournalField(page, 'Today\'s Meditation', 'Export cover verse');
-  await fillJournalField(page, 'Victory today', 'Export victory note');
+  await fillJournalField(page, 'What are you grateful for today?', 'Export victory note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   const [popup] = await Promise.all([
@@ -708,7 +788,7 @@ test('opens print document when exporting journal as PDF', async ({ page }) => {
   await expect(popup).toHaveURL(/\/journal\/print\?return=%2Fjournal/);
   await expect(popup.getByRole('button', { name: 'Go back' })).toBeVisible();
   await expect(popup.getByText('Fasted', { exact: true })).toBeVisible();
-  await expect(popup.getByText('Export cover verse')).toBeVisible();
+  await expect(popup.getByText(expectedVerse.text.slice(0, 40))).toBeVisible();
   await expect(popup.getByText('Export victory note')).toBeVisible();
   await Promise.all([
     popup.waitForEvent('close'),
@@ -747,7 +827,7 @@ test('includes meal photos in journal PDF export', async ({ page, context }) => 
 test('print page back button closes browser PDF export popup', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Today\'s Meditation', 'Popup back verse');
+  await fillJournalField(page, 'Victory today', 'Popup back note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   const [popup] = await Promise.all([
@@ -767,7 +847,7 @@ test('print page back button closes browser PDF export popup', async ({ page }) 
 test('shows a blocked popup message when PDF export cannot open', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Today\'s Meditation', 'Blocked popup verse');
+  await fillJournalField(page, 'Victory today', 'Blocked popup note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.evaluate(() => {
@@ -868,7 +948,7 @@ test('settings PDF export opens print document', async ({ page }) => {
 test('print page back button returns to journal in a same-tab browser view', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Today\'s Meditation', 'Back link verse');
+  await fillJournalField(page, 'Victory today', 'Back link note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.addInitScript(() => {
@@ -884,7 +964,7 @@ test('print page back button returns to journal in a same-tab browser view', asy
 test('PDF export auto-returns in-app when installed PWA afterprint fires synchronously', async ({ page }) => {
   await page.getByRole('button', { name: '+ New' }).click();
   await page.getByRole('radio', { name: 'Good' }).click();
-  await fillJournalField(page, 'Today\'s Meditation', 'PWA export verse');
+  await fillJournalField(page, 'Victory today', 'PWA export note');
   await page.getByRole('button', { name: 'Save Entry' }).click();
 
   await page.evaluate(() => {

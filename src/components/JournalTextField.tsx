@@ -27,7 +27,7 @@ export function JournalTextField({
       aria-current={isActive ? 'true' : undefined}
       aria-hidden={isActive || undefined}
       tabIndex={isActive ? -1 : 0}
-      className={`${inputClass} min-h-[4.5rem] cursor-text text-left`}
+      className={`${inputClass} min-h-[6rem] cursor-text text-left`}
     >
       <span
         className={`block whitespace-pre-wrap text-wrap-anywhere ${

@@ -8,11 +8,10 @@ test.describe('Modal visual baselines', () => {
     await mockSupabaseOffline(page);
   });
 
-  test('CheckInModal — streakReady', async ({ page }) => {
+  test('DailyReflection — streakReady', async ({ page }) => {
     await preparePage(page, { state: 'streakReady', date: FIXED_DATE });
-    await page.getByRole('button', { name: /check.?in for today/i }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page).toHaveScreenshot('CheckInModal-streakReady.png', screenshotOptions);
+    await expect(page.getByRole('heading', { name: "Today's Check-In" })).toBeVisible();
+    await expect(page).toHaveScreenshot('DailyReflection-streakReady.png', screenshotOptions);
   });
 
   test('JournalEditor — worstCase', async ({ page }) => {

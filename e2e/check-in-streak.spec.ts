@@ -54,24 +54,26 @@ test.describe('check-in streak', () => {
     await page.goto('/?date=2026-06-27');
     await page.waitForLoadState('networkidle');
 
-    const streakLabel = page.getByText('CHECK-IN STREAK').locator('..');
+    const streakLabel = page.locator('[data-tour="checkin-btn"]').getByText('CHECK-IN STREAK').locator('..');
     await expect(streakLabel).toContainText('2');
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'today-before-checkin.png'), fullPage: true });
 
-    await page.getByRole('button', { name: 'Check-in for Today' }).click();
-    const modal = page.getByRole('dialog');
-    await expect(modal.getByText('Check-in streak', { exact: true })).toBeVisible();
-    await expect(modal.getByText('2 consecutive days')).toBeVisible();
+    await expect(page.getByLabel("Today's Check-In").getByText('Check-in streak', { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Today's Check-In").getByText('2 consecutive days')).toBeVisible();
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-before-save.png'), fullPage: true });
 
-    await modal.getByRole('button', { name: 'Save Check-In' }).click();
-    await expect(modal.getByText('3 consecutive check-in days.')).toBeVisible({ timeout: 5000 });
+    await page.getByRole('radio', { name: 'Good' }).click();
+    await page
+      .getByRole('textbox', { name: 'What are you grateful for today?' })
+      .fill('Completed check-in with reflection');
+    await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
+    await expect(page.getByTestId('morning-reflection-complete')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('consecutive check-in days')).toBeVisible();
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-celebration.png'), fullPage: true });
 
-    await expect(modal.getByRole('button', { name: 'Continue' })).toBeEnabled({ timeout: 3000 });
-    await modal.getByRole('button', { name: 'Continue' }).click();
-    await expect(modal).toBeHidden();
     await expect(streakLabel).toContainText('3');
+    await expect(page.getByText('Checked In', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save Reflection & Check-In' })).toHaveCount(0);
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'today-after-checkin.png'), fullPage: true });
   });
 
@@ -80,7 +82,7 @@ test.describe('check-in streak', () => {
     await page.goto('/?date=2026-06-27');
     await page.waitForLoadState('networkidle');
 
-    const streakLabel = page.getByText('CHECK-IN STREAK').locator('..');
+    const streakLabel = page.locator('[data-tour="checkin-btn"]').getByText('CHECK-IN STREAK').locator('..');
     await expect(streakLabel).toContainText('0');
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'streak-reset-after-gap.png'), fullPage: true });
   });

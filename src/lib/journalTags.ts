@@ -39,17 +39,23 @@ export const JOURNAL_ENTRY_TYPE_LABELS: Record<JournalEntryType, string> = {
 
 export const VERSE_OF_THE_DAY_LABEL = "Today's Meditation";
 
+/** User-editable daily reflection fields (meditation verse is shown separately). */
 export const DAILY_REFLECTION_FIELDS = [
-  { key: 'prayerFocus', label: VERSE_OF_THE_DAY_LABEL },
+  { key: 'godTeaching', label: "What do I get from today's meditation?" },
   { key: 'prayedAbout', label: 'What I prayed about' },
-  { key: 'godTeaching', label: 'What God is teaching me' },
-  { key: 'hungerNotes', label: "What do you think contributed most to how you're feeling today?" },
-  { key: 'victory', label: 'Victory today' },
+  { key: 'hungerNotes', label: 'What do you feel contributed to your feeling today?' },
+  { key: 'victory', label: 'What are you grateful for today?' },
   { key: 'tomorrowIntention', label: "Tomorrow's intention" },
 ] as const satisfies ReadonlyArray<{
-  key: keyof Omit<DailyReflectionEntry, 'id' | 'date' | 'updatedAt' | 'type'>;
+  key: keyof Omit<DailyReflectionEntry, 'id' | 'date' | 'updatedAt' | 'type' | 'prayerFocus'>;
   label: string;
 }>;
+
+/** Daily reflection text fields shown before the mood picker in the editor and viewer. */
+export const DAILY_REFLECTION_FIELDS_BEFORE_MOOD = DAILY_REFLECTION_FIELDS.slice(0, 2);
+
+/** Daily reflection text fields shown after the mood picker in the editor and viewer. */
+export const DAILY_REFLECTION_FIELDS_AFTER_MOOD = DAILY_REFLECTION_FIELDS.slice(2);
 
 export const FOOD_JOURNAL_FIELDS = [
   { key: 'breakfast', label: 'What did you eat for breakfast?', sectionName: 'Breakfast' },
@@ -148,6 +154,7 @@ function readDayMood(raw: LegacyJournalRecord): DayMood | null {
 function readDailyReflectionFields(raw: LegacyJournalRecord) {
   const fields = emptyDailyReflectionFields();
   fields.dayMood = readDayMood(raw);
+  fields.prayerFocus = typeof raw.prayerFocus === 'string' ? raw.prayerFocus : '';
   for (const key of DAILY_REFLECTION_FIELD_KEYS) {
     fields[key] = typeof raw[key] === 'string' ? raw[key] : '';
   }
@@ -178,7 +185,10 @@ function joinFilledFoodFields(fields: ReturnType<typeof readFoodJournalFields>):
 function joinFilledReflectionFields(
   fields: ReturnType<typeof readDailyReflectionFields>,
 ): string {
-  return joinTrimmedValues(DAILY_REFLECTION_FIELD_KEYS.map((key) => fields[key]));
+  return joinTrimmedValues([
+    fields.prayerFocus,
+    ...DAILY_REFLECTION_FIELD_KEYS.map((key) => fields[key]),
+  ]);
 }
 
 function normalizeLegacyTags(raw: LegacyJournalRecord): SimpleJournalType[] {
@@ -310,11 +320,11 @@ export function getJournalEntryPreview(entry: JournalEntry): string {
     return (
       moodPrefix +
       (entry.victory ||
-        entry.prayerFocus ||
         entry.prayedAbout ||
         entry.godTeaching ||
         entry.hungerNotes ||
         entry.tomorrowIntention ||
+        entry.prayerFocus ||
         'Reflection saved')
     );
   }
@@ -332,7 +342,7 @@ export function getJournalEntryPreview(entry: JournalEntry): string {
 
 export function getJournalEntryTitle(entry: JournalEntry): string {
   if (entry.type === 'daily-reflection') {
-    return entry.prayerFocus.trim() || JOURNAL_ENTRY_TYPE_LABELS['daily-reflection'];
+    return entry.victory.trim() || entry.prayerFocus.trim() || JOURNAL_ENTRY_TYPE_LABELS['daily-reflection'];
   }
 
   if (isContentSimpleJournalEntry(entry)) {
@@ -357,7 +367,10 @@ export function journalEntryMatchesSearch(entry: JournalEntry, query: string): b
   if (JOURNAL_ENTRY_TYPE_LABELS[entry.type].toLowerCase().includes(q)) return true;
 
   if (entry.type === 'daily-reflection') {
-    return DAILY_REFLECTION_FIELD_KEYS.some((key) => entry[key].toLowerCase().includes(q));
+    return (
+      DAILY_REFLECTION_FIELD_KEYS.some((key) => entry[key].toLowerCase().includes(q)) ||
+      entry.prayerFocus.toLowerCase().includes(q)
+    );
   }
 
   if (isContentSimpleJournalEntry(entry)) {
