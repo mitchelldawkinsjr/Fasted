@@ -2,6 +2,7 @@ import type {
   AppSettings,
   Badge,
   CheckIn,
+  FavoriteMealIdea,
   FoodMealKey,
   FoodPlanCheckIn,
   FoodProfile,
@@ -452,6 +453,36 @@ export function saveFoodPlanCheckIn(checkIn: FoodPlanCheckIn): void {
     { ...checkIn, completedAt: new Date().toISOString() },
   ].sort((a, b) => a.date.localeCompare(b.date));
   persist({ ...progress, foodPlanCheckIns });
+}
+
+export function saveFavoriteMealIdea(
+  idea: Omit<FavoriteMealIdea, 'id' | 'savedAt'> & { id?: string },
+): void {
+  const progress = getProgress();
+  const favorite: FavoriteMealIdea = {
+    id: idea.id ?? crypto.randomUUID(),
+    name: idea.name,
+    label: idea.label,
+    ingredients: idea.ingredients,
+    portions: idea.portions,
+    prepSteps: idea.prepSteps,
+    prepMinutes: idea.prepMinutes,
+    phaseNotes: idea.phaseNotes,
+    savedAt: new Date().toISOString(),
+  };
+  const existing = progress.favoriteMealIdeas ?? [];
+  const withoutDup = existing.filter(
+    (item) => item.name.toLowerCase() !== favorite.name.toLowerCase(),
+  );
+  persist({ ...progress, favoriteMealIdeas: [favorite, ...withoutDup].slice(0, 24) });
+}
+
+export function removeFavoriteMealIdea(id: string): void {
+  const progress = getProgress();
+  persist({
+    ...progress,
+    favoriteMealIdeas: (progress.favoriteMealIdeas ?? []).filter((item) => item.id !== id),
+  });
 }
 
 const LEGACY_TOUR_KEY = 'fasted-tour-v1';

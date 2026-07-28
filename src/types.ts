@@ -278,6 +278,19 @@ export type FoodPlanCheckIn = {
   completedAt?: string;
 };
 
+/** LLM-generated meal idea saved as a favorite from Plan My Food. */
+export type FavoriteMealIdea = {
+  id: string;
+  name: string;
+  label: string;
+  ingredients: string[];
+  portions: string[];
+  prepSteps: string[];
+  prepMinutes?: number;
+  phaseNotes?: string;
+  savedAt: string;
+};
+
 export type UserProgress = {
   checkIns: CheckIn[];
   /** Consecutive check-in days after the most recent successful check-in. */
@@ -297,6 +310,8 @@ export type UserProgress = {
   kitchenInventory?: KitchenItem[];
   /** Daily food plan adherence check-ins. */
   foodPlanCheckIns?: FoodPlanCheckIn[];
+  /** Saved LLM meal ideas from Plan My Food. */
+  favoriteMealIdeas?: FavoriteMealIdea[];
   /** Whether the first-run product tour has been completed or skipped. */
   hasSeenTour?: boolean;
   /** First-visit mini-tours completed or skipped per page. */

@@ -58,6 +58,59 @@ test('generates meal plan from kitchen inventory', async ({ page }) => {
   await expect(page.getByText('Breakfast').first()).toBeVisible();
 });
 
+test('requests LLM meal ideas and can save a favorite', async ({ page }) => {
+  await page.route('**/api/meal-ideas', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        meals: [
+          {
+            name: 'Garlic chicken bowl',
+            label: 'Lunch',
+            ingredients: ['Chicken breast', 'Broccoli', 'Brown rice'],
+            portions: ['Chicken breast: 5–7 oz', 'Broccoli: 1½–2 cups', 'Brown rice: ½–1 cup'],
+            prepSteps: ['Sear chicken', 'Roast broccoli', 'Serve over rice'],
+            prepMinutes: 20,
+            phaseNotes: 'Fits a regular eating day.',
+          },
+        ],
+        remainingToday: 11,
+      }),
+    });
+  });
+
+  await page.getByRole('tab', { name: 'Plan My Food' }).click();
+  await page.getByRole('button', { name: /My Kitchen/ }).click();
+  await page.getByRole('button', { name: '+ Chicken breast' }).click();
+
+  await page.getByRole('button', { name: 'Generate meal ideas' }).click();
+  await expect(page.getByText('Garlic chicken bowl')).toBeVisible();
+  await expect(page.getByText('~20 min')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Save favorite' }).click();
+  await expect(page.getByRole('heading', { name: 'Saved meal ideas' })).toBeVisible();
+  await expect(page.getByText('Garlic chicken bowl')).toHaveCount(2);
+});
+
+test('falls back to checklist when meal ideas API fails', async ({ page }) => {
+  await page.route('**/api/meal-ideas', async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: 'Meal ideas unavailable. Showing your checklist instead.',
+        fallback: true,
+      }),
+    });
+  });
+
+  await page.getByRole('tab', { name: 'Plan My Food' }).click();
+  await page.getByRole('button', { name: 'Generate meal ideas' }).click();
+  await expect(page.getByText(/Showing your checklist instead/i).first()).toBeVisible();
+  await expect(page.getByText('Suggested plate')).toBeVisible();
+});
+
 test('saves food plan check-in', async ({ page }) => {
   await page.getByRole('tab', { name: 'Plan My Food' }).click();
 

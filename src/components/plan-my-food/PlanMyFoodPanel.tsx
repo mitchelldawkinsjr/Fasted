@@ -13,8 +13,16 @@ import {
   isFoodAvoided,
 } from '../../lib/foodPlan';
 import {
+  getMealIdeasRemainingToday,
+  MealIdeasError,
+  requestMealIdeas,
+  type GeneratedMealIdea,
+} from '../../lib/mealIdeas';
+import {
   getFoodPlanCheckIn,
+  removeFavoriteMealIdea,
   removeKitchenItem,
+  saveFavoriteMealIdea,
   saveFoodPlanCheckIn,
   saveFoodProfile,
   saveKitchenItem,
@@ -89,6 +97,7 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
 
   const savedProfile = progress.foodProfile;
   const inventory = progress.kitchenInventory ?? [];
+  const favorites = progress.favoriteMealIdeas ?? [];
 
   const [goal, setGoal] = useState<FoodGoal>(savedProfile?.goal ?? 'wellness');
   const [profileOpen, setProfileOpen] = useState(!savedProfile?.age);
@@ -111,6 +120,13 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
   const [newItemCategory, setNewItemCategory] = useState<KitchenCategory>('protein');
   const [newItemQuantity, setNewItemQuantity] = useState('');
   const [newItemUseSoon, setNewItemUseSoon] = useState(false);
+
+  const [llmMeals, setLlmMeals] = useState<GeneratedMealIdea[] | null>(null);
+  const [llmLoading, setLlmLoading] = useState(false);
+  const [llmError, setLlmError] = useState<string | null>(null);
+  const [llmMeta, setLlmMeta] = useState<{ cached?: boolean; remainingToday?: number } | null>(
+    null,
+  );
 
   const profile: FoodProfile = useMemo(
     () => ({ ...profileForm, goal } as FoodProfile),
@@ -205,6 +221,62 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
     });
     toast.info('Food check-in saved.');
   };
+
+  const handleGenerateMealIdeas = async (regenerate = false) => {
+    if (mealPlan?.isFastDay) {
+      toast.info('Fasting day — meal ideas are available on eating days or for post-fast.');
+      return;
+    }
+    if (planScope === 'grocery-list') {
+      toast.info('Switch to a meal scope to generate dish ideas.');
+      return;
+    }
+
+    setLlmLoading(true);
+    setLlmError(null);
+    try {
+      const result = await requestMealIdeas({
+        scope: planScope,
+        referenceDate: today,
+        profile: {
+          goal: profile.goal,
+          allergies: profile.allergies,
+          foodsAvoid: profile.foodsAvoid,
+          preferredMeals: profile.preferredMeals,
+          activityLevel: profile.activityLevel,
+        },
+        kitchen: inventory.map((item) => ({
+          name: item.name,
+          category: item.category,
+          useSoon: item.useSoon,
+          quantity: item.quantity,
+        })),
+        phaseRules: dietaryRules,
+        mealCount: profile.preferredMeals ?? 3,
+        regenerate,
+      });
+      setLlmMeals(result.meals);
+      setLlmMeta({ cached: result.cached, remainingToday: result.remainingToday });
+      toast.info(result.cached ? 'Showing saved meal ideas for these inputs.' : 'Meal ideas ready.');
+    } catch (error) {
+      const message =
+        error instanceof MealIdeasError
+          ? error.message
+          : 'Meal ideas unavailable. Showing your checklist instead.';
+      setLlmError(message);
+      setLlmMeals(null);
+      toast.info(message);
+    } finally {
+      setLlmLoading(false);
+    }
+  };
+
+  const handleSaveFavorite = (meal: GeneratedMealIdea) => {
+    saveFavoriteMealIdea(meal);
+    toast.info(`Saved “${meal.name}” to favorites.`);
+  };
+
+  const remainingIdeas = llmMeta?.remainingToday ?? getMealIdeasRemainingToday(today);
 
   if (!plan) {
     return (
@@ -532,7 +604,12 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
             <button
               key={scope}
               type="button"
-              onClick={() => setPlanScope(scope)}
+              onClick={() => {
+                setPlanScope(scope);
+                setLlmMeals(null);
+                setLlmError(null);
+                setLlmMeta(null);
+              }}
               className={`rounded-full px-3 py-2 text-label-caps transition-all ${
                 planScope === scope
                   ? 'bg-primary text-on-primary'
@@ -664,9 +741,116 @@ export function PlanMyFoodPanel({ onLogFood }: Props) {
                 {mealPlan.daysCoverage !== 1 ? 's' : ''} based on your kitchen inventory.
               </p>
             )}
+
+            {planScope !== 'grocery-list' && (
+              <div className="space-y-3 border-t border-outline-variant/40 pt-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleGenerateMealIdeas(false)}
+                    disabled={llmLoading}
+                    className="btn-stitch-primary disabled:opacity-40"
+                  >
+                    {llmLoading ? 'Generating…' : 'Generate meal ideas'}
+                  </button>
+                  {llmMeals && (
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateMealIdeas(true)}
+                      disabled={llmLoading || remainingIdeas <= 0}
+                      className="btn-stitch-secondary disabled:opacity-40"
+                    >
+                      Regenerate
+                    </button>
+                  )}
+                </div>
+                <p className="text-body-sm text-on-surface-variant">
+                  Turns your checklist into named dishes. Optional — checklist above still works
+                  offline. {remainingIdeas} generation{remainingIdeas === 1 ? '' : 's'} left today.
+                </p>
+                {llmError && (
+                  <p className="rounded-lg bg-error-container/40 px-3 py-2 text-body-md text-on-surface">
+                    {llmError}
+                  </p>
+                )}
+                {llmMeta?.cached && !llmError && (
+                  <p className="text-body-sm text-on-surface-variant">Using cached ideas for these inputs.</p>
+                )}
+                {llmMeals?.map((meal) => (
+                  <div
+                    key={`${meal.label}-${meal.name}`}
+                    className="rounded-lg bg-surface-container-low p-4"
+                  >
+                    <p className="label-caps text-secondary">{meal.label}</p>
+                    <p className="font-display text-headline-md text-primary">{meal.name}</p>
+                    {typeof meal.prepMinutes === 'number' && (
+                      <p className="text-body-sm text-on-surface-variant">~{meal.prepMinutes} min</p>
+                    )}
+                    {meal.portions.length > 0 && (
+                      <ul className="mt-2 space-y-1">
+                        {meal.portions.map((item) => (
+                          <li key={item} className="text-body-md text-on-surface-variant">
+                            • {item}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {meal.prepSteps.length > 0 && (
+                      <ol className="mt-3 list-decimal space-y-1 pl-5">
+                        {meal.prepSteps.map((step) => (
+                          <li key={step} className="text-body-md text-on-surface-variant">
+                            {step}
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                    {meal.phaseNotes && (
+                      <p className="mt-2 text-body-sm text-on-surface-variant">{meal.phaseNotes}</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleSaveFavorite(meal)}
+                      className="mt-3 text-body-md font-medium text-secondary underline"
+                    >
+                      Save favorite
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </section>
+
+      {favorites.length > 0 && (
+        <section className="stitch-card space-y-stack-md p-stack-md">
+          <h3 className="font-display text-headline-md text-primary">Saved meal ideas</h3>
+          <ul className="space-y-3">
+            {favorites.map((fav) => (
+              <li
+                key={fav.id}
+                className="flex items-start justify-between gap-3 rounded-lg bg-surface-container-low p-3"
+              >
+                <div>
+                  <p className="label-caps text-secondary">{fav.label}</p>
+                  <p className="font-display text-headline-md text-primary">{fav.name}</p>
+                  {fav.portions[0] && (
+                    <p className="text-body-sm text-on-surface-variant">{fav.portions[0]}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFavoriteMealIdea(fav.id)}
+                  className="text-error"
+                  aria-label={`Remove favorite ${fav.name}`}
+                >
+                  <Icon name="close" size={18} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Food plan check-in */}
       <section className="stitch-card space-y-stack-md p-stack-md">
