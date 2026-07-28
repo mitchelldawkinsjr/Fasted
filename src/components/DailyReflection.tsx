@@ -30,7 +30,6 @@ import { Icon } from './Icon';
 import { InfoBanner } from './InfoBanner';
 import { LoadingButton } from './LoadingButton';
 import { MoodPicker } from './MoodPicker';
-import { VerseOfTheDayLabel } from './VerseOfTheDayLabel';
 
 type Props = {
   date: string;
@@ -307,19 +306,13 @@ export function DailyReflection({ date }: Props) {
 
         {DAILY_REFLECTION_FIELDS.map(({ key, label }) => (
           <label key={key} className="block">
-            {key === 'prayerFocus' ? (
-              <VerseOfTheDayLabel date={date} />
-            ) : (
-              <span className="mb-1 block text-body-md font-medium text-on-surface">
-                {label}
-              </span>
-            )}
+            <span className="mb-1 block text-body-md font-medium text-on-surface">
+              {label}
+            </span>
             <textarea
               value={dailyFieldState[key][0]}
               onChange={(e) => dailyFieldState[key][1](e.target.value)}
-              placeholder={
-                key === 'prayerFocus' ? 'Write your reflection…' : `${label}…`
-              }
+              placeholder={`${label}…`}
               aria-label={label}
               rows={3}
               className={inputClass}
