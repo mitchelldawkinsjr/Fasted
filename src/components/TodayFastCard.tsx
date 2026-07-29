@@ -6,7 +6,6 @@ import { OverviewSection } from './OverviewSection';
 
 type Props = {
   plan: DailyFastPlan;
-  displayDate: string;
 };
 
 const FAST_TYPE_LABELS: Record<DailyFastPlan['fastType'], string> = {
@@ -18,12 +17,13 @@ const FAST_TYPE_LABELS: Record<DailyFastPlan['fastType'], string> = {
   'extended-prayer': 'Extended Prayer Day',
 };
 
-export function TodayFastCard({ plan, displayDate }: Props) {
+export function TodayFastCard({ plan }: Props) {
   const { phases, planStart, planEnd, journey } = useActiveJourney();
   const phase = phases.find((p) => p.id === plan.phaseId);
   const planDates = getAllPlanDates(journey);
   const totalDays = planDates.length;
   const dayNumber = planDates.findIndex((d) => d === plan.date) + 1;
+  const [year, month, day] = plan.date.split('-');
 
   return (
     <section className="space-y-stack-lg animate-fade-in-up">
@@ -33,7 +33,7 @@ export function TodayFastCard({ plan, displayDate }: Props) {
             Phase {plan.phaseId}: {phase?.title}
           </span>
           <h2 className="mt-1 font-display text-headline-lg-mobile text-primary">
-            {displayDate}
+            {`${month}-${day}-${year}`}
           </h2>
         </header>
 
