@@ -1,13 +1,12 @@
 import { expect, test } from '@playwright/test';
-
-const STORAGE_KEY = 'fasted-calendar-progress:guest';
+import { FIXED_DATE, STORAGE_KEY } from './fixtures/constants';
+import { seedProgressOnPage } from './fixtures/seed-states';
 
 test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date(`${FIXED_DATE}T12:00:00.000Z`) });
   await page.goto('/journal');
-  await page.evaluate((key) => {
-    localStorage.removeItem(key);
-    localStorage.setItem('fasted-calendar-install-toast-dismissed', '1');
-  }, STORAGE_KEY);
+  // Seed the default Fasted journey on a known non-fast day so meal-plan UI is stable in CI.
+  await seedProgressOnPage(page, 'empty');
   await page.reload();
 });
 
