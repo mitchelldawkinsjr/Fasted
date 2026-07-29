@@ -76,6 +76,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
+          CONTROL_PLANE_URL: ${{ secrets.CONTROL_PLANE_URL }}
+          CONTROL_PLANE_TOKEN: ${{ secrets.CONTROL_PLANE_TOKEN }}
         run: |
           chmod +x scripts/run-issue-implement.sh
           scripts/run-issue-implement.sh
