@@ -12,6 +12,14 @@ npm run compress:artifacts
 
 That aggressively re-encodes images under:
 
+## Viewing Screenshots
+
+To view the screenshots stored in the `artifacts` directory, you can use any image viewer. For example, on macOS, you can open them using Preview:
+
+```bash
+open artifacts/issue-{N}/screenshot.png
+```
+
 - `artifacts/`
 - `docs/screenshots/`
 - `docs/journal-export-design/`
