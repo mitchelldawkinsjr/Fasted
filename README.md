@@ -83,6 +83,10 @@ See [`docker/SETUP.md`](docker/SETUP.md) for VPS + Docker + reverse-proxy deploy
 
 Push to `main` can trigger GitHub Actions deploy when repository secrets and variables are configured (see [`docker/SETUP.md`](docker/SETUP.md#github-actions)).
 
+### Release notes
+
+Deploys happen on every merge. To label a ship window and generate notes from merged PRs, see [`docs/RELEASE.md`](docs/RELEASE.md) (`npm run release:notes` / `npm run release:create`).
+
 ## Tech Stack
 
 - Vite 5, React 18, React Router 6, Tailwind CSS 3, `vite-plugin-pwa`

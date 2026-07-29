@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { dismissToast, getToasts, subscribeToasts, toast } from '../lib/toast';
+import { openWhatsNewModal } from '../lib/whatsNew';
 
 const DEFAULT_UPDATE_MESSAGE = 'A new version of Fasted is ready.';
 

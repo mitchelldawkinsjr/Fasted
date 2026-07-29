@@ -6,11 +6,18 @@
 
 ## Pull requests
 
-- Title references the issue
-- Body includes `Fixes #{N}`, summary, and test plan
+- Title references the issue and is **release-ready**
+- Prefer conventional prefixes: `feat(scope): …`, `fix(scope): …`
+- Body **must** include:
+  - `Fixes #{N}`
+  - summary
+  - **`## Release notes`** — user-facing bullets (or `None` if internal-only)
+  - test plan
 - **Leave PR as draft** — do not run `gh pr ready` (Actions marks ready after review)
 - One issue, one PR — keep diffs reviewable
 - Do **not** merge the PR (human merges)
+
+Release notes are generated later from each PR’s `## Release notes` section (falls back to the title). See `docs/RELEASE.md`.
 
 ## Label handoff
 

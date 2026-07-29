@@ -405,10 +405,23 @@ When reviewing a PR for test coverage:
 | Change | Update |
 |--------|--------|
 | User-facing feature | README section or `docs/` feature note |
-| Release-worthy fix | `docs/release-notes-*.md` or CHANGELOG if present |
+| Release-worthy fix | Do **not** hand-edit release notes on every PR — ensure the PR title is release-ready (see below) |
 | New env var | `.env.example`, `docker/SETUP.md` |
 | New route/page | Comment in spec; optional `docs/` screenshot |
 | Agent workflow change | `.github/AGENT.md`, regenerate composed contexts |
+
+## Release notes (PR-based)
+
+Merges to `main` auto-deploy. Release notes are generated later from **merged PR titles** for a ship window:
+
+```bash
+npm run release:notes -- --since 2026-06-28          # first window / no tags yet
+npm run release:create -- --tag v1.1.0 --since 2026-06-28
+```
+
+See [`docs/RELEASE.md`](../../docs/RELEASE.md). Agents should **not** invent `docs/release-notes-*.md` mid-issue unless a human asked for a release.
+
+**PR `## Release notes` sections become release bullets** (title is the fallback). Use plain language, or `None` for internal-only PRs.
 
 ## Issue screenshots (mandatory for UI changes)
 
@@ -424,7 +437,7 @@ When reviewing a PR for test coverage:
 ## Documentation Agent scope
 
 - Update README for new user-visible capabilities
-- Add release notes for significant features
+- Keep PR titles release-ready; do not write per-PR release note files
 - Ensure `.env.example` matches new configuration
 - Do not create docs for internal-only refactors
 
@@ -442,11 +455,18 @@ When reviewing a PR for test coverage:
 
 ## Pull requests
 
-- Title references the issue
-- Body includes `Fixes #{N}`, summary, and test plan
+- Title references the issue and is **release-ready**
+- Prefer conventional prefixes: `feat(scope): …`, `fix(scope): …`
+- Body **must** include:
+  - `Fixes #{N}`
+  - summary
+  - **`## Release notes`** — user-facing bullets (or `None` if internal-only)
+  - test plan
 - **Leave PR as draft** — do not run `gh pr ready` (Actions marks ready after review)
 - One issue, one PR — keep diffs reviewable
 - Do **not** merge the PR (human merges)
+
+Release notes are generated later from each PR’s `## Release notes` section (falls back to the title). See `docs/RELEASE.md`.
 
 ## Label handoff
 
@@ -497,7 +517,7 @@ Read the GitHub issue, all comments (especially the spec with Acceptance Criteri
 3. Make a **minimal, focused diff** — do not refactor unrelated code
 4. Run `npm ci && npm run build` before finishing
 5. Run relevant Playwright tests if UI changed: `npm run test:e2e` (CI runs the full e2e suite on every PR)
-6. Open a PR with title referencing the issue, body with `Fixes #{N}`, summary, and test plan — **leave it as a draft** (do **not** run `gh pr ready`)
+6. Open a PR with title referencing the issue, body with `Fixes #{N}`, summary, **`## Release notes`** (user-facing bullets or `None`), and test plan — **leave it as a draft** (do **not** run `gh pr ready`)
    - GitHub Actions removes `agent-working` and starts review automatically when the PR is opened (`.github/workflows/pr-review.yml`). Do **not** manage those labels yourself on success.
 7. **Mandatory screenshots** if the fix touches any React component, page, CSS, or user-visible copy (see Screenshots section in documentation rules)
 8. **Mandatory issue update** (use `gh` CLI — after PR is open):
@@ -520,7 +540,7 @@ You are **not done** until all applicable items are checked:
 - [ ] Code implemented and pushed
 - [ ] `npm run build` passes
 - [ ] Relevant e2e tests pass (if UI changed)
-- [ ] PR opened with `Fixes #{N}` (still **draft**)
+- [ ] PR opened with `Fixes #{N}` + `## Release notes` (still **draft**)
 - [ ] Screenshots committed (if UI changed) and linked in issue comment
 - [ ] Issue comment posted with PR link + summary (+ screenshots)
 

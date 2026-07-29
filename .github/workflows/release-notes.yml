@@ -1,0 +1,88 @@
+name: Release notes
+
+# Create a GitHub Release + commit docs/release-notes-*.md from merged PRs.
+# Does not deploy — merges to main already auto-deploy.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version tag (e.g. v1.1.0)"
+        required: true
+        type: string
+      since:
+        description: "Lower bound — previous tag or YYYY-MM-DD (required if no v* tags yet)"
+        required: false
+        type: string
+        default: ""
+      draft:
+        description: "Create as draft release"
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  release-notes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Generate release notes markdown
+        id: notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ARGS=(--tag "${{ inputs.tag }}")
+          if [ -n "${{ inputs.since }}" ]; then
+            ARGS+=(--since "${{ inputs.since }}")
+          fi
+          # Status on stderr; markdown body on stdout
+          npm run release:notes -- "${ARGS[@]}" > /tmp/release-notes-body.md
+          NOTES_PATH=$(ls -1t docs/release-notes-*.md | head -1)
+          if [ ! -f "$NOTES_PATH" ]; then
+            echo "Failed to locate generated release notes file"
+            exit 1
+          fi
+          echo "path=$NOTES_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Commit release notes to main
+        env:
+          NOTES_PATH: ${{ steps.notes.outputs.path }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$NOTES_PATH"
+          if git diff --cached --quiet; then
+            echo "No doc changes to commit"
+          else
+            git commit -m "docs: add release notes for ${{ inputs.tag }}"
+            git push
+          fi
+
+      - name: Tag and publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          ARGS=(release create "$TAG" --title "$TAG" --notes-file /tmp/release-notes-body.md)
+          if [ "${{ inputs.draft }}" = "true" ]; then
+            ARGS+=(--draft)
+          fi
+          gh "${ARGS[@]}"
