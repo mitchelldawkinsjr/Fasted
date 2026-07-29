@@ -32,7 +32,7 @@ jobs:
           Review the linked PR for user-facing changes:
 
           - [ ] README updated (if new feature)
-          - [ ] Release notes added (if release-worthy)
+          - [ ] PR title is release-ready (notes generated at release time)
           - [ ] \`.env.example\` updated (if new env vars)
           - [ ] Issue screenshots verified (if UI changed)
 

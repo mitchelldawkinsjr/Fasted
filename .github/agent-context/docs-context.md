@@ -192,10 +192,23 @@ Lessons learned from shipped work: `[.github/agent-knowledge/](agent-knowledge/)
 | Change | Update |
 |--------|--------|
 | User-facing feature | README section or `docs/` feature note |
-| Release-worthy fix | `docs/release-notes-*.md` or CHANGELOG if present |
+| Release-worthy fix | Do **not** hand-edit release notes on every PR — ensure the PR title is release-ready (see below) |
 | New env var | `.env.example`, `docker/SETUP.md` |
 | New route/page | Comment in spec; optional `docs/` screenshot |
 | Agent workflow change | `.github/AGENT.md`, regenerate composed contexts |
+
+## Release notes (PR-based)
+
+Merges to `main` auto-deploy. Release notes are generated later from **merged PR titles** for a ship window:
+
+```bash
+npm run release:notes -- --since 2026-06-28          # first window / no tags yet
+npm run release:create -- --tag v1.1.0 --since 2026-06-28
+```
+
+See [`docs/RELEASE.md`](../../docs/RELEASE.md). Agents should **not** invent `docs/release-notes-*.md` mid-issue unless a human asked for a release.
+
+**PR `## Release notes` sections become release bullets** (title is the fallback). Use plain language, or `None` for internal-only PRs.
 
 ## Issue screenshots (mandatory for UI changes)
 
@@ -211,7 +224,7 @@ Lessons learned from shipped work: `[.github/agent-knowledge/](agent-knowledge/)
 ## Documentation Agent scope
 
 - Update README for new user-visible capabilities
-- Add release notes for significant features
+- Keep PR titles release-ready; do not write per-PR release note files
 - Ensure `.env.example` matches new configuration
 - Do not create docs for internal-only refactors
 
@@ -269,7 +282,7 @@ Triggered when an issue has `review-clean` label — update docs for user-facing
 ## Responsibilities
 
 - Update README for new features
-- Add release notes when appropriate
+- Confirm the PR title is release-ready (notes are generated later from merged PRs — see `docs/RELEASE.md`)
 - Update `.env.example` for new env vars
 - Verify issue screenshots are linked
 
@@ -280,8 +293,9 @@ Triggered when an issue has `review-clean` label — update docs for user-facing
 1. Read linked issue, spec, and PR summary
 2. Identify user-facing changes requiring documentation
 3. Make focused doc commits on the PR branch or follow-up commit
-4. Post issue comment listing doc updates
-5. Add label `docs-updated`, remove trigger label if applicable
+4. Do **not** create `docs/release-notes-*.md` unless a human requested a release window
+5. Post issue comment listing doc updates
+6. Add label `docs-updated`, remove trigger label if applicable
 
 ---
 
@@ -293,7 +307,7 @@ Post issue comment:
 ## Documentation update
 
 - [ ] README updated
-- [ ] Release notes added
+- [ ] PR title is release-ready (notes generated at release time)
 - [ ] `.env.example` updated
 - [ ] Issue screenshots verified
 

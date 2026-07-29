@@ -25,7 +25,9 @@
     "agent:docs": "node scripts/agent-cli.mjs docs",
     "agent:deploy": "node scripts/agent-cli.mjs deploy",
     "deploy:vps": "bash scripts/deploy-vps.sh",
-    "deploy:npm": "echo 'Run scripts/npm-add-fasted.sh on the VPS with APP_DOMAIN and API_DOMAIN set'"
+    "deploy:npm": "echo 'Run scripts/npm-add-fasted.sh on the VPS with APP_DOMAIN and API_DOMAIN set'",
+    "release:notes": "node scripts/generate-release-notes.mjs",
+    "release:create": "node scripts/generate-release-notes.mjs --publish"
   },
   "dependencies": {
     "@sentry/react": "^10.67.0",
