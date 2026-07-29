@@ -4,6 +4,25 @@ project:
 agent:
   model: composer-2.5
   startingRef: main
+# SEOS local-first: GitHub Actions → VPS control plane → Mac worker, Cursor fallback.
+# Modes: leave Mac worker off (A), dry harness (B), or real local harness (C).
+agents:
+  implementation:
+    strategy: local-first
+    primary:
+      worker: mac-m1-max
+      provider: ollama
+      model: qwen2.5-coder:32b-instruct-q4_K_M
+    fallback:
+      provider: cursor-cloud
+      model: composer-2.5
+    policy:
+      max_local_attempts: 2
+      timeout_minutes: 35
+      require_changes: true
+      require_validation: true
+controlPlane:
+  url: https://seos.360web.cloud
 commands:
   build: "npm run build"
   test: "npm run test:e2e"
