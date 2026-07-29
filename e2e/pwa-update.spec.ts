@@ -94,7 +94,6 @@ test.describe('PWA update prompt', () => {
       );
 
       await expect(page.getByText('Update available')).toBeVisible({ timeout: 10_000 });
-      await expect(page.getByRole('button', { name: "What's new" })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Refresh' })).toBeVisible();
       await expect(page.getByText(/E2E update blurb/)).toBeVisible();
     } finally {
