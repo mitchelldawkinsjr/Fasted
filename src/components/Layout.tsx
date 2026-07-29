@@ -9,6 +9,7 @@ import { ReminderPromptToast } from './ReminderPromptToast';
 import { SyncToastWatcher } from './SyncToastWatcher';
 import { ToastHost } from './ToastHost';
 import { TourOverlay } from './Tour/TourOverlay';
+import { WhatsNewModal } from './WhatsNewModal';
 import { useTour } from './Tour/TourContext';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 
@@ -60,6 +61,7 @@ export function Layout() {
       <SyncToastWatcher />
       <AuthReturnRedirect />
       <ConfirmModal />
+      <WhatsNewModal />
       <InstallPromptToast />
       <ReminderPromptToast />
       <PwaUpdatePrompt />
