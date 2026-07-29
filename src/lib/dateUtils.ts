@@ -31,6 +31,12 @@ export function formatDisplayDate(dateStr: string): string {
   });
 }
 
+/** Home page headline date — mm-dd-yyyy (TodayPage only). */
+export function formatHomePageDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-');
+  return `${month}-${day}-${year}`;
+}
+
 export function getDayOfWeek(dateStr: string): number {
   return parseLocalDate(dateStr).getDay();
 }

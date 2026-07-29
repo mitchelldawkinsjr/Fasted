@@ -13,7 +13,12 @@ import { Icon } from '../components/Icon';
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import { useProgress } from '../hooks/useProgress';
 import { getDailyPlan } from '../lib/dailyPlan';
-import { formatDisplayDate, getLocalDateString, isWithinPlan } from '../lib/dateUtils';
+import {
+  formatDisplayDate,
+  formatHomePageDate,
+  getLocalDateString,
+  isWithinPlan,
+} from '../lib/dateUtils';
 import {
   JOURNAL_ENTRY_TYPE_LABELS,
   JOURNAL_ENTRY_TYPES,
@@ -95,7 +100,7 @@ export function TodayPage() {
         </InfoBanner>
       )}
 
-      <TodayFastCard plan={plan} />
+      <TodayFastCard plan={plan} displayDate={formatHomePageDate(viewDate)} />
 
       <DailyCommitmentCard
         date={viewDate}

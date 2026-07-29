@@ -1,11 +1,12 @@
 import { useActiveJourney } from '../hooks/useActiveJourney';
 import type { DailyFastPlan } from '../types';
-import { formatDisplayDate, getAllPlanDates } from '../lib/dateUtils';
+import { getAllPlanDates } from '../lib/dateUtils';
 import { Icon } from './Icon';
 import { OverviewSection } from './OverviewSection';
 
 type Props = {
   plan: DailyFastPlan;
+  displayDate: string;
 };
 
 const FAST_TYPE_LABELS: Record<DailyFastPlan['fastType'], string> = {
@@ -17,7 +18,7 @@ const FAST_TYPE_LABELS: Record<DailyFastPlan['fastType'], string> = {
   'extended-prayer': 'Extended Prayer Day',
 };
 
-export function TodayFastCard({ plan }: Props) {
+export function TodayFastCard({ plan, displayDate }: Props) {
   const { phases, planStart, planEnd, journey } = useActiveJourney();
   const phase = phases.find((p) => p.id === plan.phaseId);
   const planDates = getAllPlanDates(journey);
@@ -32,7 +33,7 @@ export function TodayFastCard({ plan }: Props) {
             Phase {plan.phaseId}: {phase?.title}
           </span>
           <h2 className="mt-1 font-display text-headline-lg-mobile text-primary">
-            {formatDisplayDate(plan.date)}
+            {displayDate}
           </h2>
         </header>
 
