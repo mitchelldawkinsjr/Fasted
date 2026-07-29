@@ -302,13 +302,47 @@ function buildMarkdown({ tag, since, prs }) {
   parts.push('---', '', '## Merged PRs', '', prTable, '', '---', '');
   parts.push(`*Generated ${today} from merged PRs via \`npm run release:notes\`.*`, '');
 
-  return parts.filter((line) => line !== null && line !== undefined).join('\n');
+  const markdown = parts.filter((line) => line !== null && line !== undefined).join('\n');
+  return { markdown, groups };
+}
+
+function stripMarkdownLite(text) {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildWhatsNewJson({ tag, since, groups }) {
+  const version = tag || `notes-${since.mergedAfter}`;
+  const highlights = [...groups.added, ...groups.fixed, ...groups.changed]
+    .map((line) => stripMarkdownLite(line.replace(/^[-*]\s+/, '')))
+    .filter(Boolean)
+    .slice(0, 8);
+
+  return {
+    version,
+    title: "What's new in Fasted",
+    publishedAt: new Date().toISOString().slice(0, 10),
+    highlights:
+      highlights.length > 0
+        ? highlights
+        : ['Maintenance and reliability updates. See full release notes for details.'],
+    url: tag
+      ? `https://github.com/${REPO}/releases/tag/${tag}`
+      : `https://github.com/${REPO}/releases`,
+  };
 }
 
 function defaultOutPath(tag) {
   const day = new Date().toISOString().slice(0, 10);
   const suffix = tag ? `-${tag}` : '';
   return resolve(`docs/release-notes-${day}${suffix}.md`);
+}
+
+function whatsNewOutPath() {
+  return resolve('public/whats-new.json');
 }
 
 function ensureOnMainForPublish() {
@@ -351,22 +385,24 @@ function main() {
   const since = resolveSince(args.since);
   const prs = fetchMergedPrs(since.mergedAfter);
 
-  // If since was a tag date, drop PRs that landed on/before that tag's tip when possible.
-  // Day-level search can include same-day earlier merges; previousTag compare is better via API notes,
-  // but PR list by merged date is the practical approach without requiring tags historically.
-
-  const markdown = buildMarkdown({ tag: args.tag, since, prs });
+  const { markdown, groups } = buildMarkdown({ tag: args.tag, since, prs });
+  const whatsNew = buildWhatsNewJson({ tag: args.tag, since, groups });
   const outPath = args.out ? resolve(args.out) : defaultOutPath(args.tag);
+  const whatsNewPath = whatsNewOutPath();
 
   if (args.dryRun) {
     process.stdout.write(markdown);
-    console.error(`\n(dry-run) would write ${outPath}; ${prs.length} PR(s) since ${since.label}`);
+    console.error(
+      `\n(dry-run) would write ${outPath} and ${whatsNewPath}; ${prs.length} PR(s) since ${since.label}`,
+    );
     return;
   }
 
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, markdown, 'utf8');
+  writeFileSync(whatsNewPath, `${JSON.stringify(whatsNew, null, 2)}\n`, 'utf8');
   console.error(`Wrote ${outPath} (${prs.length} PR(s) since ${since.label})`);
+  console.error(`Wrote ${whatsNewPath} for in-app What's new`);
   process.stdout.write(markdown);
 
   if (args.publish) {
@@ -376,9 +412,9 @@ function main() {
       previousTag: since.previousTag,
       draft: args.draft,
     });
-    console.error(`\nNext: commit ${outPath} on main if you want it in the repo history.`);
+    console.error(`\nNext: commit ${outPath} and ${whatsNewPath} on main if you want them in the repo.`);
   } else {
-    console.error(`\nNext: review the file, then publish with:`);
+    console.error(`\nNext: review the files, then publish with:`);
     console.error(
       `  npm run release:create -- --tag vX.Y.Z${args.since ? ` --since ${args.since}` : ''}`,
     );

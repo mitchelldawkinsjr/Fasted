@@ -46,6 +46,13 @@ Or from GitHub Actions: **Actions → Release notes → Run workflow**.
 
 Keep PR titles conventional and write clear `## Release notes` bullets — they become the release.
 
-## Manual polish
+## In-app “What’s new”
 
-After generation you can edit `docs/release-notes-*.md` for user-facing wording. Re-run with `--out` if you need a custom path.
+The app reads `public/whats-new.json` (shipped with each deploy) and shows it from:
+
+- The PWA update toast → **What’s new**
+- Settings → **What’s new**
+
+`npm run release:notes` / `release:create` also refreshes that JSON. Commit it with the release docs so the next deploy picks it up. A **Full release notes** button links to the GitHub Release page.
+
+Draft GitHub Releases are not visible via the public API — publish the release (or rely on `public/whats-new.json`) for in-app highlights.

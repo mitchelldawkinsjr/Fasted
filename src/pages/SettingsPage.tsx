@@ -33,6 +33,7 @@ import { useAuth } from '../hooks/useAuth';
 import { deleteAccountData } from '../lib/sync';
 import { toast } from '../lib/toast';
 import { setAuthReturnPath } from '../lib/authReturnPath';
+import { openWhatsNewModal } from '../lib/whatsNew';
 
 type SettingsLocationState = {
   from?: string;
@@ -440,6 +441,14 @@ export function SettingsPage() {
         <div className="border-b border-surface-variant px-gutter py-4">
           <h2 className="label-caps text-secondary">APP TOUR</h2>
         </div>
+        <button
+          type="button"
+          onClick={() => openWhatsNewModal()}
+          className="flex w-full items-center gap-4 border-b border-surface-variant p-gutter text-body-md transition-colors hover:bg-surface-variant"
+        >
+          <Icon name="new_releases" />
+          What&apos;s new
+        </button>
         <button
           type="button"
           onClick={startTour}

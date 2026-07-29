@@ -1,0 +1,13 @@
+{
+  "version": "v1.1.0",
+  "title": "What's new in Fasted",
+  "publishedAt": "2026-07-28",
+  "highlights": [
+    "Plan My Food — a new journal tab to plan meals for your fast",
+    "Phase overview on Today — tap the hero card to see where you are in your journey",
+    "Daily reflection layout — fields reordered and inputs enlarged so journaling is easier",
+    "Check-in + daily reflection — check-in and reflection work together in one flow",
+    "Today's Meditation in journal — the verse matches what you see on the Today page"
+  ],
+  "url": "https://github.com/mitchelldawkinsjr/Fasted/releases/tag/v1.1.0"
+}
