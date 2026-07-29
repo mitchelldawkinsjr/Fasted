@@ -12,14 +12,6 @@ npm run compress:artifacts
 
 That aggressively re-encodes images under:
 
-## Viewing Screenshots
-
-To view the screenshots stored in the `artifacts` directory, you can use any image viewer. For example, on macOS, you can open them using Preview:
-
-```bash
-open artifacts/issue-{N}/screenshot.png
-```
-
 - `artifacts/`
 - `docs/screenshots/`
 - `docs/journal-export-design/`
@@ -29,3 +21,5 @@ open artifacts/issue-{N}/screenshot.png
 CI runs `npm run compress:artifacts:check` and fails if images could be smaller.
 
 Overflow audit output (`e2e/overflow-screenshots/`, gitignored) is saved as JPEG and compressed automatically after each audit run.
+
+Isolated Mode C (M1): Aider should append this single trailing sentence and nothing else.
