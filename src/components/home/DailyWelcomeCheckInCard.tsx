@@ -11,40 +11,29 @@ import {
   CHALLENGE_OPTIONS,
   COMMITMENT_OPTIONS,
   getTimeGreeting,
-  getWorriedEncouragement,
   INTENTION_OPTIONS,
 } from '../../lib/homeScreenLabels';
-import { LoadingButton } from '../LoadingButton';
 
 type Props = {
   date: string;
-  onComplete: () => void;
 };
 
 type Step = 'mood' | 'commitment' | 'challenge' | 'intention';
 
-export function DailyWelcomeCheckInCard({ date, onComplete }: Props) {
+export function DailyWelcomeCheckInCard({ date }: Props) {
   const [step, setStep] = useState<Step>('mood');
   const [arrivalMood, setArrivalMood] = useState<ArrivalMood | null>(null);
   const [commitmentLevel, setCommitmentLevel] = useState<CommitmentLevel | null>(null);
   const [challenge, setChallenge] = useState<DailyChallenge | null>(null);
   const [intention, setIntention] = useState<DailyIntention | null>(null);
-  const [saving, setSaving] = useState(false);
 
-  const finish = (finalIntention: DailyIntention | null) => {
+  const finish = (_finalIntention: DailyIntention | null) => {
     if (!arrivalMood || !commitmentLevel) return;
 
-    setSaving(true);
     saveDailyWelcomeCheckIn({
       date,
-      arrivalMood,
-      commitmentLevel,
-      challenge: challenge ?? undefined,
-      intention: finalIntention ?? undefined,
       completedAt: new Date().toISOString(),
     });
-    setSaving(false);
-    onComplete();
   };
 
   return (
@@ -128,7 +117,8 @@ export function DailyWelcomeCheckInCard({ date, onComplete }: Props) {
           </div>
           {commitmentLevel === 'worried' && (
             <p className="rounded-xl bg-secondary-container/20 px-4 py-3 text-body-md leading-relaxed text-on-surface-variant">
-              {getWorriedEncouragement()}
+              God&apos;s grace is new every morning. Take one step at a time—hydrate, pray briefly,
+              and return to scripture when hunger rises.
             </p>
           )}
         </div>
@@ -176,11 +166,9 @@ export function DailyWelcomeCheckInCard({ date, onComplete }: Props) {
           <p className="text-center text-body-md text-on-surface-variant">I want to…</p>
           <div className="grid grid-cols-1 gap-2">
             {INTENTION_OPTIONS.map((option) => (
-              <LoadingButton
+              <button
                 key={option.value}
                 type="button"
-                loading={saving}
-                loadingLabel="Saving…"
                 onClick={() => {
                   setIntention(option.value);
                   finish(option.value);
@@ -188,12 +176,11 @@ export function DailyWelcomeCheckInCard({ date, onComplete }: Props) {
                 className="btn-stitch-secondary w-full text-left"
               >
                 {option.label}
-              </LoadingButton>
+              </button>
             ))}
           </div>
           <button
             type="button"
-            disabled={saving}
             onClick={() => finish(intention)}
             className="mx-auto block text-body-md text-on-surface-variant underline"
           >

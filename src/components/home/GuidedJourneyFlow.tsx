@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react';
 import type { DailyFastPlan } from '../../types';
 import {
+  GUIDED_JOURNEY_STEP_ORDER,
   advanceGuidedJourneyStep,
-  getGuidedJourneyProgress,
   startGuidedJourney,
 } from '../../lib/storage';
 import type { GuidedJourneyStepId } from '../../types';
+import { useProgress } from '../../hooks/useProgress';
 import { DailyReflection } from '../DailyReflection';
 import { Icon } from '../Icon';
 import { PrayerPointsCard } from '../PrayerPointsCard';
@@ -15,7 +16,6 @@ type Props = {
   date: string;
   plan: DailyFastPlan;
   onClose: () => void;
-  onStepChange?: () => void;
 };
 
 const STEP_LABELS: Record<GuidedJourneyStepId, string> = {
@@ -25,29 +25,34 @@ const STEP_LABELS: Record<GuidedJourneyStepId, string> = {
   reflection: 'Morning Reflection',
 };
 
-const STEP_ORDER: GuidedJourneyStepId[] = [
-  'scripture',
-  'meditation',
-  'prayer',
-  'reflection',
-];
-
-export function GuidedJourneyFlow({ date, plan, onClose, onStepChange }: Props) {
+export function GuidedJourneyFlow({ date, plan, onClose }: Props) {
+  const progress = useProgress();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const progress = getGuidedJourneyProgress(date) ?? startGuidedJourney(date);
-  const currentStep = progress.currentStep;
-  const stepIndex = STEP_ORDER.indexOf(currentStep);
+  const journeyProgress = progress.guidedJourneyProgress?.[date];
+  const currentStep = journeyProgress?.currentStep ?? 'scripture';
+  const stepIndex = GUIDED_JOURNEY_STEP_ORDER.indexOf(currentStep);
+
+  useEffect(() => {
+    if (!journeyProgress) {
+      startGuidedJourney(date);
+    }
+  }, [date, journeyProgress]);
 
   useEffect(() => {
     dialogRef.current?.focus();
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, []);
 
   const handleContinue = () => {
     advanceGuidedJourneyStep(date);
-    onStepChange?.();
   };
 
   const isReflectionStep = currentStep === 'reflection';
+  const isVerseStep = currentStep === 'scripture' || currentStep === 'meditation';
 
   return (
     <div
@@ -62,7 +67,7 @@ export function GuidedJourneyFlow({ date, plan, onClose, onStepChange }: Props) 
       <header className="flex shrink-0 items-center justify-between border-b border-outline-variant/30 px-4 py-3">
         <div>
           <p className="label-caps text-secondary">
-            Step {stepIndex + 1} of {STEP_ORDER.length}
+            Step {stepIndex + 1} of {GUIDED_JOURNEY_STEP_ORDER.length}
           </p>
           <h2 id="guided-journey-title" className="font-display text-headline-md text-primary">
             {STEP_LABELS[currentStep]}
@@ -80,18 +85,14 @@ export function GuidedJourneyFlow({ date, plan, onClose, onStepChange }: Props) 
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-20">
         <div className="mx-auto max-w-lg space-y-stack-lg">
-          {currentStep === 'scripture' && (
-            <section aria-label="Today's Scripture">
+          {isVerseStep && (
+            <section aria-label={STEP_LABELS[currentStep]}>
               <VerseOfTheDay date={date} variant="today" />
-            </section>
-          )}
-
-          {currentStep === 'meditation' && (
-            <section aria-label="Today's Meditation">
-              <VerseOfTheDay date={date} variant="today" />
-              <p className="mt-stack-md text-center text-body-md text-on-surface-variant">
-                Take a quiet moment with today&apos;s verse before continuing.
-              </p>
+              {currentStep === 'meditation' && (
+                <p className="mt-stack-md text-center text-body-md text-on-surface-variant">
+                  Take a quiet moment with today&apos;s verse before continuing.
+                </p>
+              )}
             </section>
           )}
 

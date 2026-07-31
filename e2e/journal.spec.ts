@@ -315,8 +315,6 @@ test('journal meditation verse matches today page', async ({ page }) => {
           dailyWelcomeCheckIns: {
             [date]: {
               date,
-              arrivalMood: 'peaceful',
-              commitmentLevel: 'fully-committed',
               completedAt: `${date}T08:00:00.000Z`,
             },
           },

@@ -65,10 +65,6 @@ export function getTimeGreeting(date = new Date()): string {
   return 'Good Evening';
 }
 
-export function getWorriedEncouragement(): string {
-  return "God's grace is new every morning. Take one step at a time—hydrate, pray briefly, and return to scripture when hunger rises.";
-}
-
 /** Keep encouragement concise for the home screen hero area. */
 export function conciseEncouragement(message: string, maxSentences = 2): string {
   const trimmed = message.trim();

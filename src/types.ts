@@ -319,10 +319,6 @@ export type DailyIntention =
 
 export type DailyWelcomeCheckIn = {
   date: string;
-  arrivalMood: ArrivalMood;
-  commitmentLevel: CommitmentLevel;
-  challenge?: DailyChallenge;
-  intention?: DailyIntention;
   completedAt: string;
 };
 
@@ -335,8 +331,6 @@ export type GuidedJourneyStepId =
 export type GuidedJourneyProgress = {
   date: string;
   currentStep: GuidedJourneyStepId;
-  completedSteps: GuidedJourneyStepId[];
-  startedAt: string;
   completedAt?: string;
 };
 

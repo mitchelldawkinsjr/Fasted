@@ -73,8 +73,6 @@ function buildSeedProgress() {
     dailyWelcomeCheckIns: {
       [FIXED_DATE]: {
         date: FIXED_DATE,
-        arrivalMood: 'peaceful',
-        commitmentLevel: 'fully-committed',
         completedAt: `${FIXED_DATE}T08:00:00.000Z`,
       },
     },

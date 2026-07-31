@@ -14,7 +14,10 @@ export async function completeDailyWelcomeIfShown(page: Page): Promise<void> {
   await dismissTourIfShown(page);
 
   const welcome = page.getByTestId('daily-welcome-checkin');
-  if (!(await welcome.isVisible().catch(() => false))) return;
+  if (!(await welcome.isVisible().catch(() => false))) {
+    await dismissTourIfShown(page);
+    return;
+  }
 
   await dismissTourIfShown(page);
 
@@ -23,6 +26,7 @@ export async function completeDailyWelcomeIfShown(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Hungry' }).click();
   await page.getByRole('button', { name: 'Grow closer to God' }).click();
   await page.getByTestId('home-welcome-header').waitFor({ state: 'visible' });
+  await dismissTourIfShown(page);
 }
 
 /** Open the guided journey flow and advance to the morning reflection step. */
@@ -36,9 +40,4 @@ export async function openGuidedJourneyToReflection(page: Page): Promise<void> {
   }
 
   await page.locator('#daily-reflection').waitFor({ state: 'visible' });
-}
-
-/** Legacy alias: scroll/open path to daily reflection from the home screen. */
-export async function openDailyReflectionFromHome(page: Page): Promise<void> {
-  await openGuidedJourneyToReflection(page);
 }

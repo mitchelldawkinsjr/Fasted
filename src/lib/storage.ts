@@ -370,14 +370,12 @@ export function startGuidedJourney(date: string): GuidedJourneyProgress {
   const journeyProgress: GuidedJourneyProgress = {
     date,
     currentStep: 'scripture',
-    completedSteps: [],
-    startedAt: new Date().toISOString(),
   };
   saveGuidedJourneyProgress(journeyProgress);
   return journeyProgress;
 }
 
-const GUIDED_JOURNEY_STEP_ORDER: GuidedJourneyStepId[] = [
+export const GUIDED_JOURNEY_STEP_ORDER: GuidedJourneyStepId[] = [
   'scripture',
   'meditation',
   'prayer',
@@ -389,15 +387,10 @@ export function advanceGuidedJourneyStep(date: string): GuidedJourneyProgress | 
   if (!current) return null;
 
   const stepIndex = GUIDED_JOURNEY_STEP_ORDER.indexOf(current.currentStep);
-  const completedSteps = current.completedSteps.includes(current.currentStep)
-    ? current.completedSteps
-    : [...current.completedSteps, current.currentStep];
-
   const nextStep = GUIDED_JOURNEY_STEP_ORDER[stepIndex + 1];
   if (!nextStep) {
     const finished: GuidedJourneyProgress = {
       ...current,
-      completedSteps,
       completedAt: new Date().toISOString(),
     };
     saveGuidedJourneyProgress(finished);
@@ -407,7 +400,6 @@ export function advanceGuidedJourneyStep(date: string): GuidedJourneyProgress | 
   const updated: GuidedJourneyProgress = {
     ...current,
     currentStep: nextStep,
-    completedSteps,
   };
   saveGuidedJourneyProgress(updated);
   return updated;

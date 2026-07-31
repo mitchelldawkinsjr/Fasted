@@ -32,8 +32,6 @@ test.describe('Tour nav diagnostics', () => {
               dailyWelcomeCheckIns: {
                 '2026-06-27': {
                   date: '2026-06-27',
-                  arrivalMood: 'peaceful',
-                  commitmentLevel: 'fully-committed',
                   completedAt: '2026-06-27T08:00:00.000Z',
                 },
               },

@@ -1,7 +1,6 @@
 import { getMilestonePhaseId } from '../../data/fastingPlan';
 import { useActiveJourney } from '../../hooks/useActiveJourney';
 import { getAllPlanDates } from '../../lib/dateUtils';
-import { getNextReward } from '../../lib/badges';
 import { getCurrentStreak } from '../../lib/streaks';
 import { Icon } from '../Icon';
 import { MilestoneSection } from '../MilestoneSection';
@@ -19,11 +18,6 @@ export function HomeProgressSummary({ date, checkedIn }: Props) {
   const dayNumber = planDates.findIndex((d) => d === date) + 1;
   const totalDays = planDates.length;
   const progressPercent = Math.round((dayNumber / totalDays) * 100);
-
-  const nextReward =
-    phase && !phase.isCustom
-      ? getNextReward(getMilestonePhaseId(phase), phase.startDate, phase.endDate, date)
-      : null;
 
   return (
     <section
@@ -67,18 +61,6 @@ export function HomeProgressSummary({ date, checkedIn }: Props) {
           />
         </div>
       </div>
-
-      {nextReward && (
-        <div className="rounded-xl bg-surface-container-high/60 px-4 py-3">
-          <p className="label-caps text-on-surface-variant">Next milestone</p>
-          <p className="mt-1 font-display text-headline-sm text-primary">{nextReward.title}</p>
-          <p className="text-body-md text-on-surface-variant">
-            {nextReward.target - nextReward.current === 1
-              ? '1 day remaining'
-              : `${nextReward.target - nextReward.current} days remaining`}
-          </p>
-        </div>
-      )}
 
       {phase && !phase.isCustom && (
         <MilestoneSection phaseId={getMilestonePhaseId(phase)} today={date} />

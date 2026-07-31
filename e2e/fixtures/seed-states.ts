@@ -14,8 +14,6 @@ const DEFAULT_SETTINGS = {
 
 const DEFAULT_WELCOME = {
   date: FIXED_DATE,
-  arrivalMood: 'peaceful' as const,
-  commitmentLevel: 'fully-committed' as const,
   completedAt: `${FIXED_DATE}T08:00:00.000Z`,
 };
 

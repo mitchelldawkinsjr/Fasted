@@ -1,18 +1,14 @@
-import { useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { DailyFastPlan } from '../types';
 import { useActiveJourney } from '../hooks/useActiveJourney';
+import { useAuth } from '../hooks/useAuth';
 import { useProgress } from '../hooks/useProgress';
-import {
-  getDailyWelcomeCheckIn,
-  getGuidedJourneyProgress,
-} from '../lib/storage';
-import { conciseEncouragement } from '../lib/homeScreenLabels';
+import { conciseEncouragement, getTimeGreeting } from '../lib/homeScreenLabels';
 import { EncouragementCard } from './EncouragementCard';
 import { SafetyNote } from './SafetyNote';
 import { DailyWelcomeCheckInCard } from './home/DailyWelcomeCheckInCard';
 import { GuidedJourneyFlow } from './home/GuidedJourneyFlow';
 import { HomeProgressSummary } from './home/HomeProgressSummary';
-import { HomeWelcomeHeader } from './home/HomeWelcomeHeader';
 import { QuickActionsBar } from './home/QuickActionsBar';
 import { TodaysFastDetails } from './home/TodaysFastDetails';
 import { TodaysMissionHero } from './home/TodaysMissionHero';
@@ -24,35 +20,34 @@ type Props = {
 
 export function HomeScreen({ viewDate, plan }: Props) {
   const progress = useProgress();
-  const { getPhaseForDate } = useActiveJourney();
+  const { name } = useAuth();
+  const { getPhaseForDate, journey } = useActiveJourney();
   const phase = getPhaseForDate(viewDate);
   const existingCheckIn = progress.checkIns.find((c) => c.date === viewDate);
-  const welcomeCheckIn = getDailyWelcomeCheckIn(viewDate);
-  const journeyProgress = getGuidedJourneyProgress(viewDate);
+  const welcomeCheckIn = progress.dailyWelcomeCheckIns?.[viewDate];
+  const journeyProgress = progress.guidedJourneyProgress?.[viewDate];
 
-  const [welcomeComplete, setWelcomeComplete] = useState(Boolean(welcomeCheckIn));
   const [showGuidedJourney, setShowGuidedJourney] = useState(false);
-  const [, setJourneyTick] = useState(0);
 
-  const refreshJourney = useCallback(() => setJourneyTick((n) => n + 1), []);
+  useEffect(() => {
+    setShowGuidedJourney(false);
+  }, [viewDate]);
 
   const focusLabel =
     plan.prayerPoints[0] ?? phase?.prayerFocus?.[0] ?? phase?.title ?? 'Your fast today';
 
   const journeyStarted = Boolean(journeyProgress);
   const journeyComplete = Boolean(journeyProgress?.completedAt || existingCheckIn);
+  const displayName = name?.trim() || 'Friend';
 
   const handleBeginJourney = () => {
     setShowGuidedJourney(true);
   };
 
-  if (!welcomeComplete && !welcomeCheckIn) {
+  if (!welcomeCheckIn) {
     return (
       <div className="space-y-stack-lg animate-fade-in-up">
-        <DailyWelcomeCheckInCard
-          date={viewDate}
-          onComplete={() => setWelcomeComplete(true)}
-        />
+        <DailyWelcomeCheckInCard date={viewDate} />
       </div>
     );
   }
@@ -60,7 +55,12 @@ export function HomeScreen({ viewDate, plan }: Props) {
   return (
     <>
       <div className="space-y-stack-lg animate-fade-in-up">
-        <HomeWelcomeHeader date={viewDate} />
+        <header className="space-y-1 text-center" data-testid="home-welcome-header">
+          <p className="label-caps text-secondary">
+            {getTimeGreeting()}, {displayName}
+          </p>
+          <p className="text-body-lg text-on-surface-variant">{journey.name}</p>
+        </header>
 
         <HomeProgressSummary date={viewDate} checkedIn={!!existingCheckIn} />
 
@@ -86,11 +86,7 @@ export function HomeScreen({ viewDate, plan }: Props) {
         <GuidedJourneyFlow
           date={viewDate}
           plan={plan}
-          onClose={() => {
-            setShowGuidedJourney(false);
-            refreshJourney();
-          }}
-          onStepChange={refreshJourney}
+          onClose={() => setShowGuidedJourney(false)}
         />
       )}
     </>
