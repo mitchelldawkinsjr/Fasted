@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { expectDateInputContained } from './fixtures/overflow';
 import { AUDIT_VIEWPORTS } from './fixtures/viewports';
 import { FIXED_DATE } from './fixtures/constants';
+import { completeDailyWelcomeIfShown } from './fixtures/home-screen';
 import { messages } from '../src/lib/messages';
 import { resolveVerseForDate } from '../src/lib/verseOfTheDay';
 
@@ -279,12 +280,14 @@ test('date input fits within card on mobile and desktop', async ({ page }) => {
 test('morning reflection tag links to filtered journal', async ({ page }) => {
   await page.goto('/?date=2026-06-27');
   await page.waitForLoadState('networkidle');
-  await page.getByRole('link', { name: 'Prayer' }).click();
+  await completeDailyWelcomeIfShown(page);
+  await page.getByRole('link', { name: 'Prayer', exact: true }).click();
   await expect(page).toHaveURL('/journal?type=prayer');
   await expect(page.getByRole('button', { name: 'Prayer', exact: true })).toHaveClass(/bg-primary/);
 
   await page.goto('/?date=2026-06-27');
-  await page.getByRole('link', { name: 'Open journal' }).click();
+  await completeDailyWelcomeIfShown(page);
+  await page.locator('[data-tour="quick-actions"]').getByRole('link', { name: 'Journal', exact: true }).click();
   await expect(page).toHaveURL('/journal');
 });
 
@@ -298,9 +301,38 @@ test('shows verse of the day in daily reflection form', async ({ page }) => {
 });
 
 test('journal meditation verse matches today page', async ({ page }) => {
+  await page.evaluate(
+    ({ key, date }) => {
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          checkIns: [],
+          journalEntries: [],
+          badges: [],
+          settings: { reminderTime: '07:00', theme: 'light', scriptureNote: '' },
+          activeJourneyId: 'fasted-journey',
+          hasSeenTour: true,
+          dailyWelcomeCheckIns: {
+            [date]: {
+              date,
+              arrivalMood: 'peaceful',
+              commitmentLevel: 'fully-committed',
+              completedAt: `${date}T08:00:00.000Z`,
+            },
+          },
+        }),
+      );
+      localStorage.setItem('fasted-calendar-install-toast-dismissed', '1');
+    },
+    { key: STORAGE_KEY, date: FIXED_DATE },
+  );
+
   await page.goto(`/?date=${FIXED_DATE}`);
+  await page.waitForLoadState('networkidle');
+  await page.getByTestId('begin-journey-btn').click();
   const todayVerse = await page.locator('blockquote').first().innerText();
 
+  await page.getByRole('button', { name: 'Close guided journey' }).click();
   await page.goto('/journal');
   await page.getByRole('button', { name: '+ New' }).click();
   const journalVerse = await page.locator('blockquote').first().innerText();

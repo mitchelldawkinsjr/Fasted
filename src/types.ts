@@ -293,6 +293,53 @@ export type FavoriteMealIdea = {
   savedAt: string;
 };
 
+/** How the user feels arriving at the start of the day (home welcome check-in). */
+export type ArrivalMood = 'excited' | 'peaceful' | 'okay' | 'struggling' | 'exhausted';
+
+/** Commitment level for today's fast (home welcome check-in). */
+export type CommitmentLevel = 'fully-committed' | 'do-my-best' | 'worried';
+
+export type DailyChallenge =
+  | 'hungry'
+  | 'busy'
+  | 'stress'
+  | 'temptation'
+  | 'energy'
+  | 'distractions'
+  | 'other';
+
+export type DailyIntention =
+  | 'grow-closer'
+  | 'seek-healing'
+  | 'practice-discipline'
+  | 'pray-for-someone'
+  | 'break-habits'
+  | 'hear-god'
+  | 'other';
+
+export type DailyWelcomeCheckIn = {
+  date: string;
+  arrivalMood: ArrivalMood;
+  commitmentLevel: CommitmentLevel;
+  challenge?: DailyChallenge;
+  intention?: DailyIntention;
+  completedAt: string;
+};
+
+export type GuidedJourneyStepId =
+  | 'scripture'
+  | 'meditation'
+  | 'prayer'
+  | 'reflection';
+
+export type GuidedJourneyProgress = {
+  date: string;
+  currentStep: GuidedJourneyStepId;
+  completedSteps: GuidedJourneyStepId[];
+  startedAt: string;
+  completedAt?: string;
+};
+
 export type UserProgress = {
   checkIns: CheckIn[];
   /** Consecutive check-in days after the most recent successful check-in. */
@@ -318,6 +365,10 @@ export type UserProgress = {
   hasSeenTour?: boolean;
   /** First-visit mini-tours completed or skipped per page. */
   pageToursSeen?: Partial<Record<'settings' | 'calendar' | 'progress' | 'groups', boolean>>;
+  /** Daily welcome check-ins keyed by date. */
+  dailyWelcomeCheckIns?: Record<string, DailyWelcomeCheckIn>;
+  /** Guided journey progress keyed by date. */
+  guidedJourneyProgress?: Record<string, GuidedJourneyProgress>;
   /** ISO timestamp — used to reconcile local vs cloud copies when signed in. */
   updatedAt?: string;
 };

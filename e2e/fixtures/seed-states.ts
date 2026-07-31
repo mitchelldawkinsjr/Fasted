@@ -12,6 +12,13 @@ const DEFAULT_SETTINGS = {
   journalFocusMode: false,
 };
 
+const DEFAULT_WELCOME = {
+  date: FIXED_DATE,
+  arrivalMood: 'peaceful' as const,
+  commitmentLevel: 'fully-committed' as const,
+  completedAt: `${FIXED_DATE}T08:00:00.000Z`,
+};
+
 function baseProgress(overrides: Partial<UserProgress> = {}): UserProgress {
   return {
     ...TOUR_DISMISSED,
@@ -23,6 +30,10 @@ function baseProgress(overrides: Partial<UserProgress> = {}): UserProgress {
     settings: { ...DEFAULT_SETTINGS },
     activeJourneyId: FASTED_JOURNEY.id,
     journeys: [FASTED_JOURNEY],
+    dailyWelcomeCheckIns: {
+      [FIXED_DATE]: DEFAULT_WELCOME,
+      '2026-06-27': { ...DEFAULT_WELCOME, date: '2026-06-27' },
+    },
     updatedAt: `${FIXED_DATE}T12:00:00.000Z`,
     ...overrides,
   };

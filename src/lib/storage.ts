@@ -2,12 +2,15 @@ import type {
   AppSettings,
   Badge,
   CheckIn,
+  DailyWelcomeCheckIn,
   FavoriteMealIdea,
   DailyReflectionEntry,
   FoodMealKey,
   FoodPlanCheckIn,
   FoodProfile,
   GroupCheckIn,
+  GuidedJourneyProgress,
+  GuidedJourneyStepId,
   JournalEntry,
   Journey,
   KitchenItem,
@@ -328,6 +331,86 @@ export function getDailyReflectionByDate(date: string): DailyReflectionEntry | u
     (entry): entry is DailyReflectionEntry =>
       isDailyReflectionEntry(entry) && entry.date === date,
   );
+}
+
+export function getDailyWelcomeCheckIn(date: string): DailyWelcomeCheckIn | undefined {
+  return getProgress().dailyWelcomeCheckIns?.[date];
+}
+
+export function saveDailyWelcomeCheckIn(checkIn: DailyWelcomeCheckIn): void {
+  const progress = getProgress();
+  persist({
+    ...progress,
+    dailyWelcomeCheckIns: {
+      ...progress.dailyWelcomeCheckIns,
+      [checkIn.date]: checkIn,
+    },
+  });
+}
+
+export function getGuidedJourneyProgress(date: string): GuidedJourneyProgress | undefined {
+  return getProgress().guidedJourneyProgress?.[date];
+}
+
+export function saveGuidedJourneyProgress(journeyProgress: GuidedJourneyProgress): void {
+  const progress = getProgress();
+  persist({
+    ...progress,
+    guidedJourneyProgress: {
+      ...progress.guidedJourneyProgress,
+      [journeyProgress.date]: journeyProgress,
+    },
+  });
+}
+
+export function startGuidedJourney(date: string): GuidedJourneyProgress {
+  const existing = getGuidedJourneyProgress(date);
+  if (existing) return existing;
+
+  const journeyProgress: GuidedJourneyProgress = {
+    date,
+    currentStep: 'scripture',
+    completedSteps: [],
+    startedAt: new Date().toISOString(),
+  };
+  saveGuidedJourneyProgress(journeyProgress);
+  return journeyProgress;
+}
+
+const GUIDED_JOURNEY_STEP_ORDER: GuidedJourneyStepId[] = [
+  'scripture',
+  'meditation',
+  'prayer',
+  'reflection',
+];
+
+export function advanceGuidedJourneyStep(date: string): GuidedJourneyProgress | null {
+  const current = getGuidedJourneyProgress(date);
+  if (!current) return null;
+
+  const stepIndex = GUIDED_JOURNEY_STEP_ORDER.indexOf(current.currentStep);
+  const completedSteps = current.completedSteps.includes(current.currentStep)
+    ? current.completedSteps
+    : [...current.completedSteps, current.currentStep];
+
+  const nextStep = GUIDED_JOURNEY_STEP_ORDER[stepIndex + 1];
+  if (!nextStep) {
+    const finished: GuidedJourneyProgress = {
+      ...current,
+      completedSteps,
+      completedAt: new Date().toISOString(),
+    };
+    saveGuidedJourneyProgress(finished);
+    return finished;
+  }
+
+  const updated: GuidedJourneyProgress = {
+    ...current,
+    currentStep: nextStep,
+    completedSteps,
+  };
+  saveGuidedJourneyProgress(updated);
+  return updated;
 }
 
 export function saveDailyReflectionWithCheckIn(

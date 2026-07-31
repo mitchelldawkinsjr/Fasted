@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { completeDailyWelcomeIfShown } from './fixtures/home-screen';
 
 const phaseCases = [
   {
@@ -75,6 +76,9 @@ test.describe('Fasted journey phase images and instructions', () => {
     test(`uses custom image and food instructions on ${phaseCase.date}`, async ({ page }) => {
       await page.goto(`/?date=${phaseCase.date}`);
       await page.waitForLoadState('networkidle');
+      await completeDailyWelcomeIfShown(page);
+      await page.getByTestId('fast-details-toggle').click();
+      await page.getByTestId('phase-overview-toggle').click();
 
       const phaseImage = page.getByTestId('phase-overview-toggle').locator('img');
       await expect(phaseImage).toHaveAttribute('src', phaseCase.image);

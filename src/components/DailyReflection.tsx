@@ -37,6 +37,8 @@ import { DailyReflectionMeditation } from './VerseOfTheDay';
 
 type Props = {
   date: string;
+  /** Tighter layout when embedded in the guided journey full-screen flow. */
+  layout?: 'default' | 'guided';
 };
 
 function badgesEarnedOnDate(date: string): Badge[] {
@@ -107,7 +109,7 @@ function MorningReflectionComplete({
   );
 }
 
-export function DailyReflection({ date }: Props) {
+export function DailyReflection({ date, layout = 'default' }: Props) {
   const { getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
   const existingEntry = getDailyReflectionByDate(date);
@@ -253,10 +255,13 @@ export function DailyReflection({ date }: Props) {
     );
   }
 
+  const formMaxHeight =
+    layout === 'guided' ? 'max-h-[min(42vh,26rem)]' : 'max-h-[min(70vh,42rem)]';
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="stitch-card flex max-h-[min(70vh,42rem)] min-h-0 flex-col overflow-hidden"
+      className={`stitch-card flex ${formMaxHeight} min-h-0 flex-col overflow-hidden`}
       noValidate
     >
       <div className="min-h-0 flex-1 space-y-stack-md overflow-y-auto overscroll-contain p-stack-md">

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { TOUR_DISMISSED } from './fixtures/constants';
+import { completeDailyWelcomeIfShown, openGuidedJourneyToReflection } from './fixtures/home-screen';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
 
@@ -20,22 +21,18 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
   await page.goto('/?date=2026-06-27');
   await page.waitForLoadState('networkidle');
 
-  await expect(page.getByRole('heading', { name: 'Morning Reflection' })).toBeVisible();
+  await openGuidedJourneyToReflection(page);
+
+  await expect(page.locator('#guided-reflection-heading')).toBeVisible();
   await expect(page.getByRole('heading', { name: "Today's Check-In" })).toBeVisible();
 
   const meditationHeadings = page.getByRole('heading', { name: "Today's Meditation" });
-  await expect(meditationHeadings).toHaveCount(2);
+  await expect(meditationHeadings).toHaveCount(1);
 
-  const topVerse = page.getByRole('region', { name: "Today's Meditation" });
-  const reflectionVerse = page.getByRole('region', { name: 'Reflection' });
-  const topLink = topVerse.getByRole('link');
-  const reflectionLink = reflectionVerse.getByRole('link');
-  await expect(topLink).toBeVisible();
-  await expect(reflectionLink).toBeVisible();
-  await expect(reflectionLink).toHaveAttribute(
-    'aria-label',
-    await topLink.getAttribute('aria-label'),
-  );
+  const reflectionForm = page.locator('form').filter({ has: page.getByRole('heading', { name: "Today's Check-In" }) });
+  const meditationLink = reflectionForm.getByRole('link').first();
+  await expect(meditationLink).toBeVisible();
+  await expect(meditationLink).toHaveAttribute('aria-label', /opens on Bible Gateway/i);
 
   await page.getByRole('checkbox', { name: /follow today's fasting plan/i }).check();
   await page.getByRole('checkbox', { name: /pray over today's focus/i }).check();
@@ -50,8 +47,8 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
   await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
 
   await expect(page.getByTestId('morning-reflection-complete')).toBeVisible({ timeout: 5000 });
+  await page.getByRole('button', { name: 'Close guided journey' }).click();
   await expect(page.getByText('Checked In', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Save Reflection & Check-In' })).toHaveCount(0);
 
   const stored = await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
@@ -71,14 +68,16 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
 
   await page.reload();
   await page.waitForLoadState('networkidle');
-  await expect(page.getByTestId('morning-reflection-complete')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Save Reflection & Check-In' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'View in Journal' })).toBeVisible();
+  await completeDailyWelcomeIfShown(page);
+  await expect(page.getByText("Today's journey complete")).toBeVisible();
+  await expect(page.getByText('Checked In', { exact: true })).toBeVisible();
 });
 
 test('requires reflection content before saving check-in', async ({ page }) => {
   await page.goto('/?date=2026-06-27');
   await page.waitForLoadState('networkidle');
+
+  await openGuidedJourneyToReflection(page);
 
   await page.getByRole('checkbox', { name: /follow today's fasting plan/i }).check();
   await page.getByRole('radio', { name: 'Good' }).click();
@@ -100,16 +99,16 @@ test('check-in button scrolls to daily reflection section', async ({ page }) => 
   await page.goto('/?date=2026-06-27');
   await page.waitForLoadState('networkidle');
 
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.getByRole('button', { name: 'Check-in for Today' }).click();
+  await openGuidedJourneyToReflection(page);
   await expect(page.locator('#daily-reflection')).toBeInViewport();
 });
 
 test('other reflection links still navigate to journal', async ({ page }) => {
   await page.goto('/?date=2026-06-27');
   await page.waitForLoadState('networkidle');
+  await completeDailyWelcomeIfShown(page);
 
-  await page.getByRole('link', { name: 'Prayer' }).click();
+  await page.getByRole('link', { name: 'Prayer', exact: true }).click();
   await expect(page).toHaveURL('/journal?type=prayer');
   await expect(page.getByRole('button', { name: 'Prayer', exact: true })).toHaveClass(/bg-primary/);
 });

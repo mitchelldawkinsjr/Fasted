@@ -70,6 +70,14 @@ function buildSeedProgress() {
     },
     activeJourneyId: 'fasted-journey',
     hasSeenTour: false,
+    dailyWelcomeCheckIns: {
+      [FIXED_DATE]: {
+        date: FIXED_DATE,
+        arrivalMood: 'peaceful',
+        commitmentLevel: 'fully-committed',
+        completedAt: `${FIXED_DATE}T08:00:00.000Z`,
+      },
+    },
     updatedAt: new Date().toISOString(),
   };
 }
@@ -119,16 +127,15 @@ const STEP_NAMES = [
   'step-1-welcome',
   'step-2-today-card',
   'step-3-checkin',
-  'step-4-scripture',
-  'step-5-prayer-focus',
-  'step-6-encouragement',
-  'step-7-morning-reflection',
-  'step-8-calendar',
-  'step-9-journal',
-  'step-10-progress',
-  'step-11-groups',
-  'step-12-account-settings',
-  'step-13-done',
+  'step-4-begin-journey',
+  'step-5-encouragement',
+  'step-6-quick-actions',
+  'step-7-calendar',
+  'step-8-journal',
+  'step-9-progress',
+  'step-10-groups',
+  'step-11-account-settings',
+  'step-12-done',
 ];
 
 test.describe('Tour flow', () => {

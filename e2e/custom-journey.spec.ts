@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { INSTALL_TOAST_KEY, STORAGE_KEY, TOUR_DISMISSED } from './fixtures/constants';
+import { completeDailyWelcomeIfShown, openGuidedJourneyToReflection } from './fixtures/home-screen';
 import { expectDateInputContained } from './fixtures/overflow';
 import { AUDIT_VIEWPORTS } from './fixtures/viewports';
 
@@ -92,8 +93,10 @@ test.describe('custom journey builder', () => {
     expect(customJourney.phases[0].content.scheduleSummary).toContain('Wednesday');
 
     await page.goto('/?date=2026-07-08');
+    await completeDailyWelcomeIfShown(page);
+    await page.getByTestId('fast-details-toggle').click();
     const instructions = page.getByTestId('today-instructions-list');
-    await expect(page.locator('[data-tour="today-card"]').getByText('Phase 1: Neighborhood Intercession')).toBeVisible();
+    await expect(page.locator('[data-tour="today-card"]').getByText('Neighborhood Intercession')).toBeVisible();
     await expect(instructions).toContainText('Sunrise-to-sunset fast today—water only.');
     await expect(instructions).toContainText('Beverages: water.');
     await expect(instructions).toContainText('Invite one neighbor into prayer.');
@@ -101,7 +104,9 @@ test.describe('custom journey builder', () => {
     await expect(page.getByText('Neighbors', { exact: true })).toBeVisible();
 
     await page.reload();
-    await expect(page.locator('[data-tour="today-card"]').getByText('Phase 1: Neighborhood Intercession')).toBeVisible();
+    await completeDailyWelcomeIfShown(page);
+    await page.getByTestId('fast-details-toggle').click();
+    await expect(page.locator('[data-tour="today-card"]').getByText('Neighborhood Intercession')).toBeVisible();
     await expect(page.getByTestId('today-instructions-list')).toContainText(
       'Pray for three families by name.',
     );
@@ -256,6 +261,8 @@ test.describe('custom journey builder', () => {
     });
 
     await page.goto(`/?date=${today}`);
+    await completeDailyWelcomeIfShown(page);
+    await page.getByTestId('fast-details-toggle').click();
     const instructions = page.getByTestId('today-instructions-list');
     await expect(instructions).toContainText(
       'Sunrise-to-sunset fast today—water, coffee, and unsweetened tea allowed.',
@@ -286,9 +293,10 @@ test.describe('custom journey builder', () => {
     });
 
     await page.goto(`/?date=${today}`);
-    await expect(page.locator('[data-tour="today-card"]').getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
+    await completeDailyWelcomeIfShown(page);
+    await expect(page.locator('[data-tour="today-card"]').getByText("David's Fast for Seeking God")).toBeVisible();
 
-    await page.getByRole('button', { name: 'Check-in for Today' }).click();
+    await openGuidedJourneyToReflection(page);
     await expect(page.getByLabel("Today's Check-In").getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
     await expect(page.getByText('Phase 2:')).not.toBeVisible();
   });

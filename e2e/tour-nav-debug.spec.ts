@@ -29,6 +29,14 @@ test.describe('Tour nav diagnostics', () => {
               settings: { reminderTime: '07:00', theme: 'light', scriptureNote: '' },
               activeJourneyId: 'fasted-journey',
               hasSeenTour: false,
+              dailyWelcomeCheckIns: {
+                '2026-06-27': {
+                  date: '2026-06-27',
+                  arrivalMood: 'peaceful',
+                  commitmentLevel: 'fully-committed',
+                  completedAt: '2026-06-27T08:00:00.000Z',
+                },
+              },
             }),
           );
           localStorage.setItem(installKey, '1');
