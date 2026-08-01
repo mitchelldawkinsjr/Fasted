@@ -34,10 +34,11 @@ import { InfoBanner } from './InfoBanner';
 import { LoadingButton } from './LoadingButton';
 import { MoodPicker } from './MoodPicker';
 import { DailyReflectionMeditation } from './VerseOfTheDay';
+import { CheckRow, GuidedReflectionFlow } from './home/GuidedReflectionFlow';
 
 type Props = {
   date: string;
-  /** Tighter layout when embedded in the guided journey full-screen flow. */
+  /** Full-height layout when embedded in the guided journey full-screen flow. */
   layout?: 'default' | 'guided';
 };
 
@@ -255,13 +256,52 @@ export function DailyReflection({ date, layout = 'default' }: Props) {
     );
   }
 
-  const formMaxHeight =
-    layout === 'guided' ? 'max-h-[min(42vh,26rem)]' : 'max-h-[min(70vh,42rem)]';
+  if (layout === 'guided') {
+    return (
+      <GuidedReflectionFlow
+        date={date}
+        phase={phase}
+        currentStreak={currentStreak}
+        followedPlan={followedPlan}
+        setFollowedPlan={setFollowedPlan}
+        prayedFocus={prayedFocus}
+        setPrayedFocus={setPrayedFocus}
+        readScripture={readScripture}
+        setReadScripture={setReadScripture}
+        dayMood={dayMood}
+        setDayMood={setDayMood}
+        fieldValues={{
+          godTeaching,
+          prayedAbout,
+          hungerNotes,
+          victory,
+          tomorrowIntention,
+        }}
+        onFieldChange={(key, value) => {
+          const setters = {
+            godTeaching: setGodTeaching,
+            prayedAbout: setPrayedAbout,
+            hungerNotes: setHungerNotes,
+            victory: setVictory,
+            tomorrowIntention: setTomorrowIntention,
+          } as const;
+          setters[key](value);
+        }}
+        groupContexts={groupContexts}
+        groupResults={groupResults}
+        setGroupResults={setGroupResults}
+        saving={saving}
+        onSubmit={handleSubmit}
+      />
+    );
+  }
+
+  const fieldRows = 3;
 
   return (
     <form
       onSubmit={handleSubmit}
-      className={`stitch-card flex ${formMaxHeight} min-h-0 flex-col overflow-hidden`}
+      className="stitch-card flex max-h-[min(70vh,42rem)] min-h-0 flex-col overflow-hidden"
       noValidate
     >
       <div className="min-h-0 flex-1 space-y-stack-md overflow-y-auto overscroll-contain p-stack-md">
@@ -364,7 +404,7 @@ export function DailyReflection({ date, layout = 'default' }: Props) {
               onChange={(e) => dailyFieldState[key][1](e.target.value)}
               placeholder={`${label}…`}
               aria-label={label}
-              rows={3}
+              rows={fieldRows}
               className={inputClass}
             />
           </label>
@@ -382,7 +422,7 @@ export function DailyReflection({ date, layout = 'default' }: Props) {
               onChange={(e) => dailyFieldState[key][1](e.target.value)}
               placeholder={`${label}…`}
               aria-label={label}
-              rows={3}
+              rows={fieldRows}
               className={inputClass}
             />
           </label>
@@ -401,27 +441,5 @@ export function DailyReflection({ date, layout = 'default' }: Props) {
       </LoadingButton>
       </div>
     </form>
-  );
-}
-
-function CheckRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-low p-2 transition-colors hover:bg-surface-container-high sm:items-center sm:gap-3 sm:p-3">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-4 w-4 shrink-0 rounded accent-primary sm:mt-0"
-      />
-      <span className="text-xs leading-snug text-on-surface sm:text-body-md">{label}</span>
-    </label>
   );
 }

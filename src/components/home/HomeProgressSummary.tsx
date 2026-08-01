@@ -1,7 +1,6 @@
 import { getMilestonePhaseId } from '../../data/fastingPlan';
 import { useActiveJourney } from '../../hooks/useActiveJourney';
 import { getAllPlanDates } from '../../lib/dateUtils';
-import { getCurrentStreak } from '../../lib/streaks';
 import { Icon } from '../Icon';
 import { MilestoneSection } from '../MilestoneSection';
 
@@ -13,7 +12,6 @@ type Props = {
 export function HomeProgressSummary({ date, checkedIn }: Props) {
   const { journey, getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
-  const streak = getCurrentStreak(date);
   const planDates = getAllPlanDates(journey);
   const dayNumber = planDates.findIndex((d) => d === date) + 1;
   const totalDays = planDates.length;
@@ -22,26 +20,14 @@ export function HomeProgressSummary({ date, checkedIn }: Props) {
   return (
     <section
       className="stitch-card space-y-stack-md p-stack-lg"
-      aria-label="Today's progress"
-      data-tour="checkin-btn"
+      aria-label="Journey progress"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Icon name="local_fire_department" className="text-secondary" filled />
-          <div>
-            <span className="label-caps text-on-surface-variant">Check-in streak</span>
-            <p className="font-display text-headline-md text-primary">
-              {streak} <span className="text-body-md font-normal text-on-surface-variant">days</span>
-            </p>
-          </div>
-        </div>
-        <div className="text-right">
-          <span className="label-caps text-on-surface-variant">Journey</span>
-          <p className="font-display text-headline-md text-primary">
-            Day {dayNumber}{' '}
-            <span className="text-body-md font-normal text-on-surface-variant">of {totalDays}</span>
-          </p>
-        </div>
+      <div className="text-center sm:text-left">
+        <span className="label-caps text-on-surface-variant">Journey</span>
+        <p className="font-display text-headline-md text-primary">
+          Day {dayNumber}{' '}
+          <span className="text-body-md font-normal text-on-surface-variant">of {totalDays}</span>
+        </p>
       </div>
 
       <div>

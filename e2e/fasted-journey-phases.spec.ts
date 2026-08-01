@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { completeDailyWelcomeIfShown } from './fixtures/home-screen';
+import { seedProgress } from './fixtures/seed-states';
 
 const phaseCases = [
   {
@@ -67,9 +68,7 @@ const phaseCases = [
 
 test.describe('Fasted journey phase images and instructions', () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('fasted-calendar-install-toast-dismissed', '1');
-    });
+    await seedProgress(page, 'empty');
   });
 
   for (const phaseCase of phaseCases) {

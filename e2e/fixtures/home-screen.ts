@@ -8,24 +8,18 @@ async function dismissTourIfShown(page: Page): Promise<void> {
   await tour.waitFor({ state: 'hidden', timeout: 5000 });
 }
 
-/** Complete the daily welcome check-in when it appears on the home screen. */
+/** Advance past the welcome interstitial when it appears on the home screen. */
 export async function completeDailyWelcomeIfShown(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle');
   await dismissTourIfShown(page);
 
-  const welcome = page.getByTestId('daily-welcome-checkin');
-  if (!(await welcome.isVisible().catch(() => false))) {
-    await dismissTourIfShown(page);
-    return;
+  const interstitial = page.getByTestId('welcome-interstitial');
+  if (await interstitial.isVisible().catch(() => false)) {
+    await interstitial.click();
+    await interstitial.waitFor({ state: 'hidden', timeout: 5000 });
   }
 
-  await dismissTourIfShown(page);
-
-  await page.getByRole('radio', { name: 'Peaceful' }).click();
-  await page.getByRole('radio', { name: 'Fully committed' }).click();
-  await page.getByRole('button', { name: 'Hungry' }).click();
-  await page.getByRole('button', { name: 'Grow closer to God' }).click();
-  await page.getByTestId('home-welcome-header').waitFor({ state: 'visible' });
+  await page.getByTestId('home-welcome-header').waitFor({ state: 'visible', timeout: 5000 });
   await dismissTourIfShown(page);
 }
 
@@ -40,4 +34,33 @@ export async function openGuidedJourneyToReflection(page: Page): Promise<void> {
   }
 
   await page.locator('#daily-reflection').waitFor({ state: 'visible' });
+}
+
+/** Advance the stepped morning reflection through journaling to the final check-in step. */
+export async function advanceGuidedReflectionToCheckIn(
+  page: Page,
+  options?: { mood?: string },
+): Promise<void> {
+  const mood = options?.mood ?? 'Good';
+  const continueBtn = page.getByTestId('guided-reflection-continue');
+
+  await continueBtn.click();
+  await continueBtn.click();
+  await continueBtn.click();
+  await page.getByRole('radio', { name: mood }).click();
+  await continueBtn.click();
+  await continueBtn.click();
+  await continueBtn.click();
+  await continueBtn.click();
+
+  await page.getByRole('checkbox', { name: /follow today's fasting plan/i }).waitFor({ state: 'visible' });
+}
+
+/** Advance the stepped morning reflection to the mood question. */
+export async function advanceGuidedReflectionToMood(page: Page): Promise<void> {
+  const continueBtn = page.getByTestId('guided-reflection-continue');
+  for (let i = 0; i < 3; i += 1) {
+    await continueBtn.click();
+  }
+  await page.getByRole('radiogroup', { name: 'How did today feel?' }).waitFor({ state: 'visible' });
 }

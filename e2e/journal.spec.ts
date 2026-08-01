@@ -3,6 +3,7 @@ import { expectDateInputContained } from './fixtures/overflow';
 import { AUDIT_VIEWPORTS } from './fixtures/viewports';
 import { FIXED_DATE } from './fixtures/constants';
 import { completeDailyWelcomeIfShown } from './fixtures/home-screen';
+import { seedProgressOnPage } from './fixtures/seed-states';
 import { messages } from '../src/lib/messages';
 import { resolveVerseForDate } from '../src/lib/verseOfTheDay';
 
@@ -57,11 +58,7 @@ async function enableJournalFocusMode(page: import('@playwright/test').Page) {
 test.beforeEach(async ({ page }) => {
   await page.clock.install({ time: new Date(`${FIXED_DATE}T12:00:00.000Z`) });
   await page.goto('/journal');
-  await page.evaluate((key) => {
-    localStorage.removeItem(key);
-    localStorage.setItem('fasted-calendar-install-toast-dismissed', '1');
-  }, STORAGE_KEY);
-  await page.reload();
+  await seedProgressOnPage(page, 'empty');
 });
 
 test('daily reflection fields follow the updated layout order', async ({ page }) => {

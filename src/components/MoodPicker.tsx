@@ -6,14 +6,18 @@ type Props = {
   value: DayMood | null;
   onChange: (mood: DayMood) => void;
   className?: string;
+  /** Hide legend when the question is shown elsewhere (e.g. guided reflection header). */
+  hideLegend?: boolean;
 };
 
-export function MoodPicker({ value, onChange, className = '' }: Props) {
+export function MoodPicker({ value, onChange, className = '', hideLegend = false }: Props) {
   return (
     <fieldset className={className}>
-      <legend className="mb-1 block text-body-md font-medium text-on-surface">
-        How did today feel?
-      </legend>
+      {!hideLegend && (
+        <legend className="mb-1 block text-body-md font-medium text-on-surface">
+          How did today feel?
+        </legend>
+      )}
       <p className="mb-3 text-label-caps text-on-surface-variant">
         Tap the color that best matches your day — tracked for phase summaries.
       </p>

@@ -1,8 +1,10 @@
 import type { DailyFastPlan, FastPhase } from '../../types';
 import { FAST_SCHEDULE_LABELS, FAST_TYPE_LABELS } from '../../lib/homeScreenLabels';
+import { getCurrentStreak } from '../../lib/streaks';
 import { Icon } from '../Icon';
 
 type Props = {
+  date: string;
   plan: DailyFastPlan;
   phase: FastPhase | undefined;
   focusLabel: string;
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export function TodaysMissionHero({
+  date,
   plan,
   phase,
   focusLabel,
@@ -21,6 +24,7 @@ export function TodaysMissionHero({
 }: Props) {
   const scheduleLabel = FAST_SCHEDULE_LABELS[plan.fastType];
   const fastLabel = FAST_TYPE_LABELS[plan.fastType];
+  const streak = getCurrentStreak(date);
 
   return (
     <section
@@ -63,6 +67,16 @@ export function TodaysMissionHero({
           {journeyStarted ? 'Continue Today\'s Journey' : 'Begin Today\'s Journey'}
         </button>
       )}
+
+      <p
+        className="mt-2 flex items-center justify-center gap-1 text-center text-[11px] font-medium tracking-wide text-on-surface-variant/70"
+        data-tour="checkin-btn"
+      >
+        <Icon name="local_fire_department" className="text-[13px] opacity-60" filled aria-hidden />
+        <span>
+          Check-in streak · {streak} {streak === 1 ? 'day' : 'days'}
+        </span>
+      </p>
     </section>
   );
 }

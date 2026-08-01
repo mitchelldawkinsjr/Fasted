@@ -1,44 +1,4 @@
-import type {
-  ArrivalMood,
-  CommitmentLevel,
-  DailyChallenge,
-  DailyIntention,
-  FastType,
-} from '../types';
-
-export const ARRIVAL_MOOD_OPTIONS: { value: ArrivalMood; label: string; emoji: string }[] = [
-  { value: 'excited', label: 'Excited', emoji: '😊' },
-  { value: 'peaceful', label: 'Peaceful', emoji: '🙂' },
-  { value: 'okay', label: 'Okay', emoji: '😐' },
-  { value: 'struggling', label: 'Struggling', emoji: '😔' },
-  { value: 'exhausted', label: 'Exhausted', emoji: '😩' },
-];
-
-export const COMMITMENT_OPTIONS: { value: CommitmentLevel; label: string; emoji: string }[] = [
-  { value: 'fully-committed', label: 'Fully committed', emoji: '🔥' },
-  { value: 'do-my-best', label: "I'll do my best", emoji: '🙂' },
-  { value: 'worried', label: "I'm worried I'll struggle", emoji: '😬' },
-];
-
-export const CHALLENGE_OPTIONS: { value: DailyChallenge; label: string }[] = [
-  { value: 'hungry', label: 'Hungry' },
-  { value: 'busy', label: 'Busy schedule' },
-  { value: 'stress', label: 'Stress' },
-  { value: 'temptation', label: 'Temptation' },
-  { value: 'energy', label: 'Energy' },
-  { value: 'distractions', label: 'Distractions' },
-  { value: 'other', label: 'Other' },
-];
-
-export const INTENTION_OPTIONS: { value: DailyIntention; label: string }[] = [
-  { value: 'grow-closer', label: 'Grow closer to God' },
-  { value: 'seek-healing', label: 'Seek healing' },
-  { value: 'practice-discipline', label: 'Practice discipline' },
-  { value: 'pray-for-someone', label: 'Pray for someone' },
-  { value: 'break-habits', label: 'Break unhealthy habits' },
-  { value: 'hear-god', label: "Hear God's voice" },
-  { value: 'other', label: 'Other' },
-];
+import type { FastType } from '../types';
 
 export const FAST_TYPE_LABELS: Record<FastType, string> = {
   'normal-eating': 'Preparation / Normal Eating Day',

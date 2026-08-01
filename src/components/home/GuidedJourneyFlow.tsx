@@ -61,7 +61,7 @@ export function GuidedJourneyFlow({ date, plan, onClose }: Props) {
       aria-modal="true"
       aria-labelledby="guided-journey-title"
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col bg-linen"
+      className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] top-[72px] z-[60] flex flex-col bg-linen"
       data-testid="guided-journey-flow"
     >
       <header className="flex shrink-0 items-center justify-between border-b border-outline-variant/30 px-4 py-3">
@@ -83,8 +83,20 @@ export function GuidedJourneyFlow({ date, plan, onClose }: Props) {
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-20">
-        <div className="mx-auto max-w-lg space-y-stack-lg">
+      <div
+        className={`min-h-0 flex-1 overscroll-contain ${
+          isReflectionStep
+            ? 'flex flex-col overflow-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))]'
+            : 'overflow-y-auto p-4 pb-20'
+        }`}
+      >
+        <div
+          className={`mx-auto w-full ${
+            isReflectionStep
+              ? 'flex min-h-0 max-w-[680px] flex-1 flex-col px-1'
+              : 'max-w-lg space-y-stack-lg'
+          }`}
+        >
           {isVerseStep && (
             <section aria-label={STEP_LABELS[currentStep]}>
               <VerseOfTheDay date={date} variant="today" />
@@ -107,12 +119,10 @@ export function GuidedJourneyFlow({ date, plan, onClose }: Props) {
             <section
               id="daily-reflection"
               data-tour="morning-reflection"
-              aria-labelledby="guided-reflection-heading"
+              aria-labelledby="guided-journey-title"
+              className="flex min-h-0 flex-1 flex-col"
             >
-              <h3
-                id="guided-reflection-heading"
-                className="mb-stack-md font-display text-headline-md text-primary"
-              >
+              <h3 id="guided-reflection-heading" className="sr-only">
                 Morning Reflection
               </h3>
               <DailyReflection date={date} layout="guided" />

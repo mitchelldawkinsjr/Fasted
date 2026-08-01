@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { TOUR_DISMISSED } from './fixtures/constants';
-import { completeDailyWelcomeIfShown, openGuidedJourneyToReflection } from './fixtures/home-screen';
+import { completeDailyWelcomeIfShown, openGuidedJourneyToReflection, advanceGuidedReflectionToCheckIn } from './fixtures/home-screen';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
 
@@ -23,26 +23,29 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
 
   await openGuidedJourneyToReflection(page);
 
-  await expect(page.locator('#guided-reflection-heading')).toBeVisible();
-  await expect(page.getByRole('heading', { name: "Today's Check-In" })).toBeVisible();
+  await expect(page.getByTestId('guided-daily-reflection')).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Today's Meditation" })).toBeVisible();
 
-  const meditationHeadings = page.getByRole('heading', { name: "Today's Meditation" });
-  await expect(meditationHeadings).toHaveCount(1);
-
-  const reflectionForm = page.locator('form').filter({ has: page.getByRole('heading', { name: "Today's Check-In" }) });
-  const meditationLink = reflectionForm.getByRole('link').first();
+  const meditationLink = page.getByRole('link', { name: /opens on Bible Gateway/i }).first();
   await expect(meditationLink).toBeVisible();
-  await expect(meditationLink).toHaveAttribute('aria-label', /opens on Bible Gateway/i);
 
-  await page.getByRole('checkbox', { name: /follow today's fasting plan/i }).check();
-  await page.getByRole('checkbox', { name: /pray over today's focus/i }).check();
-  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByTestId('guided-reflection-continue').click();
   await page
     .getByRole('textbox', { name: "What do I get from today's meditation?" })
     .fill('Morning insight on Today page');
+  await page.getByTestId('guided-reflection-continue').click();
+  await page.getByTestId('guided-reflection-continue').click();
+  await page.getByRole('radio', { name: 'Good' }).click();
+  await page.getByTestId('guided-reflection-continue').click();
+  await page.getByTestId('guided-reflection-continue').click();
   await page
     .getByRole('textbox', { name: 'What are you grateful for today?' })
     .fill('Stayed faithful with water only');
+  await page.getByTestId('guided-reflection-continue').click();
+  await page.getByTestId('guided-reflection-continue').click();
+
+  await page.getByRole('checkbox', { name: /follow today's fasting plan/i }).check();
+  await page.getByRole('checkbox', { name: /pray over today's focus/i }).check();
 
   await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
 
@@ -79,8 +82,8 @@ test('requires reflection content before saving check-in', async ({ page }) => {
 
   await openGuidedJourneyToReflection(page);
 
+  await advanceGuidedReflectionToCheckIn(page);
   await page.getByRole('checkbox', { name: /follow today's fasting plan/i }).check();
-  await page.getByRole('radio', { name: 'Good' }).click();
   await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
 
   await expect(page.getByText('Write something in your reflection before saving.')).toBeVisible();

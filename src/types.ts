@@ -293,30 +293,7 @@ export type FavoriteMealIdea = {
   savedAt: string;
 };
 
-/** How the user feels arriving at the start of the day (home welcome check-in). */
-export type ArrivalMood = 'excited' | 'peaceful' | 'okay' | 'struggling' | 'exhausted';
-
-/** Commitment level for today's fast (home welcome check-in). */
-export type CommitmentLevel = 'fully-committed' | 'do-my-best' | 'worried';
-
-export type DailyChallenge =
-  | 'hungry'
-  | 'busy'
-  | 'stress'
-  | 'temptation'
-  | 'energy'
-  | 'distractions'
-  | 'other';
-
-export type DailyIntention =
-  | 'grow-closer'
-  | 'seek-healing'
-  | 'practice-discipline'
-  | 'pray-for-someone'
-  | 'break-habits'
-  | 'hear-god'
-  | 'other';
-
+/** Marks that today's welcome interstitial has been shown. */
 export type DailyWelcomeCheckIn = {
   date: string;
   completedAt: string;
@@ -359,7 +336,7 @@ export type UserProgress = {
   hasSeenTour?: boolean;
   /** First-visit mini-tours completed or skipped per page. */
   pageToursSeen?: Partial<Record<'settings' | 'calendar' | 'progress' | 'groups', boolean>>;
-  /** Daily welcome check-ins keyed by date. */
+  /** Welcome interstitial completions keyed by date. */
   dailyWelcomeCheckIns?: Record<string, DailyWelcomeCheckIn>;
   /** Guided journey progress keyed by date. */
   guidedJourneyProgress?: Record<string, GuidedJourneyProgress>;

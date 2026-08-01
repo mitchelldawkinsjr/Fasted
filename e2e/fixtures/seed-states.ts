@@ -17,6 +17,25 @@ const DEFAULT_WELCOME = {
   completedAt: `${FIXED_DATE}T08:00:00.000Z`,
 };
 
+/** Dates used across home-screen e2e specs — skip the welcome interstitial when seeded. */
+const E2E_WELCOME_DATES = [
+  FIXED_DATE,
+  '2026-06-14',
+  '2026-07-12',
+  '2026-08-09',
+  '2026-09-01',
+  '2026-09-28',
+  '2026-10-18',
+  '2026-11-09',
+  '2026-12-01',
+] as const;
+
+function buildWelcomeCheckIns(dates: readonly string[]) {
+  return Object.fromEntries(
+    dates.map((date) => [date, { date, completedAt: `${date}T08:00:00.000Z` }]),
+  );
+}
+
 function baseProgress(overrides: Partial<UserProgress> = {}): UserProgress {
   return {
     ...TOUR_DISMISSED,
@@ -28,10 +47,7 @@ function baseProgress(overrides: Partial<UserProgress> = {}): UserProgress {
     settings: { ...DEFAULT_SETTINGS },
     activeJourneyId: FASTED_JOURNEY.id,
     journeys: [FASTED_JOURNEY],
-    dailyWelcomeCheckIns: {
-      [FIXED_DATE]: DEFAULT_WELCOME,
-      '2026-06-27': { ...DEFAULT_WELCOME, date: '2026-06-27' },
-    },
+    dailyWelcomeCheckIns: buildWelcomeCheckIns(E2E_WELCOME_DATES),
     updatedAt: `${FIXED_DATE}T12:00:00.000Z`,
     ...overrides,
   };

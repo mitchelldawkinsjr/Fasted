@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { FIXED_DATE } from './fixtures/constants';
-import { openGuidedJourneyToReflection } from './fixtures/home-screen';
+import { openGuidedJourneyToReflection, advanceGuidedReflectionToCheckIn, advanceGuidedReflectionToMood } from './fixtures/home-screen';
 import { detectOverflow, hasOverflowIssues } from './fixtures/overflow';
 import {
   expectAboveMainNav,
@@ -42,6 +42,7 @@ test.describe('Mobile overlay and scroll smoke', () => {
     await preparePage(page, { state: 'streakReady', date: FIXED_DATE });
 
     await openGuidedJourneyToReflection(page);
+    await advanceGuidedReflectionToCheckIn(page);
 
     const saveBtn = page.getByRole('button', { name: 'Save Reflection & Check-In' });
     await expect(saveBtn).toBeVisible();
@@ -56,6 +57,7 @@ test.describe('Mobile overlay and scroll smoke', () => {
     await preparePage(page, { state: 'streakReady', date: FIXED_DATE });
 
     await openGuidedJourneyToReflection(page);
+    await advanceGuidedReflectionToMood(page);
 
     const moodGroup = page.getByRole('radiogroup', { name: 'How did today feel?' });
     await expect(moodGroup).toBeVisible();

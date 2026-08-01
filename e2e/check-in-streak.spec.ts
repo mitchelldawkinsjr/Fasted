@@ -66,13 +66,23 @@ test.describe('check-in streak', () => {
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'today-before-checkin.png'), fullPage: true });
 
     await openGuidedJourneyToReflection(page);
-    await expect(page.getByLabel("Today's Check-In").getByText('2 consecutive days')).toBeVisible();
-    await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-before-save.png'), fullPage: true });
-
+    await page.getByTestId('guided-reflection-continue').click();
+    await page
+      .getByRole('textbox', { name: "What do I get from today's meditation?" })
+      .fill('Grace for today');
+    await page.getByTestId('guided-reflection-continue').click();
+    await page.getByTestId('guided-reflection-continue').click();
     await page.getByRole('radio', { name: 'Good' }).click();
+    await page.getByTestId('guided-reflection-continue').click();
+    await page.getByTestId('guided-reflection-continue').click();
     await page
       .getByRole('textbox', { name: 'What are you grateful for today?' })
       .fill('Completed check-in with reflection');
+    await page.getByTestId('guided-reflection-continue').click();
+    await page.getByTestId('guided-reflection-continue').click();
+    await expect(page.getByLabel("Today's Check-In").getByText('2 consecutive days')).toBeVisible();
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-before-save.png'), fullPage: true });
+
     await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
     await expect(page.getByTestId('morning-reflection-complete')).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('consecutive check-in days')).toBeVisible();
