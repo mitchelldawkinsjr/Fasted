@@ -293,6 +293,24 @@ export type FavoriteMealIdea = {
   savedAt: string;
 };
 
+/** Marks that today's welcome interstitial has been shown. */
+export type DailyWelcomeCheckIn = {
+  date: string;
+  completedAt: string;
+};
+
+export type GuidedJourneyStepId =
+  | 'scripture'
+  | 'meditation'
+  | 'prayer'
+  | 'reflection';
+
+export type GuidedJourneyProgress = {
+  date: string;
+  currentStep: GuidedJourneyStepId;
+  completedAt?: string;
+};
+
 export type UserProgress = {
   checkIns: CheckIn[];
   /** Consecutive check-in days after the most recent successful check-in. */
@@ -318,6 +336,10 @@ export type UserProgress = {
   hasSeenTour?: boolean;
   /** First-visit mini-tours completed or skipped per page. */
   pageToursSeen?: Partial<Record<'settings' | 'calendar' | 'progress' | 'groups', boolean>>;
+  /** Welcome interstitial completions keyed by date. */
+  dailyWelcomeCheckIns?: Record<string, DailyWelcomeCheckIn>;
+  /** Guided journey progress keyed by date. */
+  guidedJourneyProgress?: Record<string, GuidedJourneyProgress>;
   /** ISO timestamp — used to reconcile local vs cloud copies when signed in. */
   updatedAt?: string;
 };

@@ -34,9 +34,12 @@ import { InfoBanner } from './InfoBanner';
 import { LoadingButton } from './LoadingButton';
 import { MoodPicker } from './MoodPicker';
 import { DailyReflectionMeditation } from './VerseOfTheDay';
+import { CheckRow, GuidedReflectionFlow } from './home/GuidedReflectionFlow';
 
 type Props = {
   date: string;
+  /** Full-height layout when embedded in the guided journey full-screen flow. */
+  layout?: 'default' | 'guided';
 };
 
 function badgesEarnedOnDate(date: string): Badge[] {
@@ -107,7 +110,7 @@ function MorningReflectionComplete({
   );
 }
 
-export function DailyReflection({ date }: Props) {
+export function DailyReflection({ date, layout = 'default' }: Props) {
   const { getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
   const existingEntry = getDailyReflectionByDate(date);
@@ -253,6 +256,48 @@ export function DailyReflection({ date }: Props) {
     );
   }
 
+  if (layout === 'guided') {
+    return (
+      <GuidedReflectionFlow
+        date={date}
+        phase={phase}
+        currentStreak={currentStreak}
+        followedPlan={followedPlan}
+        setFollowedPlan={setFollowedPlan}
+        prayedFocus={prayedFocus}
+        setPrayedFocus={setPrayedFocus}
+        readScripture={readScripture}
+        setReadScripture={setReadScripture}
+        dayMood={dayMood}
+        setDayMood={setDayMood}
+        fieldValues={{
+          godTeaching,
+          prayedAbout,
+          hungerNotes,
+          victory,
+          tomorrowIntention,
+        }}
+        onFieldChange={(key, value) => {
+          const setters = {
+            godTeaching: setGodTeaching,
+            prayedAbout: setPrayedAbout,
+            hungerNotes: setHungerNotes,
+            victory: setVictory,
+            tomorrowIntention: setTomorrowIntention,
+          } as const;
+          setters[key](value);
+        }}
+        groupContexts={groupContexts}
+        groupResults={groupResults}
+        setGroupResults={setGroupResults}
+        saving={saving}
+        onSubmit={handleSubmit}
+      />
+    );
+  }
+
+  const fieldRows = 3;
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -359,7 +404,7 @@ export function DailyReflection({ date }: Props) {
               onChange={(e) => dailyFieldState[key][1](e.target.value)}
               placeholder={`${label}…`}
               aria-label={label}
-              rows={3}
+              rows={fieldRows}
               className={inputClass}
             />
           </label>
@@ -377,7 +422,7 @@ export function DailyReflection({ date }: Props) {
               onChange={(e) => dailyFieldState[key][1](e.target.value)}
               placeholder={`${label}…`}
               aria-label={label}
-              rows={3}
+              rows={fieldRows}
               className={inputClass}
             />
           </label>
@@ -396,27 +441,5 @@ export function DailyReflection({ date }: Props) {
       </LoadingButton>
       </div>
     </form>
-  );
-}
-
-function CheckRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-low p-2 transition-colors hover:bg-surface-container-high sm:items-center sm:gap-3 sm:p-3">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-4 w-4 shrink-0 rounded accent-primary sm:mt-0"
-      />
-      <span className="text-xs leading-snug text-on-surface sm:text-body-md">{label}</span>
-    </label>
   );
 }

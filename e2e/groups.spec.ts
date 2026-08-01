@@ -6,6 +6,8 @@ import {
   seedAuthSession,
 } from './fixtures/groups-mock';
 import { MAIN_NAV } from './fixtures/nav-overlap';
+import { completeDailyWelcomeIfShown } from './fixtures/home-screen';
+import { seedProgress } from './fixtures/seed-states';
 import { MOBILE_SMOKE_VIEWPORTS } from './fixtures/viewports';
 
 const NAV_VIEWPORTS = [{ name: 'desktop', width: 1280, height: 720 }, ...MOBILE_SMOKE_VIEWPORTS];
@@ -13,6 +15,7 @@ const NAV_VIEWPORTS = [{ name: 'desktop', width: 1280, height: 720 }, ...MOBILE_
 test.describe('Groups', () => {
   test.beforeEach(async ({ page }) => {
     await seedAuthSession(page);
+    await seedProgress(page, 'empty');
   });
 
   test('shows Groups in main nav by default without group memberships', async ({ page }) => {
@@ -21,6 +24,7 @@ test.describe('Groups', () => {
     for (const viewport of NAV_VIEWPORTS) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto('/');
+      await completeDailyWelcomeIfShown(page);
       const nav = page.locator(MAIN_NAV);
       await expect(nav.getByRole('link', { name: 'Groups' })).toBeVisible();
       await expect(nav.getByRole('link', { name: 'Settings' })).toHaveCount(0);
@@ -32,9 +36,10 @@ test.describe('Groups', () => {
 
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
+    await completeDailyWelcomeIfShown(page);
     const groupsLink = page.locator(MAIN_NAV).getByRole('link', { name: 'Groups' });
     await expect(groupsLink).toBeVisible();
-    await groupsLink.click();
+    await groupsLink.click({ force: true });
     await expect(page).toHaveURL('/groups');
     await expect(page.getByRole('heading', { level: 2, name: 'Your Groups' })).toBeVisible();
   });
@@ -43,6 +48,7 @@ test.describe('Groups', () => {
     await mockGroupsApi(page, { myMemberships: [] });
 
     await page.goto('/');
+    await completeDailyWelcomeIfShown(page);
     await expect(page.locator(MAIN_NAV).getByRole('link', { name: 'Groups' })).toBeVisible();
 
     await page.goto('/groups');

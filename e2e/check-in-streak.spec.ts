@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import { TOUR_DISMISSED } from './fixtures/constants';
+import { openGuidedJourneyToReflection } from './fixtures/home-screen';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
 const ARTIFACT_DIR = path.join(process.cwd(), 'artifacts', 'issue-12');
@@ -27,6 +28,12 @@ function buildProgress(checkInDates: string[], checkInStreak: number) {
       scriptureNote: 'Seed data for streak screenshots.',
     },
     activeJourneyId: 'fasted-journey',
+    dailyWelcomeCheckIns: {
+      '2026-06-27': {
+        date: '2026-06-27',
+        completedAt: '2026-06-27T08:00:00.000Z',
+      },
+    },
     updatedAt: new Date().toISOString(),
   };
 }
@@ -54,22 +61,34 @@ test.describe('check-in streak', () => {
     await page.goto('/?date=2026-06-27');
     await page.waitForLoadState('networkidle');
 
-    const streakLabel = page.locator('[data-tour="checkin-btn"]').getByText('CHECK-IN STREAK').locator('..');
+    const streakLabel = page.locator('[data-tour="checkin-btn"]').getByText('Check-in streak').locator('..');
     await expect(streakLabel).toContainText('2');
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'today-before-checkin.png'), fullPage: true });
 
-    await expect(page.getByLabel("Today's Check-In").getByText('Check-in streak', { exact: true })).toBeVisible();
-    await expect(page.getByLabel("Today's Check-In").getByText('2 consecutive days')).toBeVisible();
-    await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-before-save.png'), fullPage: true });
-
+    await openGuidedJourneyToReflection(page);
+    await page.getByTestId('guided-reflection-continue').click();
+    await page
+      .getByRole('textbox', { name: "What do I get from today's meditation?" })
+      .fill('Grace for today');
+    await page.getByTestId('guided-reflection-continue').click();
+    await page.getByTestId('guided-reflection-continue').click();
     await page.getByRole('radio', { name: 'Good' }).click();
+    await page.getByTestId('guided-reflection-continue').click();
+    await page.getByTestId('guided-reflection-continue').click();
     await page
       .getByRole('textbox', { name: 'What are you grateful for today?' })
       .fill('Completed check-in with reflection');
+    await page.getByTestId('guided-reflection-continue').click();
+    await page.getByTestId('guided-reflection-continue').click();
+    await expect(page.getByLabel("Today's Check-In").getByText('2 consecutive days')).toBeVisible();
+    await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-before-save.png'), fullPage: true });
+
     await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
     await expect(page.getByTestId('morning-reflection-complete')).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('consecutive check-in days')).toBeVisible();
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'checkin-modal-celebration.png'), fullPage: true });
+
+    await page.getByRole('button', { name: 'Close guided journey' }).click();
 
     await expect(streakLabel).toContainText('3');
     await expect(page.getByText('Checked In', { exact: true })).toBeVisible();
@@ -82,7 +101,7 @@ test.describe('check-in streak', () => {
     await page.goto('/?date=2026-06-27');
     await page.waitForLoadState('networkidle');
 
-    const streakLabel = page.locator('[data-tour="checkin-btn"]').getByText('CHECK-IN STREAK').locator('..');
+    const streakLabel = page.locator('[data-tour="checkin-btn"]').getByText('Check-in streak').locator('..');
     await expect(streakLabel).toContainText('0');
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'streak-reset-after-gap.png'), fullPage: true });
   });

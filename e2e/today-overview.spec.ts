@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import * as path from 'path';
+import { completeDailyWelcomeIfShown } from './fixtures/home-screen';
 import { seedProgress } from './fixtures/seed-states';
 
 const ARTIFACT_DIR = path.join(process.cwd(), 'artifacts', 'issue-159');
@@ -13,35 +14,39 @@ test.describe('Today phase overview', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/?date=2026-07-12');
     await page.waitForLoadState('networkidle');
+    await completeDailyWelcomeIfShown(page);
 
-    const toggle = page.getByTestId('phase-overview-toggle');
+    const fastDetailsToggle = page.getByTestId('fast-details-toggle');
+    const overviewToggle = page.getByTestId('phase-overview-toggle');
     const panel = page.getByTestId('phase-overview-panel');
 
-    await expect(toggle).toBeVisible();
-    await expect(toggle).toContainText('Click for overview');
+    await expect(fastDetailsToggle).toBeVisible();
+    await fastDetailsToggle.click();
+    await expect(overviewToggle).toBeVisible();
+    await expect(overviewToggle).toContainText('Click for overview');
     await page.screenshot({
       path: path.join(ARTIFACT_DIR, 'today-overview-collapsed-mobile.png'),
       fullPage: true,
     });
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(overviewToggle).toHaveAttribute('aria-expanded', 'false');
     await expect(panel).toBeHidden();
 
-    await toggle.click();
+    await overviewToggle.click();
 
     await expect(panel).toBeVisible();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(overviewToggle).toHaveAttribute('aria-expanded', 'true');
     await expect(panel).toContainText('Phase Overview');
     await page.screenshot({
       path: path.join(ARTIFACT_DIR, 'today-overview-expanded-mobile.png'),
       fullPage: true,
     });
 
-    await toggle.click();
+    await overviewToggle.click();
 
     await expect(panel).toBeHidden();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(overviewToggle).toHaveAttribute('aria-expanded', 'false');
 
-    await toggle.click();
+    await overviewToggle.click();
     await expect(panel).toBeVisible();
 
     const overviewImage = page.getByTestId('phase-overview-image');
@@ -52,7 +57,7 @@ test.describe('Today phase overview', () => {
     await page.getByRole('button', { name: 'Close image' }).click();
     await expect(lightbox).toBeHidden();
 
-    await toggle.click();
-    await expect(panel).toBeHidden();
+    await fastDetailsToggle.click();
+    await expect(overviewToggle).toBeHidden();
   });
 });
