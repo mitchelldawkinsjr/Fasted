@@ -44,3 +44,20 @@ test('shows invalid credentials message for bad login', async ({ page }) => {
 
   await expect(page.getByText('Incorrect email or password. Please try again.')).toBeVisible();
 });
+
+test('Facebook sign-in button is disabled and does not start OAuth', async ({ page }) => {
+  let oauthStarted = false;
+  await page.route('**/auth/v1/authorize**', async (route) => {
+    oauthStarted = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({}),
+    });
+  });
+
+  const facebookButton = page.getByRole('button', { name: 'Continue with Facebook' });
+  await expect(facebookButton).toBeDisabled();
+  await facebookButton.click({ force: true });
+  expect(oauthStarted).toBe(false);
+});
