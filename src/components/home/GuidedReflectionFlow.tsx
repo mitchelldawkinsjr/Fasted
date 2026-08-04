@@ -13,18 +13,21 @@ import { InfoBanner } from '../InfoBanner';
 import { LoadingButton } from '../LoadingButton';
 import { MoodPicker } from '../MoodPicker';
 import { PrayerPointsCard } from '../PrayerPointsCard';
+import { VerseOfTheDay } from '../VerseOfTheDay';
 
 type ReflectionFieldKey =
   | (typeof DAILY_REFLECTION_FIELDS_BEFORE_MOOD)[number]['key']
   | (typeof DAILY_REFLECTION_FIELDS_AFTER_MOOD)[number]['key'];
 
 type GuidedReflectionStep =
+  | { kind: 'meditation' }
   | { kind: 'field'; key: ReflectionFieldKey; label: string }
   | { kind: 'mood' }
   | { kind: 'prayer' }
   | { kind: 'checkin' };
 
 const GUIDED_REFLECTION_STEPS: GuidedReflectionStep[] = [
+  { kind: 'meditation' },
   ...DAILY_REFLECTION_FIELDS_BEFORE_MOOD.map(({ key, label }) => ({
     kind: 'field' as const,
     key,
@@ -41,6 +44,7 @@ const GUIDED_REFLECTION_STEPS: GuidedReflectionStep[] = [
 ];
 
 type Props = {
+  date: string;
   prayerPoints: string[];
   phase: FastPhase | undefined;
   currentStreak: number;
@@ -76,6 +80,7 @@ function guidedQuestionTitle(step: GuidedReflectionStep): string | null {
 }
 
 export function GuidedReflectionFlow({
+  date,
   prayerPoints,
   phase,
   currentStreak,
@@ -143,6 +148,15 @@ export function GuidedReflectionFlow({
             isFieldStep ? 'flex min-h-0 flex-1 flex-col' : 'mx-auto max-w-lg'
           }`}
         >
+          {currentStep.kind === 'meditation' && (
+            <section aria-label="Today's Meditation" data-testid="meditation-step">
+              <VerseOfTheDay date={date} variant="today" />
+              <p className="mt-stack-md text-center text-body-md text-on-surface-variant">
+                Take a quiet moment with today&apos;s verse before journaling.
+              </p>
+            </section>
+          )}
+
           {currentStep.kind === 'prayer' && (
             <div data-testid="prayer-focus-step">
               <PrayerPointsCard

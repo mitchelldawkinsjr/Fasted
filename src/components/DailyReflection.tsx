@@ -261,6 +261,7 @@ export function DailyReflection({ date, layout = 'default', prayerPoints = [] }:
   if (layout === 'guided') {
     return (
       <GuidedReflectionFlow
+        date={date}
         prayerPoints={prayerPoints}
         phase={phase}
         currentStreak={currentStreak}

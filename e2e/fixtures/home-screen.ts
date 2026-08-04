@@ -23,13 +23,18 @@ export async function completeDailyWelcomeIfShown(page: Page): Promise<void> {
   await dismissTourIfShown(page);
 }
 
-/** Open the guided journey flow at the first journal question. */
+/** Open the guided journey flow at the first journal question (after meditation). */
 export async function openGuidedJourneyToReflection(page: Page): Promise<void> {
   await completeDailyWelcomeIfShown(page);
   await page.getByTestId('begin-journey-btn').click();
   await page.getByTestId('guided-journey-flow').waitFor({ state: 'visible' });
   await page.getByTestId('guided-daily-reflection').waitFor({ state: 'visible' });
   await page.locator('#daily-reflection').waitFor({ state: 'visible' });
+  await page.getByTestId('meditation-step').waitFor({ state: 'visible' });
+  await page.getByTestId('guided-reflection-continue').click();
+  await page
+    .getByRole('textbox', { name: "What do I get from today's meditation?" })
+    .waitFor({ state: 'visible' });
 }
 
 /** Advance the stepped morning reflection through journaling to the final check-in step. */
