@@ -30,7 +30,7 @@ export function WelcomeInterstitial({ date, displayName }: Props) {
   };
 
   return (
-    <section
+    <div
       className="relative flex min-h-[70dvh] flex-col items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-surface via-secondary-container/25 to-surface-container-low px-container-margin py-section-gap text-center animate-fade-in-up"
       aria-labelledby="welcome-interstitial-heading"
       data-testid="welcome-interstitial"
@@ -63,6 +63,6 @@ export function WelcomeInterstitial({ date, displayName }: Props) {
         Welcome, {displayName}. Your journey awaits.
       </p>
       <p className="mt-stack-lg text-body-md text-on-surface-variant/70">Tap to continue</p>
-    </section>
+    </div>
   );
 }
