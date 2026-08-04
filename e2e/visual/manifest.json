@@ -20,13 +20,6 @@
     { "name": "JournalEditor", "state": "worstCase", "trigger": "+ New on /journal" },
     { "name": "JournalViewer", "state": "worstCase", "trigger": "View reflection on /journal" }
   ],
-  "auth": [
-    {
-      "name": "FacebookOAuth",
-      "state": "disabled",
-      "trigger": "Settings account sign-in section /settings#account-sign-in"
-    }
-  ],
   "commands": {
     "prE2e": "npm run test:e2e",
     "mobileAudit": "npm run test:audit",
