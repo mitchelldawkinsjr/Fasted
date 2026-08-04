@@ -363,24 +363,35 @@ export function saveGuidedJourneyProgress(journeyProgress: GuidedJourneyProgress
   });
 }
 
+const LEGACY_GUIDED_JOURNEY_STEPS: GuidedJourneyStepId[] = ['scripture', 'meditation', 'prayer'];
+
+export function normalizeGuidedJourneyStep(
+  step: GuidedJourneyStepId,
+): GuidedJourneyStepId {
+  return LEGACY_GUIDED_JOURNEY_STEPS.includes(step) ? 'reflection' : step;
+}
+
 export function startGuidedJourney(date: string): GuidedJourneyProgress {
   const existing = getGuidedJourneyProgress(date);
-  if (existing) return existing;
+  if (existing) {
+    const normalizedStep = normalizeGuidedJourneyStep(existing.currentStep);
+    if (normalizedStep !== existing.currentStep) {
+      const migrated: GuidedJourneyProgress = { ...existing, currentStep: normalizedStep };
+      saveGuidedJourneyProgress(migrated);
+      return migrated;
+    }
+    return existing;
+  }
 
   const journeyProgress: GuidedJourneyProgress = {
     date,
-    currentStep: 'scripture',
+    currentStep: 'reflection',
   };
   saveGuidedJourneyProgress(journeyProgress);
   return journeyProgress;
 }
 
-export const GUIDED_JOURNEY_STEP_ORDER: GuidedJourneyStepId[] = [
-  'scripture',
-  'meditation',
-  'prayer',
-  'reflection',
-];
+export const GUIDED_JOURNEY_STEP_ORDER: GuidedJourneyStepId[] = ['reflection'];
 
 export function advanceGuidedJourneyStep(date: string): GuidedJourneyProgress | null {
   const current = getGuidedJourneyProgress(date);
