@@ -24,12 +24,10 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
   await openGuidedJourneyToReflection(page);
 
   await expect(page.getByTestId('guided-daily-reflection')).toBeVisible();
-  await expect(page.getByRole('heading', { name: "Today's Meditation" })).toBeVisible();
+  await expect(
+    page.getByRole('textbox', { name: "What do I get from today's meditation?" }),
+  ).toBeVisible();
 
-  const meditationLink = page.getByRole('link', { name: /opens on Bible Gateway/i }).first();
-  await expect(meditationLink).toBeVisible();
-
-  await page.getByTestId('guided-reflection-continue').click();
   await page
     .getByRole('textbox', { name: "What do I get from today's meditation?" })
     .fill('Morning insight on Today page');
@@ -42,6 +40,8 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
     .getByRole('textbox', { name: 'What are you grateful for today?' })
     .fill('Stayed faithful with water only');
   await page.getByTestId('guided-reflection-continue').click();
+  await page.getByTestId('guided-reflection-continue').click();
+  await expect(page.getByTestId('prayer-focus-step')).toBeVisible();
   await page.getByTestId('guided-reflection-continue').click();
 
   await page.getByRole('checkbox', { name: /follow today's fasting plan/i }).check();

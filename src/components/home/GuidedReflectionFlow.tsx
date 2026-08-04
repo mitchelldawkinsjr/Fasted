@@ -12,6 +12,7 @@ import { GroupCommitmentRows } from '../GroupCommitmentRows';
 import { InfoBanner } from '../InfoBanner';
 import { LoadingButton } from '../LoadingButton';
 import { MoodPicker } from '../MoodPicker';
+import { PrayerPointsCard } from '../PrayerPointsCard';
 import { VerseOfTheDay } from '../VerseOfTheDay';
 
 type ReflectionFieldKey =
@@ -22,6 +23,7 @@ type GuidedReflectionStep =
   | { kind: 'meditation' }
   | { kind: 'field'; key: ReflectionFieldKey; label: string }
   | { kind: 'mood' }
+  | { kind: 'prayer' }
   | { kind: 'checkin' };
 
 const GUIDED_REFLECTION_STEPS: GuidedReflectionStep[] = [
@@ -37,11 +39,13 @@ const GUIDED_REFLECTION_STEPS: GuidedReflectionStep[] = [
     key,
     label,
   })),
+  { kind: 'prayer' },
   { kind: 'checkin' },
 ];
 
 type Props = {
   date: string;
+  prayerPoints: string[];
   phase: FastPhase | undefined;
   currentStreak: number;
   followedPlan: boolean;
@@ -77,6 +81,7 @@ function guidedQuestionTitle(step: GuidedReflectionStep): string | null {
 
 export function GuidedReflectionFlow({
   date,
+  prayerPoints,
   phase,
   currentStreak,
   followedPlan,
@@ -144,12 +149,21 @@ export function GuidedReflectionFlow({
           }`}
         >
           {currentStep.kind === 'meditation' && (
-            <section aria-label="Today's Meditation">
+            <section aria-label="Today's Meditation" data-testid="meditation-step">
               <VerseOfTheDay date={date} variant="today" />
               <p className="mt-stack-md text-center text-body-md text-on-surface-variant">
                 Take a quiet moment with today&apos;s verse before journaling.
               </p>
             </section>
+          )}
+
+          {currentStep.kind === 'prayer' && (
+            <div data-testid="prayer-focus-step">
+              <PrayerPointsCard
+                points={prayerPoints}
+                encouragement="You are setting this time apart for something greater."
+              />
+            </div>
           )}
 
           {isFieldStep && (

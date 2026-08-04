@@ -66,7 +66,6 @@ test.describe('check-in streak', () => {
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'today-before-checkin.png'), fullPage: true });
 
     await openGuidedJourneyToReflection(page);
-    await page.getByTestId('guided-reflection-continue').click();
     await page
       .getByRole('textbox', { name: "What do I get from today's meditation?" })
       .fill('Grace for today');
@@ -78,6 +77,7 @@ test.describe('check-in streak', () => {
     await page
       .getByRole('textbox', { name: 'What are you grateful for today?' })
       .fill('Completed check-in with reflection');
+    await page.getByTestId('guided-reflection-continue').click();
     await page.getByTestId('guided-reflection-continue').click();
     await page.getByTestId('guided-reflection-continue').click();
     await expect(page.getByLabel("Today's Check-In").getByText('2 consecutive days')).toBeVisible();

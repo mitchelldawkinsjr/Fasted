@@ -40,6 +40,8 @@ type Props = {
   date: string;
   /** Full-height layout when embedded in the guided journey full-screen flow. */
   layout?: 'default' | 'guided';
+  /** Prayer focus points shown before check-in in the guided journey flow. */
+  prayerPoints?: string[];
 };
 
 function badgesEarnedOnDate(date: string): Badge[] {
@@ -110,7 +112,7 @@ function MorningReflectionComplete({
   );
 }
 
-export function DailyReflection({ date, layout = 'default' }: Props) {
+export function DailyReflection({ date, layout = 'default', prayerPoints = [] }: Props) {
   const { getPhaseForDate } = useActiveJourney();
   const phase = getPhaseForDate(date);
   const existingEntry = getDailyReflectionByDate(date);
@@ -260,6 +262,7 @@ export function DailyReflection({ date, layout = 'default' }: Props) {
     return (
       <GuidedReflectionFlow
         date={date}
+        prayerPoints={prayerPoints}
         phase={phase}
         currentStreak={currentStreak}
         followedPlan={followedPlan}

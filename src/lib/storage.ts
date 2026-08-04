@@ -10,7 +10,6 @@ import type {
   FoodProfile,
   GroupCheckIn,
   GuidedJourneyProgress,
-  GuidedJourneyStepId,
   JournalEntry,
   Journey,
   KitchenItem,
@@ -367,42 +366,9 @@ export function startGuidedJourney(date: string): GuidedJourneyProgress {
   const existing = getGuidedJourneyProgress(date);
   if (existing) return existing;
 
-  const journeyProgress: GuidedJourneyProgress = {
-    date,
-    currentStep: 'scripture',
-  };
+  const journeyProgress: GuidedJourneyProgress = { date };
   saveGuidedJourneyProgress(journeyProgress);
   return journeyProgress;
-}
-
-export const GUIDED_JOURNEY_STEP_ORDER: GuidedJourneyStepId[] = [
-  'scripture',
-  'meditation',
-  'prayer',
-  'reflection',
-];
-
-export function advanceGuidedJourneyStep(date: string): GuidedJourneyProgress | null {
-  const current = getGuidedJourneyProgress(date);
-  if (!current) return null;
-
-  const stepIndex = GUIDED_JOURNEY_STEP_ORDER.indexOf(current.currentStep);
-  const nextStep = GUIDED_JOURNEY_STEP_ORDER[stepIndex + 1];
-  if (!nextStep) {
-    const finished: GuidedJourneyProgress = {
-      ...current,
-      completedAt: new Date().toISOString(),
-    };
-    saveGuidedJourneyProgress(finished);
-    return finished;
-  }
-
-  const updated: GuidedJourneyProgress = {
-    ...current,
-    currentStep: nextStep,
-  };
-  saveGuidedJourneyProgress(updated);
-  return updated;
 }
 
 export function saveDailyReflectionWithCheckIn(
