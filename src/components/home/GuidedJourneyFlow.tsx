@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { DailyFastPlan } from '../../types';
 import { startGuidedJourney } from '../../lib/storage';
-import { useProgress } from '../../hooks/useProgress';
 import { DailyReflection } from '../DailyReflection';
 import { Icon } from '../Icon';
 
@@ -12,15 +11,11 @@ type Props = {
 };
 
 export function GuidedJourneyFlow({ date, plan, onClose }: Props) {
-  const progress = useProgress();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const journeyProgress = progress.guidedJourneyProgress?.[date];
 
   useEffect(() => {
-    if (!journeyProgress) {
-      startGuidedJourney(date);
-    }
-  }, [date, journeyProgress]);
+    startGuidedJourney(date);
+  }, [date]);
 
   useEffect(() => {
     dialogRef.current?.focus();

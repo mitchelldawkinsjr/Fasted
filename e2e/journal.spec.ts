@@ -297,7 +297,7 @@ test('shows verse of the day in daily reflection form', async ({ page }) => {
   await expect(chapterLink).toHaveAttribute('href', /biblegateway\.com\/passage\/\?search=.+&version=NLT$/);
 });
 
-test('journal meditation verse matches today page', async ({ page }) => {
+test('journal meditation verse matches date-bound verse of the day', async ({ page }) => {
   await page.evaluate(
     ({ key, date }) => {
       localStorage.setItem(
@@ -322,17 +322,12 @@ test('journal meditation verse matches today page', async ({ page }) => {
     { key: STORAGE_KEY, date: FIXED_DATE },
   );
 
-  await page.goto(`/?date=${FIXED_DATE}`);
-  await page.waitForLoadState('networkidle');
-  await page.getByTestId('begin-journey-btn').click();
-  const todayVerse = await page.locator('blockquote').first().innerText();
-
-  await page.getByRole('button', { name: 'Close guided journey' }).click();
   await page.goto('/journal');
   await page.getByRole('button', { name: '+ New' }).click();
+  await expect(page.getByRole('heading', { name: "Today's Meditation" })).toBeVisible();
   const journalVerse = await page.locator('blockquote').first().innerText();
 
-  expect(journalVerse).toBe(todayVerse);
+  expect(journalVerse).toContain(expectedVerse.text);
 });
 
 test('opens a read-only view of a saved entry', async ({ page }) => {

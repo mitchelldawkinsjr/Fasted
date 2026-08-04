@@ -10,7 +10,6 @@ import type {
   FoodProfile,
   GroupCheckIn,
   GuidedJourneyProgress,
-  GuidedJourneyStepId,
   JournalEntry,
   Journey,
   KitchenItem,
@@ -363,57 +362,13 @@ export function saveGuidedJourneyProgress(journeyProgress: GuidedJourneyProgress
   });
 }
 
-const LEGACY_GUIDED_JOURNEY_STEPS: GuidedJourneyStepId[] = ['scripture', 'meditation', 'prayer'];
-
-export function normalizeGuidedJourneyStep(
-  step: GuidedJourneyStepId,
-): GuidedJourneyStepId {
-  return LEGACY_GUIDED_JOURNEY_STEPS.includes(step) ? 'reflection' : step;
-}
-
 export function startGuidedJourney(date: string): GuidedJourneyProgress {
   const existing = getGuidedJourneyProgress(date);
-  if (existing) {
-    const normalizedStep = normalizeGuidedJourneyStep(existing.currentStep);
-    if (normalizedStep !== existing.currentStep) {
-      const migrated: GuidedJourneyProgress = { ...existing, currentStep: normalizedStep };
-      saveGuidedJourneyProgress(migrated);
-      return migrated;
-    }
-    return existing;
-  }
+  if (existing) return existing;
 
-  const journeyProgress: GuidedJourneyProgress = {
-    date,
-    currentStep: 'reflection',
-  };
+  const journeyProgress: GuidedJourneyProgress = { date };
   saveGuidedJourneyProgress(journeyProgress);
   return journeyProgress;
-}
-
-export const GUIDED_JOURNEY_STEP_ORDER: GuidedJourneyStepId[] = ['reflection'];
-
-export function advanceGuidedJourneyStep(date: string): GuidedJourneyProgress | null {
-  const current = getGuidedJourneyProgress(date);
-  if (!current) return null;
-
-  const stepIndex = GUIDED_JOURNEY_STEP_ORDER.indexOf(current.currentStep);
-  const nextStep = GUIDED_JOURNEY_STEP_ORDER[stepIndex + 1];
-  if (!nextStep) {
-    const finished: GuidedJourneyProgress = {
-      ...current,
-      completedAt: new Date().toISOString(),
-    };
-    saveGuidedJourneyProgress(finished);
-    return finished;
-  }
-
-  const updated: GuidedJourneyProgress = {
-    ...current,
-    currentStep: nextStep,
-  };
-  saveGuidedJourneyProgress(updated);
-  return updated;
 }
 
 export function saveDailyReflectionWithCheckIn(

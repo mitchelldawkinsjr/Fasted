@@ -299,15 +299,8 @@ export type DailyWelcomeCheckIn = {
   completedAt: string;
 };
 
-export type GuidedJourneyStepId =
-  | 'scripture'
-  | 'meditation'
-  | 'prayer'
-  | 'reflection';
-
 export type GuidedJourneyProgress = {
   date: string;
-  currentStep: GuidedJourneyStepId;
   completedAt?: string;
 };
 
