@@ -2,6 +2,8 @@
 
 PNG/JPEG captures from agent QA, Playwright runs, and manual verification live here, grouped by issue number (`artifacts/issue-{N}/`).
 
+Local SEOS Mode C workers may attach screenshots here after M1 Aider runs; keep filenames stable for issue comment links.
+
 These files are **intentionally kept in git** so issue comments and PRs can link stable raw URLs.
 
 ## Before committing any screenshots
