@@ -121,6 +121,7 @@ export type CheckIn = {
   followedPlan: boolean;
   prayedFocus: boolean;
   readScripture: boolean;
+  walkWithGod: boolean;
   journaled: boolean;
   win: string;
   completedAt: string;

@@ -21,7 +21,13 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
   await page.goto('/?date=2026-06-27');
   await page.waitForLoadState('networkidle');
 
-  await openGuidedJourneyToReflection(page);
+  await completeDailyWelcomeIfShown(page);
+  await page.getByTestId('begin-journey-btn').click();
+  await page.getByRole('checkbox', { name: /commit to following today's fasting plan/i }).check();
+  await page.getByRole('checkbox', { name: /commit to praying over today's focus/i }).check();
+  await page.getByTestId('guided-reflection-continue').click();
+  await page.getByTestId('meditation-step').waitFor({ state: 'visible' });
+  await page.getByTestId('guided-reflection-continue').click();
 
   await expect(page.getByTestId('guided-daily-reflection')).toBeVisible();
   await expect(
@@ -42,10 +48,6 @@ test('saves daily reflection and check-in together from Today page', async ({ pa
   await page.getByTestId('guided-reflection-continue').click();
   await page.getByTestId('guided-reflection-continue').click();
   await expect(page.getByTestId('prayer-focus-step')).toBeVisible();
-  await page.getByTestId('guided-reflection-continue').click();
-
-  await page.getByRole('checkbox', { name: /follow today's fasting plan/i }).check();
-  await page.getByRole('checkbox', { name: /pray over today's focus/i }).check();
 
   await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
 
@@ -83,7 +85,6 @@ test('requires reflection content before saving check-in', async ({ page }) => {
   await openGuidedJourneyToReflection(page);
 
   await advanceGuidedReflectionToCheckIn(page);
-  await page.getByRole('checkbox', { name: /follow today's fasting plan/i }).check();
   await page.getByRole('button', { name: 'Save Reflection & Check-In' }).click();
 
   await expect(page.getByText('Write something in your reflection before saving.')).toBeVisible();

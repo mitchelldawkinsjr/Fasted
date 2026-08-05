@@ -6,6 +6,11 @@ import {
 } from '../../lib/journalTags';
 import { messages } from '../../lib/messages';
 import { toast } from '../../lib/toast';
+import {
+  CHECK_IN_COMMITMENTS,
+  TODAY_COMMITMENTS_HEADING,
+  TODAY_COMMITMENTS_SUBTITLE,
+} from '../../lib/checkInCommitments';
 import type { CommitmentResult, DayMood, FastPhase } from '../../types';
 import type { GroupCommitmentContext } from '../../hooks/useGroupCommitmentContexts';
 import { GroupCommitmentRows } from '../GroupCommitmentRows';
@@ -27,6 +32,7 @@ type GuidedReflectionStep =
   | { kind: 'checkin' };
 
 const GUIDED_REFLECTION_STEPS: GuidedReflectionStep[] = [
+  { kind: 'checkin' },
   { kind: 'meditation' },
   ...DAILY_REFLECTION_FIELDS_BEFORE_MOOD.map(({ key, label }) => ({
     kind: 'field' as const,
@@ -40,7 +46,6 @@ const GUIDED_REFLECTION_STEPS: GuidedReflectionStep[] = [
     label,
   })),
   { kind: 'prayer' },
-  { kind: 'checkin' },
 ];
 
 type Props = {
@@ -54,6 +59,8 @@ type Props = {
   setPrayedFocus: Dispatch<SetStateAction<boolean>>;
   readScripture: boolean;
   setReadScripture: Dispatch<SetStateAction<boolean>>;
+  walkWithGod: boolean;
+  setWalkWithGod: Dispatch<SetStateAction<boolean>>;
   dayMood: DayMood | null;
   setDayMood: Dispatch<SetStateAction<DayMood | null>>;
   fieldValues: Record<ReflectionFieldKey, string>;
@@ -75,7 +82,7 @@ const GUIDED_QUESTION_TITLE_CLASS = 'mt-1 font-display text-headline-md text-pri
 function guidedQuestionTitle(step: GuidedReflectionStep): string | null {
   if (step.kind === 'field') return step.label;
   if (step.kind === 'mood') return 'How did today feel?';
-  if (step.kind === 'checkin') return "Today's Check-In";
+  if (step.kind === 'checkin') return TODAY_COMMITMENTS_HEADING;
   return null;
 }
 
@@ -90,6 +97,8 @@ export function GuidedReflectionFlow({
   setPrayedFocus,
   readScripture,
   setReadScripture,
+  walkWithGod,
+  setWalkWithGod,
   dayMood,
   setDayMood,
   fieldValues,
@@ -190,10 +199,17 @@ export function GuidedReflectionFlow({
           )}
 
           {currentStep.kind === 'checkin' && (
-            <section aria-labelledby="daily-reflection-checkin-heading" className="space-y-stack-md">
+            <section
+              aria-labelledby="daily-reflection-checkin-heading"
+              className="space-y-stack-md"
+            >
               <h4 id="daily-reflection-checkin-heading" className="sr-only">
-                Today&apos;s Check-In
+                {TODAY_COMMITMENTS_HEADING}
               </h4>
+
+              <p className="text-center text-body-md text-on-surface-variant">
+                {TODAY_COMMITMENTS_SUBTITLE}
+              </p>
 
               {phase && (
                 <InfoBanner
@@ -218,21 +234,30 @@ export function GuidedReflectionFlow({
               </div>
 
               <div className="grid grid-cols-1 gap-2">
-                <CheckRow
-                  label="Did you follow today's fasting plan?"
-                  checked={followedPlan}
-                  onChange={setFollowedPlan}
-                />
-                <CheckRow
-                  label="Did you pray over today's focus?"
-                  checked={prayedFocus}
-                  onChange={setPrayedFocus}
-                />
-                <CheckRow
-                  label="Did you read today's scripture?"
-                  checked={readScripture}
-                  onChange={setReadScripture}
-                />
+                {CHECK_IN_COMMITMENTS.map(({ key, label }) => (
+                  <CheckRow
+                    key={key}
+                    label={label}
+                    checked={
+                      key === 'followedPlan'
+                        ? followedPlan
+                        : key === 'prayedFocus'
+                          ? prayedFocus
+                          : key === 'readScripture'
+                            ? readScripture
+                            : walkWithGod
+                    }
+                    onChange={
+                      key === 'followedPlan'
+                        ? setFollowedPlan
+                        : key === 'prayedFocus'
+                          ? setPrayedFocus
+                          : key === 'readScripture'
+                            ? setReadScripture
+                            : setWalkWithGod
+                    }
+                  />
+                ))}
               </div>
 
               {groupContexts.length > 0 && (

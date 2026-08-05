@@ -296,9 +296,9 @@ test.describe('custom journey builder', () => {
     await completeDailyWelcomeIfShown(page);
     await expect(page.locator('[data-tour="today-card"]').getByText("David's Fast for Seeking God")).toBeVisible();
 
-    await openGuidedJourneyToReflection(page);
-    await advanceGuidedReflectionToCheckIn(page);
-    await expect(page.getByLabel("Today's Check-In").getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
+    await completeDailyWelcomeIfShown(page);
+    await page.getByTestId('begin-journey-btn').click();
+    await expect(page.getByLabel("Today's Commitments").getByText("Phase 1: David's Fast for Seeking God")).toBeVisible();
     await expect(page.getByText('Phase 2:')).not.toBeVisible();
   });
 });

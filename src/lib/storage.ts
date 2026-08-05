@@ -199,6 +199,10 @@ function loadRaw(): UserProgress {
     const progress: UserProgress = {
       ...DEFAULT_PROGRESS,
       ...parsed,
+      checkIns: (parsed.checkIns ?? []).map((checkIn) => ({
+        ...checkIn,
+        walkWithGod: checkIn.walkWithGod ?? false,
+      })),
       checkInStreak: parsed.checkInStreak ?? 0,
       journalEntries,
       mealImages: parsed.mealImages ?? {},

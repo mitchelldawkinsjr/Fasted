@@ -35,6 +35,11 @@ import { LoadingButton } from './LoadingButton';
 import { MoodPicker } from './MoodPicker';
 import { DailyReflectionMeditation } from './VerseOfTheDay';
 import { CheckRow, GuidedReflectionFlow } from './home/GuidedReflectionFlow';
+import {
+  CHECK_IN_COMMITMENTS,
+  TODAY_COMMITMENTS_HEADING,
+  TODAY_COMMITMENTS_SUBTITLE,
+} from '../lib/checkInCommitments';
 
 type Props = {
   date: string;
@@ -122,6 +127,7 @@ export function DailyReflection({ date, layout = 'default', prayerPoints = [] }:
   const [followedPlan, setFollowedPlan] = useState(existingCheckIn?.followedPlan ?? false);
   const [prayedFocus, setPrayedFocus] = useState(existingCheckIn?.prayedFocus ?? false);
   const [readScripture, setReadScripture] = useState(existingCheckIn?.readScripture ?? false);
+  const [walkWithGod, setWalkWithGod] = useState(existingCheckIn?.walkWithGod ?? false);
   const [dayMood, setDayMood] = useState<DayMood | null>(existingEntry?.dayMood ?? null);
   const [prayedAbout, setPrayedAbout] = useState(existingEntry?.prayedAbout ?? '');
   const [godTeaching, setGodTeaching] = useState(existingEntry?.godTeaching ?? '');
@@ -184,6 +190,7 @@ export function DailyReflection({ date, layout = 'default', prayerPoints = [] }:
       followedPlan,
       prayedFocus,
       readScripture,
+      walkWithGod,
       journaled: true,
       win: victory.trim(),
       completedAt: new Date().toISOString(),
@@ -271,6 +278,8 @@ export function DailyReflection({ date, layout = 'default', prayerPoints = [] }:
         setPrayedFocus={setPrayedFocus}
         readScripture={readScripture}
         setReadScripture={setReadScripture}
+        walkWithGod={walkWithGod}
+        setWalkWithGod={setWalkWithGod}
         dayMood={dayMood}
         setDayMood={setDayMood}
         fieldValues={{
@@ -313,8 +322,11 @@ export function DailyReflection({ date, layout = 'default', prayerPoints = [] }:
           id="daily-reflection-checkin-heading"
           className="mb-stack-sm font-display text-headline-sm text-primary"
         >
-          Today&apos;s Check-In
+          {TODAY_COMMITMENTS_HEADING}
         </h4>
+        <p className="mb-stack-sm text-body-md text-on-surface-variant">
+          {TODAY_COMMITMENTS_SUBTITLE}
+        </p>
 
         {phase && (
           <InfoBanner variant="phase" icon="flag" className="mb-stack-sm px-2 py-1 text-xs sm:px-3 sm:py-2 sm:text-body-md">
@@ -335,21 +347,30 @@ export function DailyReflection({ date, layout = 'default', prayerPoints = [] }:
         </div>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <CheckRow
-            label="Did you follow today's fasting plan?"
-            checked={followedPlan}
-            onChange={setFollowedPlan}
-          />
-          <CheckRow
-            label="Did you pray over today's focus?"
-            checked={prayedFocus}
-            onChange={setPrayedFocus}
-          />
-          <CheckRow
-            label="Did you read today's scripture?"
-            checked={readScripture}
-            onChange={setReadScripture}
-          />
+          {CHECK_IN_COMMITMENTS.map(({ key, label }) => (
+            <CheckRow
+              key={key}
+              label={label}
+              checked={
+                key === 'followedPlan'
+                  ? followedPlan
+                  : key === 'prayedFocus'
+                    ? prayedFocus
+                    : key === 'readScripture'
+                      ? readScripture
+                      : walkWithGod
+              }
+              onChange={
+                key === 'followedPlan'
+                  ? setFollowedPlan
+                  : key === 'prayedFocus'
+                    ? setPrayedFocus
+                    : key === 'readScripture'
+                      ? setReadScripture
+                      : setWalkWithGod
+              }
+            />
+          ))}
         </div>
 
         {groupContexts.length > 0 && (
