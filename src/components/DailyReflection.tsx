@@ -144,6 +144,12 @@ export function DailyReflection({ date, layout = 'default', prayerPoints = [] }:
   const currentStreak = getCurrentStreak(date);
   const reflectionFields = [prayedAbout, godTeaching, hungerNotes, victory, tomorrowIntention];
   const hasReflectionContent = joinTrimmedValues(reflectionFields).length > 0;
+  const commitmentState = {
+    followedPlan: [followedPlan, setFollowedPlan] as const,
+    prayedFocus: [prayedFocus, setPrayedFocus] as const,
+    readScripture: [readScripture, setReadScripture] as const,
+    walkWithGod: [walkWithGod, setWalkWithGod] as const,
+  };
 
   const dailyFieldState = {
     prayedAbout: [prayedAbout, setPrayedAbout] as const,
@@ -351,24 +357,8 @@ export function DailyReflection({ date, layout = 'default', prayerPoints = [] }:
             <CheckRow
               key={key}
               label={label}
-              checked={
-                key === 'followedPlan'
-                  ? followedPlan
-                  : key === 'prayedFocus'
-                    ? prayedFocus
-                    : key === 'readScripture'
-                      ? readScripture
-                      : walkWithGod
-              }
-              onChange={
-                key === 'followedPlan'
-                  ? setFollowedPlan
-                  : key === 'prayedFocus'
-                    ? setPrayedFocus
-                    : key === 'readScripture'
-                      ? setReadScripture
-                      : setWalkWithGod
-              }
+              checked={commitmentState[key][0]}
+              onChange={commitmentState[key][1]}
             />
           ))}
         </div>

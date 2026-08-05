@@ -2,7 +2,6 @@ import { expect, test, type Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import { TOUR_DISMISSED } from './fixtures/constants';
-import { openGuidedJourneyToReflection } from './fixtures/home-screen';
 
 const STORAGE_KEY = 'fasted-calendar-progress:guest';
 const ARTIFACT_DIR = path.join(process.cwd(), 'artifacts', 'issue-12');

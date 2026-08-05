@@ -29,10 +29,11 @@ type GuidedReflectionStep =
   | { kind: 'field'; key: ReflectionFieldKey; label: string }
   | { kind: 'mood' }
   | { kind: 'prayer' }
-  | { kind: 'checkin' };
+  | { kind: 'commitments' }
+  | { kind: 'groupCheckin' };
 
-const GUIDED_REFLECTION_STEPS: GuidedReflectionStep[] = [
-  { kind: 'checkin' },
+const BASE_GUIDED_REFLECTION_STEPS: GuidedReflectionStep[] = [
+  { kind: 'commitments' },
   { kind: 'meditation' },
   ...DAILY_REFLECTION_FIELDS_BEFORE_MOOD.map(({ key, label }) => ({
     kind: 'field' as const,
@@ -46,6 +47,7 @@ const GUIDED_REFLECTION_STEPS: GuidedReflectionStep[] = [
     label,
   })),
   { kind: 'prayer' },
+  { kind: 'groupCheckin' },
 ];
 
 type Props = {
@@ -82,7 +84,8 @@ const GUIDED_QUESTION_TITLE_CLASS = 'mt-1 font-display text-headline-md text-pri
 function guidedQuestionTitle(step: GuidedReflectionStep): string | null {
   if (step.kind === 'field') return step.label;
   if (step.kind === 'mood') return 'How did today feel?';
-  if (step.kind === 'checkin') return TODAY_COMMITMENTS_HEADING;
+  if (step.kind === 'commitments') return TODAY_COMMITMENTS_HEADING;
+  if (step.kind === 'groupCheckin') return 'Group commitments';
   return null;
 }
 
@@ -111,7 +114,16 @@ export function GuidedReflectionFlow({
 }: Props) {
   const [stepIndex, setStepIndex] = useState(0);
   const fieldTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const steps = GUIDED_REFLECTION_STEPS;
+  const steps =
+    groupContexts.length > 0
+      ? BASE_GUIDED_REFLECTION_STEPS
+      : BASE_GUIDED_REFLECTION_STEPS.filter((step) => step.kind !== 'groupCheckin');
+  const commitmentState = {
+    followedPlan: [followedPlan, setFollowedPlan] as const,
+    prayedFocus: [prayedFocus, setPrayedFocus] as const,
+    readScripture: [readScripture, setReadScripture] as const,
+    walkWithGod: [walkWithGod, setWalkWithGod] as const,
+  };
   const currentStep = steps[stepIndex];
   const isLastStep = stepIndex === steps.length - 1;
   const isFieldStep = currentStep.kind === 'field';
@@ -198,7 +210,7 @@ export function GuidedReflectionFlow({
             <MoodPicker value={dayMood} onChange={setDayMood} hideLegend className="px-1" />
           )}
 
-          {currentStep.kind === 'checkin' && (
+          {currentStep.kind === 'commitments' && (
             <section
               aria-labelledby="daily-reflection-checkin-heading"
               className="space-y-stack-md"
@@ -238,47 +250,31 @@ export function GuidedReflectionFlow({
                   <CheckRow
                     key={key}
                     label={label}
-                    checked={
-                      key === 'followedPlan'
-                        ? followedPlan
-                        : key === 'prayedFocus'
-                          ? prayedFocus
-                          : key === 'readScripture'
-                            ? readScripture
-                            : walkWithGod
-                    }
-                    onChange={
-                      key === 'followedPlan'
-                        ? setFollowedPlan
-                        : key === 'prayedFocus'
-                          ? setPrayedFocus
-                          : key === 'readScripture'
-                            ? setReadScripture
-                            : setWalkWithGod
-                    }
+                    checked={commitmentState[key][0]}
+                    onChange={commitmentState[key][1]}
                   />
                 ))}
               </div>
-
-              {groupContexts.length > 0 && (
-                <div className="space-y-4">
-                  {groupContexts.map((ctx) => (
-                    <section key={ctx.group.id}>
-                      <h5 className="mb-2 label-caps text-secondary">
-                        Group commitments · {ctx.group.name}
-                      </h5>
-                      <GroupCommitmentRows
-                        commitments={ctx.commitments}
-                        results={groupResults[ctx.group.id] ?? []}
-                        onChange={(results) =>
-                          setGroupResults((prev) => ({ ...prev, [ctx.group.id]: results }))
-                        }
-                      />
-                    </section>
-                  ))}
-                </div>
-              )}
             </section>
+          )}
+
+          {currentStep.kind === 'groupCheckin' && (
+            <div className="space-y-4">
+              {groupContexts.map((ctx) => (
+                <section key={ctx.group.id}>
+                  <h5 className="mb-2 label-caps text-secondary">
+                    Group commitments · {ctx.group.name}
+                  </h5>
+                  <GroupCommitmentRows
+                    commitments={ctx.commitments}
+                    results={groupResults[ctx.group.id] ?? []}
+                    onChange={(results) =>
+                      setGroupResults((prev) => ({ ...prev, [ctx.group.id]: results }))
+                    }
+                  />
+                </section>
+              ))}
+            </div>
           )}
         </div>
       </div>

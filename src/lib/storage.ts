@@ -264,6 +264,10 @@ export function persistFromCloud(data: UserProgress): void {
   const normalized: UserProgress = {
     ...DEFAULT_PROGRESS,
     ...data,
+    checkIns: (data.checkIns ?? []).map((checkIn) => ({
+      ...checkIn,
+      walkWithGod: checkIn.walkWithGod ?? false,
+    })),
     checkInStreak: data.checkInStreak ?? 0,
     journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
     mealImages: data.mealImages ?? {},

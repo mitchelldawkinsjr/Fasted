@@ -8,5 +8,3 @@ export const CHECK_IN_COMMITMENTS = [
   { key: 'readScripture' as const, label: "I commit to reading today's scripture." },
   { key: 'walkWithGod' as const, label: 'I commit to walking with God today.' },
 ] as const;
-
-export type CheckInCommitmentKey = (typeof CHECK_IN_COMMITMENTS)[number]['key'];
