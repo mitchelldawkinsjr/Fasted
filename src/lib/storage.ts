@@ -199,6 +199,10 @@ function loadRaw(): UserProgress {
     const progress: UserProgress = {
       ...DEFAULT_PROGRESS,
       ...parsed,
+      checkIns: (parsed.checkIns ?? []).map((checkIn) => ({
+        ...checkIn,
+        walkWithGod: checkIn.walkWithGod ?? false,
+      })),
       checkInStreak: parsed.checkInStreak ?? 0,
       journalEntries,
       mealImages: parsed.mealImages ?? {},
@@ -260,6 +264,10 @@ export function persistFromCloud(data: UserProgress): void {
   const normalized: UserProgress = {
     ...DEFAULT_PROGRESS,
     ...data,
+    checkIns: (data.checkIns ?? []).map((checkIn) => ({
+      ...checkIn,
+      walkWithGod: checkIn.walkWithGod ?? false,
+    })),
     checkInStreak: data.checkInStreak ?? 0,
     journalEntries: normalizeJournalEntries(data.journalEntries ?? []),
     mealImages: data.mealImages ?? {},

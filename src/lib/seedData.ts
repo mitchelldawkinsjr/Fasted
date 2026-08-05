@@ -35,6 +35,7 @@ function buildCheckIn(date: string): CheckIn {
     followedPlan: true,
     prayedFocus: true,
     readScripture: true,
+    walkWithGod: true,
     journaled: true,
     win: 'Showed up with honesty.',
     completedAt: `${date}T20:00:00.000Z`,

@@ -10,7 +10,7 @@ test.describe('Modal visual baselines', () => {
 
   test('DailyReflection — streakReady', async ({ page }) => {
     await preparePage(page, { state: 'streakReady', date: FIXED_DATE });
-    await expect(page.getByRole('heading', { name: "Today's Check-In" })).toBeVisible();
+    await expect(page.getByRole('heading', { name: "Today's Commitments" })).toBeVisible();
     await expect(page).toHaveScreenshot('DailyReflection-streakReady.png', screenshotOptions);
   });
 
