@@ -378,8 +378,8 @@ export function CloudSyncSection() {
 
             <button
               type="button"
-              disabled={busy}
-              onClick={() => void handleOAuth('facebook')}
+              disabled
+              title="Facebook sign-in is temporarily unavailable"
               className="flex w-full items-center justify-center gap-3 rounded-xl border border-outline-variant bg-surface-container px-4 py-3 text-body-md text-on-surface transition-colors hover:bg-surface-container-high disabled:opacity-50"
             >
               <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="#1877F2" aria-hidden="true">
