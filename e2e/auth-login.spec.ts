@@ -44,3 +44,7 @@ test('shows invalid credentials message for bad login', async ({ page }) => {
 
   await expect(page.getByText('Incorrect email or password. Please try again.')).toBeVisible();
 });
+
+test('Facebook sign-in button is disabled', async ({ page }) => {
+  await expect(page.getByRole('button', { name: 'Continue with Facebook' })).toBeDisabled();
+});
