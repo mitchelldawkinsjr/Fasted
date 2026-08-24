@@ -19,4 +19,6 @@ LESSON_TITLE="..." LESSON_BODY="..." ISSUE_NUMBER=88 node scripts/append-agent-l
 
 ## Recent lessons
 
+- [2026-07-29 — SEOS Mode B smoke verified (#188)](2026-07-29-seos-mode-b-smoke.md)
+
 _(Append newest entries at the top of this section during monthly review.)_
