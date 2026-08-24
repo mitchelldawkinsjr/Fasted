@@ -1,0 +1,27 @@
+# SDD §12.1 — Phase 1 thin GitHub Action. This is the adapter a *reviewed*
+# repository installs (copy this file into that repo's .github/workflows/);
+# it is not part of review-pool's own CI (see ci.yml for that). It only
+# dispatches to the coordinator and exits — the actual review runs on the
+# local worker pool, so hosted runner time is limited to this one curl call.
+name: AI Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch review
+        run: |
+          curl --fail-with-body \
+            -H "Authorization: Bearer $SCHEDULER_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"repo":"${{ github.repository }}",
+                 "pr":${{ github.event.pull_request.number }},
+                 "sha":"${{ github.event.pull_request.head.sha }}"}' \
+            "$SCHEDULER_URL/v1/jobs"
+        env:
+          SCHEDULER_URL: ${{ secrets.SCHEDULER_URL }}
+          SCHEDULER_TOKEN: ${{ secrets.SCHEDULER_TOKEN }}
