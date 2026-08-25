@@ -21,3 +21,5 @@ That aggressively re-encodes images under:
 CI runs `npm run compress:artifacts:check` and fails if images could be smaller.
 
 Overflow audit output (`e2e/overflow-screenshots/`, gitignored) is saved as JPEG and compressed automatically after each audit run.
+
+Mode C smoke: local Aider text edits for this path should stay under about five lines.
