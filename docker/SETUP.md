@@ -14,6 +14,8 @@ Set these environment variables before running setup scripts:
 | `SUPABASE_DIR` | `/opt/apps/supabase` | Supabase docker stack path |
 | `DOCKER_NETWORK` | `fasted-network` | Shared Docker network name |
 
+> **Cloudflare (free plan):** Universal SSL only covers one level (`*.example.com`). A name like `api.fasted.example.com` gets no edge cert when proxied (orange cloud). Use flat names such as `fasted-api.example.com`, or set that record to DNS-only and let NPM serve its Let's Encrypt cert.
+
 ## GitHub Actions
 
 CI deploy reads production paths from **repository variables** (Settings → Secrets and variables → Actions → Variables). SSH credentials stay in **secrets**.
@@ -128,9 +130,9 @@ Run local Supabase via the official docker stack, or leave vars unset to disable
 
 ## Social login (OAuth)
 
-The app supports Google and Facebook sign-in via Supabase OAuth. To enable:
+The app supports Google sign-in via Supabase OAuth. To enable:
 
-1. **Supabase Dashboard → Authentication → Providers** — enable Google and/or Facebook and supply the required credentials.
+1. **Supabase Dashboard → Authentication → Providers** — enable Google and supply the required credentials.
 
 2. **Add redirect URLs** in Supabase Dashboard → Authentication → URL Configuration:
    - `http://localhost:5173` (Vite dev server)

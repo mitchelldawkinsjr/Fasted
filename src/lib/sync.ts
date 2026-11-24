@@ -533,7 +533,7 @@ export async function updateUserProfile(name: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function signInWithOAuth(provider: 'google' | 'facebook'): Promise<void> {
+export async function signInWithOAuth(provider: 'google'): Promise<void> {
   rememberGuestMigration(await snapshotGuestProgress());
 
   const { error } = await authWithRetry(() =>
